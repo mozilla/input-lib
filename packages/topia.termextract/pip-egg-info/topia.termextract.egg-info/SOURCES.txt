@@ -1,0 +1,15 @@
+README.txt
+setup.cfg
+pip-egg-info/topia.termextract.egg-info/PKG-INFO
+pip-egg-info/topia.termextract.egg-info/SOURCES.txt
+pip-egg-info/topia.termextract.egg-info/dependency_links.txt
+pip-egg-info/topia.termextract.egg-info/namespace_packages.txt
+pip-egg-info/topia.termextract.egg-info/not-zip-safe
+pip-egg-info/topia.termextract.egg-info/requires.txt
+pip-egg-info/topia.termextract.egg-info/top_level.txt
+src/topia/__init__.py
+src/topia/termextract/__init__.py
+src/topia/termextract/extract.py
+src/topia/termextract/interfaces.py
+src/topia/termextract/tag.py
+src/topia/termextract/tests.py

@@ -1,0 +1,12 @@
+README.txt
+setup.cfg
+annoying/__init__.py
+annoying/decorators.py
+annoying/fields.py
+annoying/functions.py
+annoying/middlewares.py
+annoying/utils.py
+pip-egg-info/django_annoying.egg-info/PKG-INFO
+pip-egg-info/django_annoying.egg-info/SOURCES.txt
+pip-egg-info/django_annoying.egg-info/dependency_links.txt
+pip-egg-info/django_annoying.egg-info/top_level.txt

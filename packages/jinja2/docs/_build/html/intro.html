@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Jinja2 Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="_static/style.css" type="text/css">
+    <link rel="stylesheet" href="_static/print.css" type="text/css" media="print">
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css">
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:   '#',
+        VERSION:    '2.0'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/interface.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/jinja.js"></script>
+    <link rel="contents" title="Global table of contents" href="contents.html">
+    <link rel="index" title="Global index" href="genindex.html">
+    <link rel="search" title="Search" href="search.html">
+    <link rel="top" title="Jinja2 v2.0 documentation" href="index.html">
+    <link rel="next" title="API" href="api.html">
+    <link rel="prev" title="Jinja2 Documentation" href="index.html">
+    
+  </head>
+  <body>
+    <div id="content">
+      <div class="header">
+        <h1 class="heading"><a href="index.html"
+          title="back to the documentation overview"><span>Jinja</span></a></h1>
+      </div>
+      <div class="relnav">
+        <a href="index.html">&laquo; Jinja2 Documentation</a> |
+        <a href="#">Introduction</a>
+        | <a href="api.html">API &raquo;</a>
+      </div>
+      <div id="contentwrapper">
+        <div id="toc">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li><a class="reference external" href="#">Introduction</a><ul>
+<li><a class="reference external" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference external" href="#installation">Installation</a><ul>
+<li><a class="reference external" href="#as-a-python-egg-via-easy-install">As a Python egg (via easy_install)</a></li>
+<li><a class="reference external" href="#from-the-tarball-release">From the tarball release</a></li>
+<li><a class="reference external" href="#installing-the-development-version">Installing the development version</a></li>
+<li><a class="reference external" href="#enable-the-speedups-module">Enable the speedups Module</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#basic-api-usage">Basic API Usage</a></li>
+<li><a class="reference external" href="#experimental-python-3-support">Experimental Python 3 Support</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+        
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>This is the documentation for the Jinja2 general purpose templating language.
+Jinja2 is a library for Python 2.4 and onwards that is designed to be flexible,
+fast and secure.</p>
+<p>If you have any exposure to other text-based template languages, such as Smarty or
+Django, you should feel right at home with Jinja2.  It&#8217;s both designer and
+developer friendly by sticking to Python&#8217;s principles and adding functionality
+useful for templating environments.</p>
+<p>The key-features are...</p>
+<ul class="simple">
+<li>... <strong>configurable syntax</strong>.  If you are generating LaTeX or other formats
+with Jinja2 you can change the delimiters to something that integrates better
+into the LaTeX markup.</li>
+<li>... <strong>fast</strong>.  While performance is not the primarily target of Jinja2 it&#8217;s
+surprisingly fast.  The overhead compared to regular Python code was reduced
+to the very minimum.</li>
+<li>... <strong>easy to debug</strong>.  Jinja2 integrates directly into the python traceback
+system which allows you to debug Jinja2 templates with regular python
+debugging helpers.</li>
+<li>... <strong>secure</strong>.  It&#8217;s possible to evaluate untrusted template code if the
+optional sandbox is enabled.  This allows Jinja2 to be used as templating
+language for applications where users may modify the template design.</li>
+</ul>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>Jinja2 needs at least <strong>Python 2.4</strong> to run.  Additionally a working C-compiler
+that can create python extensions should be installed for the debugger.  If no
+C-compiler is available and you are using Python 2.4 the <a class="reference external" href="http://python.net/crew/theller/ctypes/">ctypes</a> module
+should be installed.</p>
+<p>If you don&#8217;t have a working C-compiler and you are trying to install the source
+release with the speedups you will get a compiler error.  This however can be
+circumvented by passing the <tt class="docutils literal"><span class="pre">--without-speedups</span></tt> command line argument to the
+setup script:</p>
+<div class="highlight-python"><pre>$ python setup.py --with-speedups install</pre>
+</div>
+<p>(As of Jinja 2.2, the speedups are disabled by default and can be enabled
+with <tt class="docutils literal"><span class="pre">--with-speedups</span></tt>.  See <a class="reference internal" href="#enable-speedups"><em>Enable the speedups Module</em></a>)</p>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>You have multiple ways to install Jinja2.  If you are unsure what to do, go
+with the Python egg or tarball.</p>
+<div class="section" id="as-a-python-egg-via-easy-install">
+<h3>As a Python egg (via easy_install)<a class="headerlink" href="#as-a-python-egg-via-easy-install" title="Permalink to this headline">¶</a></h3>
+<p>You can install the most recent Jinja2 version using <a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> or <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a>:</p>
+<div class="highlight-python"><pre>easy_install Jinja2
+pip install Jinja2</pre>
+</div>
+<p>This will install a Jinja2 egg in your Python installation&#8217;s site-packages
+directory.</p>
+<p>(If you are installing from the windows command line omit the <cite>sudo</cite> and make
+sure to run the command as user with administrator rights)</p>
+</div>
+<div class="section" id="from-the-tarball-release">
+<h3>From the tarball release<a class="headerlink" href="#from-the-tarball-release" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Download the most recent tarball from the <a class="reference external" href="http://pypi.python.org/pypi/Jinja2">download page</a></li>
+<li>Unpack the tarball</li>
+<li><tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt></li>
+</ol>
+<p>Note that you either have to have setuptools or <a class="reference external" href="http://pypi.python.org/pypi/distribute">distribute</a> installed,
+the latter is preferred.</p>
+<p>This will install Jinja2 into your Python installation&#8217;s site-packages directory.</p>
+</div>
+<div class="section" id="installing-the-development-version">
+<h3>Installing the development version<a class="headerlink" href="#installing-the-development-version" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Install <a class="reference external" href="http://www.selenic.com/mercurial/">mercurial</a></li>
+<li><tt class="docutils literal"><span class="pre">hg</span> <span class="pre">clone</span> <span class="pre">http://dev.pocoo.org/hg/jinja2-main</span> <span class="pre">jinja2</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">cd</span> <span class="pre">jinja2</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">jinja2</span> <span class="pre">/usr/lib/python2.X/site-packages</span></tt></li>
+</ol>
+<p>As an alternative to steps 4 you can also do <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></tt>
+which will install the package via distribute in development mode.  This also
+has the advantage that the C extensions are compiled.</p>
+<p>Alternative you can use <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a> to install the current development
+snapshot:</p>
+<div class="highlight-python"><pre>sudo pip install Jinja2==dev</pre>
+</div>
+<p>Or the <a class="reference external" href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> command:</p>
+<div class="highlight-python"><pre>sudo easy_install Jinja2==dev</pre>
+</div>
+</div>
+<div class="section" id="enable-the-speedups-module">
+<span id="enable-speedups"></span><h3>Enable the speedups Module<a class="headerlink" href="#enable-the-speedups-module" title="Permalink to this headline">¶</a></h3>
+<p>By default Jinja2 will not compile the speedups module.  Enabling this
+will fail if you don&#8217;t have the Python headers or a working compiler.  This
+is often the case if you are installing Jinja2 from a windows machine.</p>
+<p>You can enable the speedups extension when installing using the
+<tt class="docutils literal"><span class="pre">--with-speedups</span></tt> flag:</p>
+<div class="highlight-python"><pre>sudo python setup.py --with-speedups install</pre>
+</div>
+</div>
+</div>
+<div class="section" id="basic-api-usage">
+<h2>Basic API Usage<a class="headerlink" href="#basic-api-usage" title="Permalink to this headline">¶</a></h2>
+<p>This section gives you a brief introduction to the Python API for Jinja2
+templates.</p>
+<p>The most basic way to create a template and render it is through
+<a title="jinja2.Template" class="reference external" href="api.html#jinja2.Template"><tt class="xref docutils literal"><span class="pre">Template</span></tt></a>.  This however is not the recommended way to
+work with it if your templates are not loaded from strings but the file
+system or another data source:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Template</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">template</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s">&#39;Hello {{ name }}!&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;John Doe&#39;</span><span class="p">)</span>
+<span class="go">u&#39;Hello John Doe!&#39;</span>
+</pre></div>
+</div>
+<p>By creating an instance of <a title="jinja2.Template" class="reference external" href="api.html#jinja2.Template"><tt class="xref docutils literal"><span class="pre">Template</span></tt></a> you get back a new template
+object that provides a method called <a title="jinja2.Template.render" class="reference external" href="api.html#jinja2.Template.render"><tt class="xref docutils literal"><span class="pre">render()</span></tt></a> which when
+called with a dict or keyword arguments expands the template.  The dict
+or keywords arguments passed to the template are the so-called &#8220;context&#8221;
+of the template.</p>
+<p>What you can see here is that Jinja2 is using unicode internally and the
+return value is an unicode string.  So make sure that your application is
+indeed using unicode internally.</p>
+</div>
+<div class="section" id="experimental-python-3-support">
+<h2>Experimental Python 3 Support<a class="headerlink" href="#experimental-python-3-support" title="Permalink to this headline">¶</a></h2>
+<p>Jinja 2.3 brings experimental support for Python 3.  It means that all
+unittests pass on the new version, but there might still be small bugs in
+there and behavior might be inconsistent.  If you notice any bugs, please
+provide feedback in the <a class="reference external" href="http://dev.pocoo.org/projects/jinja/">Jinja bug tracker</a>.</p>
+<p>Also please keep in mind that the documentation is written with Python 2
+in mind, you will have to adapt the shown code examples to Python 3 syntax
+for yourself.</p>
+</div>
+</div>
+
+
+      </div>
+    </div>
+    <div class="footer">
+      © Copyright 2010 by the <a href="http://pocoo.org/">Pocoo Team</a>,
+      documentation generated by <a href="http://sphinx.pocoo.org/">Sphinx</a>
+    </div>
+  </body>
+</html>

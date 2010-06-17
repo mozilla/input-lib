@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Jinja2 Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="_static/style.css" type="text/css">
+    <link rel="stylesheet" href="_static/print.css" type="text/css" media="print">
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css">
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:   '#',
+        VERSION:    '2.0'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/interface.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/jinja.js"></script>
+    <link rel="contents" title="Global table of contents" href="contents.html">
+    <link rel="index" title="Global index" href="genindex.html">
+    <link rel="search" title="Search" href="search.html">
+    <link rel="top" title="Jinja2 v2.0 documentation" href="index.html">
+    <link rel="next" title="Template Designer Documentation" href="templates.html">
+    <link rel="prev" title="API" href="api.html">
+    
+  </head>
+  <body>
+    <div id="content">
+      <div class="header">
+        <h1 class="heading"><a href="index.html"
+          title="back to the documentation overview"><span>Jinja</span></a></h1>
+      </div>
+      <div class="relnav">
+        <a href="api.html">&laquo; API</a> |
+        <a href="#">Sandbox</a>
+        | <a href="templates.html">Template Designer Documentation &raquo;</a>
+      </div>
+      <div id="contentwrapper">
+        
+  <div class="section" id="module-jinja2.sandbox">
+<h1>Sandbox<a class="headerlink" href="#module-jinja2.sandbox" title="Permalink to this headline">¶</a></h1>
+<p>The Jinja2 sandbox can be used to evaluate untrusted code.  Access to unsafe
+attributes and methods is prohibited.</p>
+<p>Assuming <cite>env</cite> is a <tt class="xref docutils literal"><span class="pre">SandboxedEnvironment</span></tt> in the default configuration
+the following piece of code shows how it works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="s">&quot;{{ func.func_code }}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span><span class="bp">None</span><span class="p">)</span>
+<span class="go">u&#39;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="s">&quot;{{ func.func_code.do_something }}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span><span class="bp">None</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  <span class="c">...</span>
+<span class="nc">SecurityError</span>: <span class="n-Identifier">access to attribute &#39;func_code&#39; of &#39;function&#39; object is unsafe.</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="jinja2.sandbox.SandboxedEnvironment">
+<em class="property">class </em><tt class="descclassname">jinja2.sandbox.</tt><tt class="descname">SandboxedEnvironment</tt><big>(</big><span class="optional">[</span><em>options</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#jinja2.sandbox.SandboxedEnvironment" title="Permalink to this definition">¶</a></dt>
+<dd><p>The sandboxed environment.  It works like the regular environment but
+tells the compiler to generate sandboxed code.  Additionally subclasses of
+this environment may override the methods that tell the runtime what
+attributes or functions are safe to access.</p>
+<p>If the template tries to access insecure code a <a title="jinja2.sandbox.SecurityError" class="reference internal" href="#jinja2.sandbox.SecurityError"><tt class="xref docutils literal"><span class="pre">SecurityError</span></tt></a> is
+raised.  However also other exceptions may occour during the rendering so
+the caller has to ensure that all exceptions are catched.</p>
+<dl class="method">
+<dt id="jinja2.sandbox.SandboxedEnvironment.is_safe_attribute">
+<tt class="descname">is_safe_attribute</tt><big>(</big><em>obj</em>, <em>attr</em>, <em>value</em><big>)</big><a class="headerlink" href="#jinja2.sandbox.SandboxedEnvironment.is_safe_attribute" title="Permalink to this definition">¶</a></dt>
+<dd>The sandboxed environment will call this method to check if the
+attribute of an object is safe to access.  Per default all attributes
+starting with an underscore are considered private as well as the
+special attributes of internal python objects as returned by the
+<a title="jinja2.sandbox.is_internal_attribute" class="reference internal" href="#jinja2.sandbox.is_internal_attribute"><tt class="xref docutils literal"><span class="pre">is_internal_attribute()</span></tt></a> function.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.sandbox.SandboxedEnvironment.is_safe_callable">
+<tt class="descname">is_safe_callable</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#jinja2.sandbox.SandboxedEnvironment.is_safe_callable" title="Permalink to this definition">¶</a></dt>
+<dd>Check if an object is safely callable.  Per default a function is
+considered safe unless the <cite>unsafe_callable</cite> attribute exists and is
+True.  Override this method to alter the behavior, but this won&#8217;t
+affect the <cite>unsafe</cite> decorator from this module.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.sandbox.ImmutableSandboxedEnvironment">
+<em class="property">class </em><tt class="descclassname">jinja2.sandbox.</tt><tt class="descname">ImmutableSandboxedEnvironment</tt><big>(</big><span class="optional">[</span><em>options</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#jinja2.sandbox.ImmutableSandboxedEnvironment" title="Permalink to this definition">¶</a></dt>
+<dd>Works exactly like the regular <cite>SandboxedEnvironment</cite> but does not
+permit modifications on the builtin mutable objects <cite>list</cite>, <cite>set</cite>, and
+<cite>dict</cite> by using the <a title="jinja2.sandbox.modifies_known_mutable" class="reference internal" href="#jinja2.sandbox.modifies_known_mutable"><tt class="xref docutils literal"><span class="pre">modifies_known_mutable()</span></tt></a> function.</dd></dl>
+
+<dl class="exception">
+<dt id="jinja2.sandbox.SecurityError">
+<em class="property">exception </em><tt class="descclassname">jinja2.sandbox.</tt><tt class="descname">SecurityError</tt><big>(</big><em>message=None</em><big>)</big><a class="headerlink" href="#jinja2.sandbox.SecurityError" title="Permalink to this definition">¶</a></dt>
+<dd>Raised if a template tries to do something insecure if the
+sandbox is enabled.</dd></dl>
+
+<dl class="function">
+<dt id="jinja2.sandbox.unsafe">
+<tt class="descclassname">jinja2.sandbox.</tt><tt class="descname">unsafe</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#jinja2.sandbox.unsafe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mark a function or method as unsafe:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@unsafe</span>
+<span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="jinja2.sandbox.is_internal_attribute">
+<tt class="descclassname">jinja2.sandbox.</tt><tt class="descname">is_internal_attribute</tt><big>(</big><em>obj</em>, <em>attr</em><big>)</big><a class="headerlink" href="#jinja2.sandbox.is_internal_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the attribute given is an internal python attribute.  For
+example this function returns <cite>True</cite> for the <cite>func_code</cite> attribute of
+python objects.  This is useful if the environment method
+<a title="jinja2.sandbox.SandboxedEnvironment.is_safe_attribute" class="reference internal" href="#jinja2.sandbox.SandboxedEnvironment.is_safe_attribute"><tt class="xref docutils literal"><span class="pre">is_safe_attribute()</span></tt></a> is overriden.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jinja2.sandbox</span> <span class="kn">import</span> <span class="n">is_internal_attribute</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_internal_attribute</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&quot;func_code&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_internal_attribute</span><span class="p">((</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">func_code</span><span class="p">,</span> <span class="s">&#39;co_code&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_internal_attribute</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="s">&quot;upper&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="jinja2.sandbox.modifies_known_mutable">
+<tt class="descclassname">jinja2.sandbox.</tt><tt class="descname">modifies_known_mutable</tt><big>(</big><em>obj</em>, <em>attr</em><big>)</big><a class="headerlink" href="#jinja2.sandbox.modifies_known_mutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function checks if an attribute on a builtin mutable object
+(list, dict, set or deque) would modify it if called.  It also supports
+the &#8220;user&#8221;-versions of the objects (<cite>sets.Set</cite>, <cite>UserDict.*</cite> etc.) and
+with Python 2.6 onwards the abstract base classes <cite>MutableSet</cite>,
+<cite>MutableMapping</cite>, and <cite>MutableSequence</cite>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">modifies_known_mutable</span><span class="p">({},</span> <span class="s">&quot;clear&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modifies_known_mutable</span><span class="p">({},</span> <span class="s">&quot;keys&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modifies_known_mutable</span><span class="p">([],</span> <span class="s">&quot;append&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modifies_known_mutable</span><span class="p">([],</span> <span class="s">&quot;index&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>If called with an unsupported object (such as unicode) <cite>False</cite> is
+returned.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">modifies_known_mutable</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="s">&quot;upper&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<div class="admonition-note admonition ">
+<p class="first admonition-title">Note</p>
+<p>The Jinja2 sandbox alone is no solution for perfect security.  Especially
+for web applications you have to keep in mind that users may create
+templates with arbitrary HTML in so it&#8217;s crucial to ensure that (if you
+are running multiple users on the same server) they can&#8217;t harm each other
+via JavaScript insertions and much more.</p>
+<p>Also the sandbox is only as good as the configuration.  We stronly
+recommend only passing non-shared resources to the template and use
+some sort of whitelisting for attributes.</p>
+<p class="last">Also keep in mind that templates may raise runtime or compile time errors,
+so make sure to catch them.</p>
+</div>
+</div>
+
+
+      </div>
+    </div>
+    <div class="footer">
+      © Copyright 2010 by the <a href="http://pocoo.org/">Pocoo Team</a>,
+      documentation generated by <a href="http://sphinx.pocoo.org/">Sphinx</a>
+    </div>
+  </body>
+</html>

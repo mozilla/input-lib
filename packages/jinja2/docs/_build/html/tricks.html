@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Jinja2 Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="_static/style.css" type="text/css">
+    <link rel="stylesheet" href="_static/print.css" type="text/css" media="print">
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css">
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:   '#',
+        VERSION:    '2.0'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/interface.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/jinja.js"></script>
+    <link rel="contents" title="Global table of contents" href="contents.html">
+    <link rel="index" title="Global index" href="genindex.html">
+    <link rel="search" title="Search" href="search.html">
+    <link rel="top" title="Jinja2 v2.0 documentation" href="index.html">
+    <link rel="next" title="Frequently Asked Questions" href="faq.html">
+    <link rel="prev" title="Switching from other Template Engines" href="switching.html">
+    
+  </head>
+  <body>
+    <div id="content">
+      <div class="header">
+        <h1 class="heading"><a href="index.html"
+          title="back to the documentation overview"><span>Jinja</span></a></h1>
+      </div>
+      <div class="relnav">
+        <a href="switching.html">&laquo; Switching from other Template Engines</a> |
+        <a href="#">Tips and Tricks</a>
+        | <a href="faq.html">Frequently Asked Questions &raquo;</a>
+      </div>
+      <div id="contentwrapper">
+        <div id="toc">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li><a class="reference external" href="#">Tips and Tricks</a><ul>
+<li><a class="reference external" href="#null-master-fallback">Null-Master Fallback</a></li>
+<li><a class="reference external" href="#alternating-rows">Alternating Rows</a></li>
+<li><a class="reference external" href="#highlighting-active-menu-items">Highlighting Active Menu Items</a></li>
+<li><a class="reference external" href="#accessing-the-parent-loop">Accessing the parent Loop</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+        
+  <div class="section" id="tips-and-tricks">
+<h1>Tips and Tricks<a class="headerlink" href="#tips-and-tricks" title="Permalink to this headline">¶</a></h1>
+<p>This part of the documentation shows some tips and tricks for Jinja2
+templates.</p>
+<div class="section" id="null-master-fallback">
+<span id="id1"></span><h2>Null-Master Fallback<a class="headerlink" href="#null-master-fallback" title="Permalink to this headline">¶</a></h2>
+<p>Jinja2 supports dynamic inheritance and does not distinguish between parent
+and child template as long as no <cite>extends</cite> tag is visited.  While this leads
+to the surprising behavior that everything before the first <cite>extends</cite> tag
+including whitespace is printed out instead of being igored, it can be used
+for a neat trick.</p>
+<p>Usually child templates extend from one template that adds a basic HTML
+skeleton.  However it&#8217;s possible put the <cite>extends</cite> tag into an <cite>if</cite> tag to
+only extend from the layout template if the <cite>standalone</cite> variable evaluates
+to false which it does per default if it&#8217;s not defined.  Additionally a very
+basic skeleton is added to the file so that if it&#8217;s indeed rendered with
+<cite>standalone</cite> set to <cite>True</cite> a very basic HTML skeleton is added:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">if</span> <span class="k">not</span> <span class="nv">standalone</span> <span class="cp">%}{%</span> <span class="k">extends</span> <span class="s1">&#39;master.html&#39;</span> <span class="cp">%}{%</span> <span class="k">endif</span> -<span class="cp">%}</span>
+<span class="cp">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;</span>
+<span class="nt">&lt;title&gt;</span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">title</span> <span class="cp">%}</span>The Page Title<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href=</span><span class="s">&quot;style.css&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span><span class="nt">&gt;</span>
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
+  <span class="nt">&lt;p&gt;</span>This is the page body.<span class="nt">&lt;/p&gt;</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="alternating-rows">
+<h2>Alternating Rows<a class="headerlink" href="#alternating-rows" title="Permalink to this headline">¶</a></h2>
+<p>If you want to have different styles for each row of a table or
+list you can use the <cite>cycle</cite> method on the <cite>loop</cite> object:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;ul&gt;</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">row</span> <span class="k">in</span> <span class="nv">rows</span> <span class="cp">%}</span>
+  <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nb">loop</span><span class="nv">.cycle</span><span class="o">(</span><span class="s1">&#39;odd&#39;</span><span class="o">,</span> <span class="s1">&#39;even&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span><span class="cp">{{</span> <span class="nv">row</span> <span class="cp">}}</span><span class="nt">&lt;/li&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="nt">&lt;/ul&gt;</span>
+</pre></div>
+</div>
+<p><cite>cycle</cite> can take an unlimited amount of strings.  Each time this
+tag is encountered the next item from the list is rendered.</p>
+</div>
+<div class="section" id="highlighting-active-menu-items">
+<h2>Highlighting Active Menu Items<a class="headerlink" href="#highlighting-active-menu-items" title="Permalink to this headline">¶</a></h2>
+<p>Often you want to have a navigation bar with an active navigation
+item.  This is really simple to achieve.  Because assignments outside
+of <cite>block</cite>s in child templates are global and executed before the layout
+template is evaluated it&#8217;s possible to define the active menu item in the
+child template:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">extends</span> <span class="s2">&quot;layout.html&quot;</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">set</span> <span class="nv">active_page</span> <span class="o">=</span> <span class="s2">&quot;index&quot;</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+<p>The layout template can then access <cite>active_page</cite>.  Additionally it makes
+sense to defined a default for that variable:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">set</span> <span class="nv">navigation_bar</span> <span class="o">=</span> <span class="o">[</span>
+    <span class="o">(</span><span class="s1">&#39;/&#39;</span><span class="o">,</span> <span class="s1">&#39;index&#39;</span><span class="o">,</span> <span class="s1">&#39;Index&#39;</span><span class="o">),</span>
+    <span class="o">(</span><span class="s1">&#39;/downloads/&#39;</span><span class="o">,</span> <span class="s1">&#39;downloads&#39;</span><span class="o">,</span> <span class="s1">&#39;Downloads&#39;</span><span class="o">),</span>
+    <span class="o">(</span><span class="s1">&#39;/about/&#39;</span><span class="o">,</span> <span class="s1">&#39;about&#39;</span><span class="o">,</span> <span class="s1">&#39;About&#39;</span><span class="o">)</span>
+<span class="o">]</span> -<span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">set</span> <span class="nv">active_page</span> <span class="o">=</span> <span class="nv">active_page</span><span class="o">|</span><span class="nf">default</span><span class="o">(</span><span class="s1">&#39;index&#39;</span><span class="o">)</span> -<span class="cp">%}</span>
+...
+<span class="nt">&lt;ul</span> <span class="na">id=</span><span class="s">&quot;navigation&quot;</span><span class="nt">&gt;</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">href</span><span class="o">,</span> <span class="nv">id</span><span class="o">,</span> <span class="nv">caption</span> <span class="k">in</span> <span class="nv">navigation_bar</span> <span class="cp">%}</span>
+  <span class="nt">&lt;li</span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">id</span> <span class="o">==</span> <span class="nv">active_page</span> <span class="cp">%}</span> <span class="na">class=</span><span class="s">&quot;active&quot;</span><span class="cp">{%</span> <span class="k">endif</span>
+  <span class="cp">%}</span><span class="nt">&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">href</span><span class="o">|</span><span class="nf">e</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span><span class="cp">{{</span> <span class="nv">caption</span><span class="o">|</span><span class="nf">e</span> <span class="cp">}}</span><span class="nt">&lt;/a&gt;</span>/li&gt;
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="nt">&lt;/ul&gt;</span>
+...
+</pre></div>
+</div>
+</div>
+<div class="section" id="accessing-the-parent-loop">
+<span id="id2"></span><h2>Accessing the parent Loop<a class="headerlink" href="#accessing-the-parent-loop" title="Permalink to this headline">¶</a></h2>
+<p>The special <cite>loop</cite> variable always points to the innermost loop.  If it&#8217;s
+desired to have access to an outer loop it&#8217;s possible to alias it:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;table&gt;</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">row</span> <span class="k">in</span> <span class="nv">table</span> <span class="cp">%}</span>
+  <span class="nt">&lt;tr&gt;</span>
+  <span class="cp">{%</span> <span class="k">set</span> <span class="nv">rowloop</span> <span class="o">=</span> <span class="nb">loop</span> <span class="cp">%}</span>
+  <span class="cp">{%</span> <span class="k">for</span> <span class="nv">cell</span> <span class="k">in</span> <span class="nv">row</span> <span class="cp">%}</span>
+    <span class="nt">&lt;td</span> <span class="na">id=</span><span class="s">&quot;cell-</span><span class="cp">{{</span> <span class="nv">rowloop.index</span> <span class="cp">}}</span><span class="s">-</span><span class="cp">{{</span> <span class="nb">loop</span><span class="nv">.index</span> <span class="cp">}}</span><span class="nt">&gt;</span><span class="cp">{{</span> <span class="nv">cell</span> <span class="cp">}}</span><span class="nt">&lt;/td&gt;</span>
+  <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+  <span class="nt">&lt;/tr&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="nt">&lt;/table&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+    </div>
+    <div class="footer">
+      © Copyright 2010 by the <a href="http://pocoo.org/">Pocoo Team</a>,
+      documentation generated by <a href="http://sphinx.pocoo.org/">Sphinx</a>
+    </div>
+  </body>
+</html>

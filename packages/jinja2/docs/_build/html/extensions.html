@@ -1,0 +1,1646 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Jinja2 Documentation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="_static/style.css" type="text/css">
+    <link rel="stylesheet" href="_static/print.css" type="text/css" media="print">
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css">
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:   '#',
+        VERSION:    '2.0'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/interface.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/jinja.js"></script>
+    <link rel="contents" title="Global table of contents" href="contents.html">
+    <link rel="index" title="Global index" href="genindex.html">
+    <link rel="search" title="Search" href="search.html">
+    <link rel="top" title="Jinja2 v2.0 documentation" href="index.html">
+    <link rel="next" title="Integration" href="integration.html">
+    <link rel="prev" title="Template Designer Documentation" href="templates.html">
+    
+  </head>
+  <body>
+    <div id="content">
+      <div class="header">
+        <h1 class="heading"><a href="index.html"
+          title="back to the documentation overview"><span>Jinja</span></a></h1>
+      </div>
+      <div class="relnav">
+        <a href="templates.html">&laquo; Template Designer Documentation</a> |
+        <a href="#">Extensions</a>
+        | <a href="integration.html">Integration &raquo;</a>
+      </div>
+      <div id="contentwrapper">
+        <div id="toc">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li><a class="reference external" href="#">Extensions</a><ul>
+<li><a class="reference external" href="#adding-extensions">Adding Extensions</a></li>
+<li><a class="reference external" href="#i18n-extension">i18n Extension</a><ul>
+<li><a class="reference external" href="#environment-methods">Environment Methods</a></li>
+<li><a class="reference external" href="#newstyle-gettext">Newstyle Gettext</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#expression-statement">Expression Statement</a></li>
+<li><a class="reference external" href="#loop-controls">Loop Controls</a></li>
+<li><a class="reference external" href="#with-statement">With Statement</a></li>
+<li><a class="reference external" href="#autoescape-extension">Autoescape Extension</a></li>
+<li><a class="reference external" href="#module-jinja2.ext">Writing Extensions</a><ul>
+<li><a class="reference external" href="#example-extension">Example Extension</a></li>
+<li><a class="reference external" href="#extension-api">Extension API</a></li>
+<li><a class="reference external" href="#parser-api">Parser API</a></li>
+<li><a class="reference external" href="#module-jinja2.nodes">AST</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+        
+  <div class="section" id="extensions">
+<span id="jinja-extensions"></span><h1>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h1>
+<p>Jinja2 supports extensions that can add extra filters, tests, globals or even
+extend the parser.  The main motivation of extensions is it to move often used
+code into a reusable class like adding support for internationalization.</p>
+<div class="section" id="adding-extensions">
+<h2>Adding Extensions<a class="headerlink" href="#adding-extensions" title="Permalink to this headline">¶</a></h2>
+<p>Extensions are added to the Jinja2 environment at creation time.  Once the
+environment is created additional extensions cannot be added.  To add an
+extension pass a list of extension classes or import paths to the
+<cite>environment</cite> parameter of the <tt class="xref docutils literal"><span class="pre">Environment</span></tt> constructor.  The following
+example creates a Jinja2 environment with the i18n extension loaded:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">jinja_env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;jinja2.ext.i18n&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="i18n-extension">
+<span id="id1"></span><h2>i18n Extension<a class="headerlink" href="#i18n-extension" title="Permalink to this headline">¶</a></h2>
+<p><strong>Import name:</strong> <cite>jinja2.ext.i18n</cite></p>
+<p>Jinja2 currently comes with one extension, the i18n extension.  It can be
+used in combination with <a class="reference external" href="http://docs.python.org/dev/library/gettext">gettext</a> or <a class="reference external" href="http://babel.edgewall.org/">babel</a>.  If the i18n extension is
+enabled Jinja2 provides a <cite>trans</cite> statement that marks the wrapped string as
+translatable and calls <cite>gettext</cite>.</p>
+<p>After enabling dummy <cite>_</cite> function that forwards calls to <cite>gettext</cite> is added
+to the environment globals.  An internationalized application then has to
+provide at least an <cite>gettext</cite> and optoinally a <cite>ngettext</cite> function into the
+namespace.  Either globally or for each rendering.</p>
+<div class="section" id="environment-methods">
+<h3>Environment Methods<a class="headerlink" href="#environment-methods" title="Permalink to this headline">¶</a></h3>
+<p>After enabling of the extension the environment provides the following
+additional methods:</p>
+<dl class="method">
+<dt id="jinja2.Environment.install_gettext_translations">
+<tt class="descclassname">jinja2.Environment.</tt><tt class="descname">install_gettext_translations</tt><big>(</big><em>translations</em>, <em>newstyle=False</em><big>)</big><a class="headerlink" href="#jinja2.Environment.install_gettext_translations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Installs a translation globally for that environment.  The tranlations
+object provided must implement at least <cite>ugettext</cite> and <cite>ungettext</cite>.
+The <cite>gettext.NullTranslations</cite> and <cite>gettext.GNUTranslations</cite> classes
+as well as <a class="reference external" href="http://babel.edgewall.org/">Babel</a>s <cite>Translations</cite> class are supported.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 2.5: </span>newstyle gettext added</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.Environment.install_null_translations">
+<tt class="descclassname">jinja2.Environment.</tt><tt class="descname">install_null_translations</tt><big>(</big><em>newstyle=False</em><big>)</big><a class="headerlink" href="#jinja2.Environment.install_null_translations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Install dummy gettext functions.  This is useful if you want to prepare
+the application for internationalization but don&#8217;t want to implement the
+full internationalization system yet.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 2.5: </span>newstyle gettext added</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.Environment.install_gettext_callables">
+<tt class="descclassname">jinja2.Environment.</tt><tt class="descname">install_gettext_callables</tt><big>(</big><em>gettext</em>, <em>ngettext</em>, <em>newstyle=False</em><big>)</big><a class="headerlink" href="#jinja2.Environment.install_gettext_callables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Installs the given <cite>gettext</cite> and <cite>ngettext</cite> callables into the
+environment as globals.  They are supposed to behave exactly like the
+standard library&#8217;s <tt class="xref docutils literal"><span class="pre">gettext.ugettext()</span></tt> and
+<tt class="xref docutils literal"><span class="pre">gettext.ungettext()</span></tt> functions.</p>
+<p>If <cite>newstyle</cite> is activated, the callables are wrapped to work like
+newstyle callables.  See <a class="reference internal" href="#newstyle-gettext"><em>Newstyle Gettext</em></a> for more information.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.5.</span></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.Environment.uninstall_gettext_translations">
+<tt class="descclassname">jinja2.Environment.</tt><tt class="descname">uninstall_gettext_translations</tt><big>(</big><big>)</big><a class="headerlink" href="#jinja2.Environment.uninstall_gettext_translations" title="Permalink to this definition">¶</a></dt>
+<dd>Uninstall the translations again.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.Environment.extract_translations">
+<tt class="descclassname">jinja2.Environment.</tt><tt class="descname">extract_translations</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#jinja2.Environment.extract_translations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract localizable strings from the given template node or source.</p>
+<p>For every string found this function yields a <tt class="docutils literal"><span class="pre">(lineno,</span> <span class="pre">function,</span>
+<span class="pre">message)</span></tt> tuple, where:</p>
+<ul class="simple">
+<li><cite>lineno</cite> is the number of the line on which the string was found,</li>
+<li><cite>function</cite> is the name of the <cite>gettext</cite> function used (if the
+string was extracted from embedded Python code), and</li>
+<li><cite>message</cite> is the string itself (a <cite>unicode</cite> object, or a tuple
+of <cite>unicode</cite> objects for functions with multiple string arguments).</li>
+</ul>
+<p>If <a class="reference external" href="http://babel.edgewall.org/">Babel</a> is installed <a class="reference external" href="integration.html#babel-integration"><em>the babel integration</em></a>
+can be used to extract strings for babel.</p>
+</dd></dl>
+
+<p>For a web application that is available in multiple languages but gives all
+the users the same language (for example a multilingual forum software
+installed for a French community) may load the translations once and add the
+translation methods to the environment at environment generation time:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">translations</span> <span class="o">=</span> <span class="n">get_gettext_translations</span><span class="p">()</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;jinja2.ext.i18n&#39;</span><span class="p">])</span>
+<span class="n">env</span><span class="o">.</span><span class="n">install_gettext_translations</span><span class="p">(</span><span class="n">translations</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <cite>get_gettext_translations</cite> function would return the translator for the
+current configuration.  (For example by using <cite>gettext.find</cite>)</p>
+<p>The usage of the <cite>i18n</cite> extension for template designers is covered as part
+<a class="reference external" href="templates.html#i18n-in-templates"><em>of the template documentation</em></a>.</p>
+</div>
+<div class="section" id="newstyle-gettext">
+<span id="id2"></span><h3>Newstyle Gettext<a class="headerlink" href="#newstyle-gettext" title="Permalink to this headline">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.5.</span></p>
+<p>Starting with version 2.5 you can use newstyle gettext calls.  These are
+inspired by trac&#8217;s internal gettext functions and are fully supported by
+the babel extraction tool.  They might not work as expected by other
+extraction tools in case you are not using Babel&#8217;s.</p>
+<p>What&#8217;s the big difference between standard and newstyle gettext calls?  In
+general they are less to type and less error prone.  Also if they are used
+in an autoescaping environment they better support automatic escaping.
+Here some common differences between old and new calls:</p>
+<p>standard gettext:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">gettext</span><span class="o">(</span><span class="s1">&#39;Hello World!&#39;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="cp">{{</span> <span class="nv">gettext</span><span class="o">(</span><span class="s1">&#39;Hello %(name)s!&#39;</span><span class="o">)|</span><span class="nf">format</span><span class="o">(</span><span class="nv">name</span><span class="o">=</span><span class="s1">&#39;World&#39;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="cp">{{</span> <span class="nv">ngettext</span><span class="o">(</span><span class="s1">&#39;%(num)d apple&#39;</span><span class="o">,</span> <span class="s1">&#39;%(num)d apples&#39;</span><span class="o">,</span> <span class="nv">apples</span><span class="o">|</span><span class="nf">count</span><span class="o">)|</span><span class="nf">format</span><span class="o">(</span>
+    <span class="nv">num</span><span class="o">=</span><span class="nv">apples</span><span class="o">|</span><span class="nf">count</span>
+<span class="o">)</span><span class="cp">}}</span>
+</pre></div>
+</div>
+<p>newstyle gettext looks like this instead:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">gettext</span><span class="o">(</span><span class="s1">&#39;Hello World!&#39;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="cp">{{</span> <span class="nv">gettext</span><span class="o">(</span><span class="s1">&#39;Hello %(name)s!&#39;</span><span class="o">,</span> <span class="nv">name</span><span class="o">=</span><span class="s1">&#39;World&#39;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="cp">{{</span> <span class="nv">ngettext</span><span class="o">(</span><span class="s1">&#39;%(num)d apple&#39;</span><span class="o">,</span> <span class="s1">&#39;%(num)d apples&#39;</span><span class="o">,</span> <span class="nv">apples</span><span class="o">|</span><span class="nf">count</span><span class="o">)</span> <span class="cp">}}</span>
+</pre></div>
+</div>
+<p>The advantages of newstyle gettext is that you have less to type and that
+named placeholders become mandatory.  The latter sounds like a
+disadvantage but solves a lot of troubles translators are often facing
+when they are unable to switch the positions of two placeholder.  With
+newstyle gettext, all format strings look the same.</p>
+<p>Furthermore with newstyle gettext, string formatting is also used if no
+placeholders are used which makes all strings behave exactly the same.
+Last but not least are newstyle gettext calls able to properly mark
+strings for autoescaping which solves lots of escaping related issues many
+templates are experiencing over time when using autoescaping.</p>
+</div>
+</div>
+<div class="section" id="expression-statement">
+<h2>Expression Statement<a class="headerlink" href="#expression-statement" title="Permalink to this headline">¶</a></h2>
+<p><strong>Import name:</strong> <cite>jinja2.ext.do</cite></p>
+<p>The &#8220;do&#8221; aka expression-statement extension adds a simple <cite>do</cite> tag to the
+template engine that works like a variable expression but ignores the
+return value.</p>
+</div>
+<div class="section" id="loop-controls">
+<span id="loopcontrols-extension"></span><h2>Loop Controls<a class="headerlink" href="#loop-controls" title="Permalink to this headline">¶</a></h2>
+<p><strong>Import name:</strong> <cite>jinja2.ext.loopcontrols</cite></p>
+<p>This extension adds support for <cite>break</cite> and <cite>continue</cite> in loops.  After
+enabling Jinja2 provides those two keywords which work exactly like in
+Python.</p>
+</div>
+<div class="section" id="with-statement">
+<span id="with-extension"></span><h2>With Statement<a class="headerlink" href="#with-statement" title="Permalink to this headline">¶</a></h2>
+<p><strong>Import name:</strong> <cite>jinja2.ext.with_</cite></p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.3.</span></p>
+<p>This extension adds support for the with keyword.  Using this keyword it
+is possible to enforce a nested scope in a template.  Variables can be
+declared directly in the opening block of the with statement or using a
+standard <cite>set</cite> statement directly within.</p>
+</div>
+<div class="section" id="autoescape-extension">
+<span id="id3"></span><h2>Autoescape Extension<a class="headerlink" href="#autoescape-extension" title="Permalink to this headline">¶</a></h2>
+<p><strong>Import name:</strong> <cite>jinja2.ext.autoescape</cite></p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.4.</span></p>
+<p>The autoescape extension allows you to toggle the autoescape feature from
+within the template.  If the environment&#8217;s <tt class="xref docutils literal"><span class="pre">autoescape</span></tt>
+setting is set to <cite>False</cite> it can be activated, if it&#8217;s <cite>True</cite> it can be
+activated.  The setting overriding is scoped.</p>
+</div>
+<div class="section" id="module-jinja2.ext">
+<span id="writing-extensions"></span><h2>Writing Extensions<a class="headerlink" href="#module-jinja2.ext" title="Permalink to this headline">¶</a></h2>
+<p>By writing extensions you can add custom tags to Jinja2.  This is a non trival
+task and usually not needed as the default tags and expressions cover all
+common use cases.  The i18n extension is a good example of why extensions are
+useful, another one would be fragment caching.</p>
+<p>When writing extensions you have to keep in mind that you are working with the
+Jinja2 template compiler which does not validate the node tree you are possing
+to it.  If the AST is malformed you will get all kinds of compiler or runtime
+errors that are horrible to debug.  Always make sure you are using the nodes
+you create correctly.  The API documentation below shows which nodes exist and
+how to use them.</p>
+<div class="section" id="example-extension">
+<h3>Example Extension<a class="headerlink" href="#example-extension" title="Permalink to this headline">¶</a></h3>
+<p>The following example implements a <cite>cache</cite> tag for Jinja2 by using the
+<a class="reference external" href="http://werkzeug.pocoo.org/">Werkzeug</a> caching contrib module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">nodes</span>
+<span class="kn">from</span> <span class="nn">jinja2.ext</span> <span class="kn">import</span> <span class="n">Extension</span>
+
+
+<span class="k">class</span> <span class="nc">FragmentCacheExtension</span><span class="p">(</span><span class="n">Extension</span><span class="p">):</span>
+    <span class="c"># a set of names that trigger the extension.</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;cache&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FragmentCacheExtension</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span>
+
+        <span class="c"># add the defaults to the environment</span>
+        <span class="n">environment</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">fragment_cache_prefix</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">fragment_cache</span><span class="o">=</span><span class="bp">None</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+        <span class="c"># the first token is the token that started the tag.  In our case</span>
+        <span class="c"># we only listen to ``&#39;cache&#39;`` so this will be a name token with</span>
+        <span class="c"># `cache` as value.  We get the line number so that we can give</span>
+        <span class="c"># that line number to the nodes we create by hand.</span>
+        <span class="n">lineno</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">next</span><span class="p">()</span><span class="o">.</span><span class="n">lineno</span>
+
+        <span class="c"># now we parse a single expression that is used as cache key.</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_expression</span><span class="p">()]</span>
+
+        <span class="c"># if there is a comma, the user provided a timeout.  If not use</span>
+        <span class="c"># None as second parameter.</span>
+        <span class="k">if</span> <span class="n">parser</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">skip_if</span><span class="p">(</span><span class="s">&#39;comma&#39;</span><span class="p">):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_expression</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>
+
+        <span class="c"># now we parse the body of the cache block up to `endcache` and</span>
+        <span class="c"># drop the needle (which would always be `endcache` in that case)</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_statements</span><span class="p">([</span><span class="s">&#39;name:endcache&#39;</span><span class="p">],</span> <span class="n">drop_needle</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># now return a `CallBlock` node that calls our _cache_support</span>
+        <span class="c"># helper method on this extension.</span>
+        <span class="k">return</span> <span class="n">nodes</span><span class="o">.</span><span class="n">CallBlock</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">call_method</span><span class="p">(</span><span class="s">&#39;_cache_support&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">),</span>
+                               <span class="p">[],</span> <span class="p">[],</span> <span class="n">body</span><span class="p">)</span><span class="o">.</span><span class="n">set_lineno</span><span class="p">(</span><span class="n">lineno</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_cache_support</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">caller</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper callback.&quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">fragment_cache_prefix</span> <span class="o">+</span> <span class="n">name</span>
+
+        <span class="c"># try to load the block from the cache</span>
+        <span class="c"># if there is no fragment in the cache, render it and store</span>
+        <span class="c"># it in the cache.</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">fragment_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rv</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="n">caller</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">fragment_cache</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">rv</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rv</span>
+</pre></div>
+</div>
+<p>And here is how you use it in an environment:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">jinja2</span> <span class="kn">import</span> <span class="n">Environment</span>
+<span class="kn">from</span> <span class="nn">werkzeug.contrib.cache</span> <span class="kn">import</span> <span class="n">SimpleCache</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="n">FragmentCacheExtension</span><span class="p">])</span>
+<span class="n">env</span><span class="o">.</span><span class="n">fragment_cache</span> <span class="o">=</span> <span class="n">SimpleCache</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Inside the template it&#8217;s then possible to mark blocks as cacheable.  The
+following example caches a sidebar for 300 seconds:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">cache</span> <span class="s1">&#39;sidebar&#39;</span><span class="o">,</span> <span class="m">300</span> <span class="cp">%}</span>
+<span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
+    ...
+<span class="nt">&lt;/div&gt;</span>
+<span class="cp">{%</span> <span class="k">endcache</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="extension-api">
+<h3>Extension API<a class="headerlink" href="#extension-api" title="Permalink to this headline">¶</a></h3>
+<p>Extensions always have to extend the <a title="jinja2.ext.Extension" class="reference internal" href="#jinja2.ext.Extension"><tt class="xref docutils literal"><span class="pre">jinja2.ext.Extension</span></tt></a> class:</p>
+<dl class="class">
+<dt id="jinja2.ext.Extension">
+<em class="property">class </em><tt class="descclassname">jinja2.ext.</tt><tt class="descname">Extension</tt><big>(</big><em>environment</em><big>)</big><a class="headerlink" href="#jinja2.ext.Extension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extensions can be used to add extra functionality to the Jinja template
+system at the parser level.  Custom extensions are bound to an environment
+but may not store environment specific data on <cite>self</cite>.  The reason for
+this is that an extension can be bound to another environment (for
+overlays) by creating a copy and reassigning the <cite>environment</cite> attribute.</p>
+<p>As extensions are created by the environment they cannot accept any
+arguments for configuration.  One may want to work around that by using
+a factory function, but that is not possible as extensions are identified
+by their import name.  The correct way to configure the extension is
+storing the configuration values on the environment.  Because this way the
+environment ends up acting as central configuration storage the
+attributes may clash which is why extensions have to ensure that the names
+they choose for configuration are not too generic.  <tt class="docutils literal"><span class="pre">prefix</span></tt> for example
+is a terrible name, <tt class="docutils literal"><span class="pre">fragment_cache_prefix</span></tt> on the other hand is a good
+name as includes the name of the extension (fragment cache).</p>
+<dl class="attribute">
+<dt id="jinja2.ext.Extension.identifier">
+<tt class="descname">identifier</tt><a class="headerlink" href="#jinja2.ext.Extension.identifier" title="Permalink to this definition">¶</a></dt>
+<dd>The identifier of the extension.  This is always the true import name
+of the extension class and must not be changed.</dd></dl>
+
+<dl class="attribute">
+<dt id="jinja2.ext.Extension.tags">
+<tt class="descname">tags</tt><a class="headerlink" href="#jinja2.ext.Extension.tags" title="Permalink to this definition">¶</a></dt>
+<dd>If the extension implements custom tags this is a set of tag names
+the extension is listening for.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.ext.Extension.preprocess">
+<tt class="descname">preprocess</tt><big>(</big><em>source</em>, <em>name</em>, <em>filename=None</em><big>)</big><a class="headerlink" href="#jinja2.ext.Extension.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd>This method is called before the actual lexing and can be used to
+preprocess the source.  The <cite>filename</cite> is optional.  The return value
+must be the preprocessed source.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.ext.Extension.filter_stream">
+<tt class="descname">filter_stream</tt><big>(</big><em>stream</em><big>)</big><a class="headerlink" href="#jinja2.ext.Extension.filter_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>It&#8217;s passed a <a title="jinja2.lexer.TokenStream" class="reference internal" href="#jinja2.lexer.TokenStream"><tt class="xref docutils literal"><span class="pre">TokenStream</span></tt></a> that can be used
+to filter tokens returned.  This method has to return an iterable of
+<a title="jinja2.lexer.Token" class="reference internal" href="#jinja2.lexer.Token"><tt class="xref docutils literal"><span class="pre">Token</span></tt></a>s, but it doesn&#8217;t have to return a
+<a title="jinja2.lexer.TokenStream" class="reference internal" href="#jinja2.lexer.TokenStream"><tt class="xref docutils literal"><span class="pre">TokenStream</span></tt></a>.</p>
+<p>In the <cite>ext</cite> folder of the Jinja2 source distribution there is a file
+called <cite>inlinegettext.py</cite> which implements a filter that utilizes this
+method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.ext.Extension.parse">
+<tt class="descname">parse</tt><big>(</big><em>parser</em><big>)</big><a class="headerlink" href="#jinja2.ext.Extension.parse" title="Permalink to this definition">¶</a></dt>
+<dd>If any of the <a title="jinja2.ext.Extension.tags" class="reference internal" href="#jinja2.ext.Extension.tags"><tt class="xref docutils literal"><span class="pre">tags</span></tt></a> matched this method is called with the
+parser as first argument.  The token the parser stream is pointing at
+is the name token that matched.  This method has to return one or a
+list of multiple nodes.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.ext.Extension.attr">
+<tt class="descname">attr</tt><big>(</big><em>name</em>, <em>lineno=None</em><big>)</big><a class="headerlink" href="#jinja2.ext.Extension.attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an attribute node for the current extension.  This is useful
+to pass constants on extensions to generated template code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="s">&#39;_my_attribute&#39;</span><span class="p">,</span> <span class="n">lineno</span><span class="o">=</span><span class="n">lineno</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.ext.Extension.call_method">
+<tt class="descname">call_method</tt><big>(</big><em>name</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>dyn_args=None</em>, <em>dyn_kwargs=None</em>, <em>lineno=None</em><big>)</big><a class="headerlink" href="#jinja2.ext.Extension.call_method" title="Permalink to this definition">¶</a></dt>
+<dd>Call a method of the extension.  This is a shortcut for
+<a title="attr" class="reference external" href="templates.html#attr"><tt class="xref docutils literal"><span class="pre">attr()</span></tt></a> + <a title="jinja2.nodes.Call" class="reference internal" href="#jinja2.nodes.Call"><tt class="xref docutils literal"><span class="pre">jinja2.nodes.Call</span></tt></a>.</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="parser-api">
+<h3>Parser API<a class="headerlink" href="#parser-api" title="Permalink to this headline">¶</a></h3>
+<p>The parser passed to <a title="jinja2.ext.Extension.parse" class="reference internal" href="#jinja2.ext.Extension.parse"><tt class="xref docutils literal"><span class="pre">Extension.parse()</span></tt></a> provides ways to parse
+expressions of different types.  The following methods may be used by
+extensions:</p>
+<dl class="class">
+<dt id="jinja2.parser.Parser">
+<em class="property">class </em><tt class="descclassname">jinja2.parser.</tt><tt class="descname">Parser</tt><big>(</big><em>environment</em>, <em>source</em>, <em>name=None</em>, <em>filename=None</em>, <em>state=None</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the central parsing class Jinja2 uses.  It&#8217;s passed to
+extensions and can be used to parse expressions or statements.</p>
+<dl class="attribute">
+<dt id="jinja2.ext.Parser.filename">
+<tt class="descname">filename</tt><a class="headerlink" href="#jinja2.ext.Parser.filename" title="Permalink to this definition">¶</a></dt>
+<dd>The filename of the template the parser processes.  This is <strong>not</strong>
+the load name of the template.  For the load name see <a title="jinja2.ext.Parser.name" class="reference internal" href="#jinja2.ext.Parser.name"><tt class="xref docutils literal"><span class="pre">name</span></tt></a>.
+For templates that were not loaded form the file system this is
+<cite>None</cite>.</dd></dl>
+
+<dl class="attribute">
+<dt id="jinja2.ext.Parser.name">
+<tt class="descname">name</tt><a class="headerlink" href="#jinja2.ext.Parser.name" title="Permalink to this definition">¶</a></dt>
+<dd>The load name of the template.</dd></dl>
+
+<dl class="attribute">
+<dt id="jinja2.ext.Parser.stream">
+<tt class="descname">stream</tt><a class="headerlink" href="#jinja2.ext.Parser.stream" title="Permalink to this definition">¶</a></dt>
+<dd>The current <a title="jinja2.lexer.TokenStream" class="reference internal" href="#jinja2.lexer.TokenStream"><tt class="xref docutils literal"><span class="pre">TokenStream</span></tt></a></dd></dl>
+
+<dl class="method">
+<dt id="jinja2.parser.Parser.parse_expression">
+<tt class="descname">parse_expression</tt><big>(</big><em>with_condexpr=True</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser.parse_expression" title="Permalink to this definition">¶</a></dt>
+<dd>Parse an expression.  Per default all expressions are parsed, if
+the optional <cite>with_condexpr</cite> parameter is set to <cite>False</cite> conditional
+expressions are not parsed.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.parser.Parser.parse_tuple">
+<tt class="descname">parse_tuple</tt><big>(</big><em>simplified=False</em>, <em>with_condexpr=True</em>, <em>extra_end_rules=None</em>, <em>explicit_parentheses=False</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser.parse_tuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Works like <cite>parse_expression</cite> but if multiple expressions are
+delimited by a comma a <a title="jinja2.nodes.Tuple" class="reference internal" href="#jinja2.nodes.Tuple"><tt class="xref docutils literal"><span class="pre">Tuple</span></tt></a> node is created.
+This method could also return a regular expression instead of a tuple
+if no commas where found.</p>
+<p>The default parsing mode is a full tuple.  If <cite>simplified</cite> is <cite>True</cite>
+only names and literals are parsed.  The <cite>no_condexpr</cite> parameter is
+forwarded to <tt class="xref docutils literal"><span class="pre">parse_expression()</span></tt>.</p>
+<p>Because tuples do not require delimiters and may end in a bogus comma
+an extra hint is needed that marks the end of a tuple.  For example
+for loops support tuples between <cite>for</cite> and <cite>in</cite>.  In that case the
+<cite>extra_end_rules</cite> is set to <tt class="docutils literal"><span class="pre">['name:in']</span></tt>.</p>
+<p><cite>explicit_parentheses</cite> is true if the parsing was triggered by an
+expression in parentheses.  This is used to figure out if an empty
+tuple is a valid expression or not.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.parser.Parser.parse_assign_target">
+<tt class="descname">parse_assign_target</tt><big>(</big><em>with_tuple=True</em>, <em>name_only=False</em>, <em>extra_end_rules=None</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser.parse_assign_target" title="Permalink to this definition">¶</a></dt>
+<dd>Parse an assignment target.  As Jinja2 allows assignments to
+tuples, this function can parse all allowed assignment targets.  Per
+default assignments to tuples are parsed, that can be disable however
+by setting <cite>with_tuple</cite> to <cite>False</cite>.  If only assignments to names are
+wanted <cite>name_only</cite> can be set to <cite>True</cite>.  The <cite>extra_end_rules</cite>
+parameter is forwarded to the tuple parsing function.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.parser.Parser.parse_statements">
+<tt class="descname">parse_statements</tt><big>(</big><em>end_tokens</em>, <em>drop_needle=False</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser.parse_statements" title="Permalink to this definition">¶</a></dt>
+<dd>Parse multiple statements into a list until one of the end tokens
+is reached.  This is used to parse the body of statements as it also
+parses template data if appropriate.  The parser checks first if the
+current token is a colon and skips it if there is one.  Then it checks
+for the block end and parses until if one of the <cite>end_tokens</cite> is
+reached.  Per default the active token in the stream at the end of
+the call is the matched end token.  If this is not wanted <cite>drop_needle</cite>
+can be set to <cite>True</cite> and the end token is removed.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.parser.Parser.free_identifier">
+<tt class="descname">free_identifier</tt><big>(</big><em>lineno=None</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser.free_identifier" title="Permalink to this definition">¶</a></dt>
+<dd>Return a new free identifier as <a title="jinja2.nodes.InternalName" class="reference internal" href="#jinja2.nodes.InternalName"><tt class="xref docutils literal"><span class="pre">InternalName</span></tt></a>.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.parser.Parser.fail">
+<tt class="descname">fail</tt><big>(</big><em>msg</em>, <em>lineno=None</em>, <em>exc=&lt;class 'jinja2.exceptions.TemplateSyntaxError'&gt;</em><big>)</big><a class="headerlink" href="#jinja2.parser.Parser.fail" title="Permalink to this definition">¶</a></dt>
+<dd>Convenience method that raises <cite>exc</cite> with the message, passed
+line number or last line number as well as the current name and
+filename.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.lexer.TokenStream">
+<em class="property">class </em><tt class="descclassname">jinja2.lexer.</tt><tt class="descname">TokenStream</tt><big>(</big><em>generator</em>, <em>name</em>, <em>filename</em><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>A token stream is an iterable that yields <tt class="xref docutils literal"><span class="pre">Token</span></tt>s.  The
+parser however does not iterate over it but calls <tt class="xref docutils literal"><span class="pre">next()</span></tt> to go
+one token ahead.  The current active token is stored as <a title="jinja2.ext.TokenStream.current" class="reference internal" href="#jinja2.ext.TokenStream.current"><tt class="xref docutils literal"><span class="pre">current</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="jinja2.ext.TokenStream.current">
+<tt class="descname">current</tt><a class="headerlink" href="#jinja2.ext.TokenStream.current" title="Permalink to this definition">¶</a></dt>
+<dd>The current <a title="jinja2.lexer.Token" class="reference internal" href="#jinja2.lexer.Token"><tt class="xref docutils literal"><span class="pre">Token</span></tt></a>.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.push">
+<tt class="descname">push</tt><big>(</big><em>token</em><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.push" title="Permalink to this definition">¶</a></dt>
+<dd>Push a token back to the stream.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.look">
+<tt class="descname">look</tt><big>(</big><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.look" title="Permalink to this definition">¶</a></dt>
+<dd>Look at the next token.</dd></dl>
+
+<dl class="attribute">
+<dt id="jinja2.lexer.TokenStream.eos">
+<tt class="descname">eos</tt><a class="headerlink" href="#jinja2.lexer.TokenStream.eos" title="Permalink to this definition">¶</a></dt>
+<dd>Are we at the end of the stream?</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.skip">
+<tt class="descname">skip</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.skip" title="Permalink to this definition">¶</a></dt>
+<dd>Got n tokens ahead.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.next">
+<tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.next" title="Permalink to this definition">¶</a></dt>
+<dd>Go one token ahead and return the old one</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.next_if">
+<tt class="descname">next_if</tt><big>(</big><em>expr</em><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.next_if" title="Permalink to this definition">¶</a></dt>
+<dd>Perform the token test and return the token if it matched.
+Otherwise the return value is <cite>None</cite>.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.skip_if">
+<tt class="descname">skip_if</tt><big>(</big><em>expr</em><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.skip_if" title="Permalink to this definition">¶</a></dt>
+<dd>Like <tt class="xref docutils literal"><span class="pre">next_if()</span></tt> but only returns <cite>True</cite> or <cite>False</cite>.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.TokenStream.expect">
+<tt class="descname">expect</tt><big>(</big><em>expr</em><big>)</big><a class="headerlink" href="#jinja2.lexer.TokenStream.expect" title="Permalink to this definition">¶</a></dt>
+<dd>Expect a given token type and return it.  This accepts the same
+argument as <a title="jinja2.lexer.Token.test" class="reference internal" href="#jinja2.lexer.Token.test"><tt class="xref docutils literal"><span class="pre">jinja2.lexer.Token.test()</span></tt></a>.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.lexer.Token">
+<em class="property">class </em><tt class="descclassname">jinja2.lexer.</tt><tt class="descname">Token</tt><a class="headerlink" href="#jinja2.lexer.Token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Token class.</p>
+<dl class="attribute">
+<dt id="jinja2.ext.Token.lineno">
+<tt class="descname">lineno</tt><a class="headerlink" href="#jinja2.ext.Token.lineno" title="Permalink to this definition">¶</a></dt>
+<dd>The line number of the token</dd></dl>
+
+<dl class="attribute">
+<dt id="jinja2.ext.Token.type">
+<tt class="descname">type</tt><a class="headerlink" href="#jinja2.ext.Token.type" title="Permalink to this definition">¶</a></dt>
+<dd>The type of the token.  This string is interned so you may compare
+it with arbitrary strings using the <cite>is</cite> operator.</dd></dl>
+
+<dl class="attribute">
+<dt id="jinja2.ext.Token.value">
+<tt class="descname">value</tt><a class="headerlink" href="#jinja2.ext.Token.value" title="Permalink to this definition">¶</a></dt>
+<dd>The value of the token.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.Token.test">
+<tt class="descname">test</tt><big>(</big><em>expr</em><big>)</big><a class="headerlink" href="#jinja2.lexer.Token.test" title="Permalink to this definition">¶</a></dt>
+<dd>Test a token against a token expression.  This can either be a
+token type or <tt class="docutils literal"><span class="pre">'token_type:token_value'</span></tt>.  This can only test
+against string values and types.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.lexer.Token.test_any">
+<tt class="descname">test_any</tt><big>(</big><em>*iterable</em><big>)</big><a class="headerlink" href="#jinja2.lexer.Token.test_any" title="Permalink to this definition">¶</a></dt>
+<dd>Test against multiple token expressions.</dd></dl>
+
+</dd></dl>
+
+<p>There is also a utility function in the lexer module that can count newline
+characters in strings:</p>
+<dl class="function">
+<dt id="jinja2.lexer.count_newlines">
+<tt class="descclassname">jinja2.lexer.</tt><tt class="descname">count_newlines</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#jinja2.lexer.count_newlines" title="Permalink to this definition">¶</a></dt>
+<dd>Count the number of newline characters in the string.  This is
+useful for extensions that filter a stream.</dd></dl>
+
+</div>
+<div class="section" id="module-jinja2.nodes">
+<h3>AST<a class="headerlink" href="#module-jinja2.nodes" title="Permalink to this headline">¶</a></h3>
+<p>The AST (Abstract Syntax Tree) is used to represent a template after parsing.
+It&#8217;s build of nodes that the compiler then converts into executable Python
+code objects.  Extensions that provide custom statements can return nodes to
+execute custom Python code.</p>
+<p>The list below describes all nodes that are currently available.  The AST may
+change between Jinja2 versions but will stay backwards compatible.</p>
+<p>For more information have a look at the repr of <a title="jinja2.Environment.parse" class="reference external" href="api.html#jinja2.Environment.parse"><tt class="xref docutils literal"><span class="pre">jinja2.Environment.parse()</span></tt></a>.</p>
+<dl class="class">
+<dt id="jinja2.nodes.Node">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Node</tt><a class="headerlink" href="#jinja2.nodes.Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseclass for all Jinja2 nodes.  There are a number of nodes available
+of different types.  There are three major types:</p>
+<ul class="simple">
+<li><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a>: statements</li>
+<li><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a>: expressions</li>
+<li><a title="jinja2.nodes.Helper" class="reference internal" href="#jinja2.nodes.Helper"><tt class="xref docutils literal"><span class="pre">Helper</span></tt></a>: helper nodes</li>
+<li><a title="jinja2.nodes.Template" class="reference internal" href="#jinja2.nodes.Template"><tt class="xref docutils literal"><span class="pre">Template</span></tt></a>: the outermost wrapper node</li>
+</ul>
+<p>All nodes have fields and attributes.  Fields may be other nodes, lists,
+or arbitrary values.  Fields are passed to the constructor as regular
+positional arguments, attributes as keyword arguments.  Each node has
+two attributes: <cite>lineno</cite> (the line number of the node) and <cite>environment</cite>.
+The <cite>environment</cite> attribute is set at the end of the parsing process for
+all nodes automatically.</p>
+<dl class="method">
+<dt id="jinja2.nodes.Node.find">
+<tt class="descname">find</tt><big>(</big><em>node_type</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.find" title="Permalink to this definition">¶</a></dt>
+<dd>Find the first node of a given type.  If no such node exists the
+return value is <cite>None</cite>.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Node.find_all">
+<tt class="descname">find_all</tt><big>(</big><em>node_type</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.find_all" title="Permalink to this definition">¶</a></dt>
+<dd>Find all the nodes of a given type.  If the type is a tuple,
+the check is performed for any of the tuple items.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Node.iter_child_nodes">
+<tt class="descname">iter_child_nodes</tt><big>(</big><em>exclude=None</em>, <em>only=None</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.iter_child_nodes" title="Permalink to this definition">¶</a></dt>
+<dd>Iterates over all direct child nodes of the node.  This iterates
+over all fields and yields the values of they are nodes.  If the value
+of a field is a list all the nodes in that list are returned.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Node.iter_fields">
+<tt class="descname">iter_fields</tt><big>(</big><em>exclude=None</em>, <em>only=None</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.iter_fields" title="Permalink to this definition">¶</a></dt>
+<dd>This method iterates over all fields that are defined and yields
+<tt class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></tt> tuples.  Per default all fields are returned, but
+it&#8217;s possible to limit that to some fields by providing the <cite>only</cite>
+parameter or to exclude some using the <cite>exclude</cite> parameter.  Both
+should be sets or tuples of field names.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Node.set_ctx">
+<tt class="descname">set_ctx</tt><big>(</big><em>ctx</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.set_ctx" title="Permalink to this definition">¶</a></dt>
+<dd>Reset the context of a node and all child nodes.  Per default the
+parser will all generate nodes that have a &#8216;load&#8217; context as it&#8217;s the
+most common one.  This method is used in the parser to set assignment
+targets and other nodes to a store context.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Node.set_environment">
+<tt class="descname">set_environment</tt><big>(</big><em>environment</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.set_environment" title="Permalink to this definition">¶</a></dt>
+<dd>Set the environment for all nodes.</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Node.set_lineno">
+<tt class="descname">set_lineno</tt><big>(</big><em>lineno</em>, <em>override=False</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Node.set_lineno" title="Permalink to this definition">¶</a></dt>
+<dd>Set the line numbers of the node and children.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Expr">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Expr</tt><a class="headerlink" href="#jinja2.nodes.Expr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseclass for all expressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Node" class="reference internal" href="#jinja2.nodes.Node"><tt class="xref docutils literal"><span class="pre">Node</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="jinja2.nodes.Expr.as_const">
+<tt class="descname">as_const</tt><big>(</big><em>eval_ctx=None</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Expr.as_const" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the expression as constant or raise
+<a title="jinja2.nodes.Impossible" class="reference internal" href="#jinja2.nodes.Impossible"><tt class="xref docutils literal"><span class="pre">Impossible</span></tt></a> if this was not possible.</p>
+<p>An <a title="jinja2.nodes.EvalContext" class="reference external" href="api.html#jinja2.nodes.EvalContext"><tt class="xref docutils literal"><span class="pre">EvalContext</span></tt></a> can be provided, if none is given
+a default context is created which requires the nodes to have
+an attached environment.</p>
+<p class="versionchanged">
+<span class="versionmodified">Changed in version 2.4: </span>the <cite>eval_ctx</cite> parameter was added.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jinja2.nodes.Expr.can_assign">
+<tt class="descname">can_assign</tt><big>(</big><big>)</big><a class="headerlink" href="#jinja2.nodes.Expr.can_assign" title="Permalink to this definition">¶</a></dt>
+<dd>Check if it&#8217;s possible to assign something to this node.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.BinExpr">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">BinExpr</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.BinExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseclass for all binary expressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Add">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Add</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the left to the right node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.And">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">And</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.And" title="Permalink to this definition">¶</a></dt>
+<dd><p>Short circuited AND.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Div">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Div</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Div" title="Permalink to this definition">¶</a></dt>
+<dd><p>Divides the left by the right node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.FloorDiv">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">FloorDiv</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.FloorDiv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Divides the left by the right node and truncates conver the
+result into an integer by truncating.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Mod">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Mod</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Mod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Left modulo right.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Mul">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Mul</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Mul" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplies the left with the right node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Or">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Or</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Or" title="Permalink to this definition">¶</a></dt>
+<dd><p>Short circuited OR.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Pow">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Pow</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Pow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Left to the power of right.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Sub">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Sub</tt><big>(</big><em>left</em>, <em>right</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Sub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Substract the right from the left node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.BinExpr" class="reference internal" href="#jinja2.nodes.BinExpr"><tt class="xref docutils literal"><span class="pre">BinExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Call">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Call</tt><big>(</big><em>node</em>, <em>args</em>, <em>kwargs</em>, <em>dyn_args</em>, <em>dyn_kwargs</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls an expression.  <cite>args</cite> is a list of arguments, <cite>kwargs</cite> a list
+of keyword arguments (list of <a title="jinja2.nodes.Keyword" class="reference internal" href="#jinja2.nodes.Keyword"><tt class="xref docutils literal"><span class="pre">Keyword</span></tt></a> nodes), and <cite>dyn_args</cite>
+and <cite>dyn_kwargs</cite> has to be either <cite>None</cite> or a node that is used as
+node for dynamic positional (<tt class="docutils literal"><span class="pre">*args</span></tt>) or keyword (<tt class="docutils literal"><span class="pre">**kwargs</span></tt>)
+arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Compare">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Compare</tt><big>(</big><em>expr</em>, <em>ops</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compares an expression with some other expressions.  <cite>ops</cite> must be a
+list of <a title="jinja2.nodes.Operand" class="reference internal" href="#jinja2.nodes.Operand"><tt class="xref docutils literal"><span class="pre">Operand</span></tt></a>s.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Concat">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Concat</tt><big>(</big><em>nodes</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Concat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Concatenates the list of expressions provided after converting them to
+unicode.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.CondExpr">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">CondExpr</tt><big>(</big><em>test</em>, <em>expr1</em>, <em>expr2</em><big>)</big><a class="headerlink" href="#jinja2.nodes.CondExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>A conditional expression (inline if expression).  (<tt class="docutils literal"><span class="pre">{{</span>
+<span class="pre">foo</span> <span class="pre">if</span> <span class="pre">bar</span> <span class="pre">else</span> <span class="pre">baz</span> <span class="pre">}}</span></tt>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.ContextReference">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">ContextReference</tt><a class="headerlink" href="#jinja2.nodes.ContextReference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current template context.  It can be used like a
+<a title="jinja2.nodes.Name" class="reference internal" href="#jinja2.nodes.Name"><tt class="xref docutils literal"><span class="pre">Name</span></tt></a> node, with a <tt class="docutils literal"><span class="pre">'load'</span></tt> ctx and will return the
+current <a title="jinja2.runtime.Context" class="reference external" href="api.html#jinja2.runtime.Context"><tt class="xref docutils literal"><span class="pre">Context</span></tt></a> object.</p>
+<p>Here an example that assigns the current template name to a
+variable named <cite>foo</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Assign</span><span class="p">(</span><span class="n">Name</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">ctx</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">),</span>
+       <span class="n">Getattr</span><span class="p">(</span><span class="n">ContextReference</span><span class="p">(),</span> <span class="s">&#39;name&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.EnvironmentAttribute">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">EnvironmentAttribute</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#jinja2.nodes.EnvironmentAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads an attribute from the environment object.  This is useful for
+extensions that want to call a callback stored on the environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.ExtensionAttribute">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">ExtensionAttribute</tt><big>(</big><em>identifier</em>, <em>name</em><big>)</big><a class="headerlink" href="#jinja2.nodes.ExtensionAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the attribute of an extension bound to the environment.
+The identifier is the identifier of the <tt class="xref docutils literal"><span class="pre">Extension</span></tt>.</p>
+<p>This node is usually constructed by calling the
+<a title="jinja2.ext.Extension.attr" class="reference internal" href="#jinja2.ext.Extension.attr"><tt class="xref docutils literal"><span class="pre">attr()</span></tt></a> method on an extension.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Filter">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Filter</tt><big>(</big><em>node</em>, <em>name</em>, <em>args</em>, <em>kwargs</em>, <em>dyn_args</em>, <em>dyn_kwargs</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>This node applies a filter on an expression.  <cite>name</cite> is the name of
+the filter, the rest of the fields are the same as for <a title="jinja2.nodes.Call" class="reference internal" href="#jinja2.nodes.Call"><tt class="xref docutils literal"><span class="pre">Call</span></tt></a>.</p>
+<p>If the <cite>node</cite> of a filter is <cite>None</cite> the contents of the last buffer are
+filtered.  Buffers are created by macros and filter blocks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Getattr">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Getattr</tt><big>(</big><em>node</em>, <em>attr</em>, <em>ctx</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Getattr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an attribute or item from an expression that is a ascii-only
+bytestring and prefer the attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Getitem">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Getitem</tt><big>(</big><em>node</em>, <em>arg</em>, <em>ctx</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Getitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an attribute or item from an expression and prefer the item.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.ImportedName">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">ImportedName</tt><big>(</big><em>importname</em><big>)</big><a class="headerlink" href="#jinja2.nodes.ImportedName" title="Permalink to this definition">¶</a></dt>
+<dd><p>If created with an import name the import name is returned on node
+access.  For example <tt class="docutils literal"><span class="pre">ImportedName('cgi.escape')</span></tt> returns the <cite>escape</cite>
+function from the cgi module on evaluation.  Imports are optimized by the
+compiler so there is no need to assign them to local variables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.InternalName">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">InternalName</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#jinja2.nodes.InternalName" title="Permalink to this definition">¶</a></dt>
+<dd><p>An internal name in the compiler.  You cannot create these nodes
+yourself but the parser provides a
+<a title="jinja2.parser.Parser.free_identifier" class="reference internal" href="#jinja2.parser.Parser.free_identifier"><tt class="xref docutils literal"><span class="pre">free_identifier()</span></tt></a> method that creates
+a new identifier for you.  This identifier is not available from the
+template and is not threated specially by the compiler.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Literal">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Literal</tt><a class="headerlink" href="#jinja2.nodes.Literal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseclass for literals.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Const">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Const</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Const" title="Permalink to this definition">¶</a></dt>
+<dd><p>All constant values.  The parser will return this node for simple
+constants such as <tt class="docutils literal"><span class="pre">42</span></tt> or <tt class="docutils literal"><span class="pre">&quot;foo&quot;</span></tt> but it can be used to store more
+complex values such as lists too.  Only constants with a safe
+representation (objects where <tt class="docutils literal"><span class="pre">eval(repr(x))</span> <span class="pre">==</span> <span class="pre">x</span></tt> is true).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Literal" class="reference internal" href="#jinja2.nodes.Literal"><tt class="xref docutils literal"><span class="pre">Literal</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Dict">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Dict</tt><big>(</big><em>items</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Any dict literal such as <tt class="docutils literal"><span class="pre">{1:</span> <span class="pre">2,</span> <span class="pre">3:</span> <span class="pre">4}</span></tt>.  The items must be a list of
+<a title="jinja2.nodes.Pair" class="reference internal" href="#jinja2.nodes.Pair"><tt class="xref docutils literal"><span class="pre">Pair</span></tt></a> nodes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Literal" class="reference internal" href="#jinja2.nodes.Literal"><tt class="xref docutils literal"><span class="pre">Literal</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.List">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">List</tt><big>(</big><em>items</em><big>)</big><a class="headerlink" href="#jinja2.nodes.List" title="Permalink to this definition">¶</a></dt>
+<dd><p>Any list literal such as <tt class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Literal" class="reference internal" href="#jinja2.nodes.Literal"><tt class="xref docutils literal"><span class="pre">Literal</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.TemplateData">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">TemplateData</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#jinja2.nodes.TemplateData" title="Permalink to this definition">¶</a></dt>
+<dd><p>A constant template string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Literal" class="reference internal" href="#jinja2.nodes.Literal"><tt class="xref docutils literal"><span class="pre">Literal</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Tuple">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Tuple</tt><big>(</big><em>items</em>, <em>ctx</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Tuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>For loop unpacking and some other things like multiple arguments
+for subscripts.  Like for <a title="jinja2.nodes.Name" class="reference internal" href="#jinja2.nodes.Name"><tt class="xref docutils literal"><span class="pre">Name</span></tt></a> <cite>ctx</cite> specifies if the tuple
+is used for loading the names or storing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Literal" class="reference internal" href="#jinja2.nodes.Literal"><tt class="xref docutils literal"><span class="pre">Literal</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.MarkSafe">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">MarkSafe</tt><big>(</big><em>expr</em><big>)</big><a class="headerlink" href="#jinja2.nodes.MarkSafe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mark the wrapped expression as safe (wrap it as <cite>Markup</cite>).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.MarkSafeIfAutoescape">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">MarkSafeIfAutoescape</tt><big>(</big><em>expr</em><big>)</big><a class="headerlink" href="#jinja2.nodes.MarkSafeIfAutoescape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mark the wrapped expression as safe (wrap it as <cite>Markup</cite>) but
+only if autoescaping is active.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.5.</span></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Name">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Name</tt><big>(</big><em>name</em>, <em>ctx</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Looks up a name or stores a value in a name.
+The <cite>ctx</cite> of the node can be one of the following values:</p>
+<ul class="simple">
+<li><cite>store</cite>: store a value in the name</li>
+<li><cite>load</cite>: load that name</li>
+<li><cite>param</cite>: like <cite>store</cite> but if the name was defined as function parameter.</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Slice">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Slice</tt><big>(</big><em>start</em>, <em>stop</em>, <em>step</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a slice object.  This must only be used as argument for
+<tt class="xref docutils literal"><span class="pre">Subscript</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Test">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Test</tt><big>(</big><em>node</em>, <em>name</em>, <em>args</em>, <em>kwargs</em>, <em>dyn_args</em>, <em>dyn_kwargs</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a test on an expression.  <cite>name</cite> is the name of the test, the
+rest of the fields are the same as for <a title="jinja2.nodes.Call" class="reference internal" href="#jinja2.nodes.Call"><tt class="xref docutils literal"><span class="pre">Call</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.UnaryExpr">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">UnaryExpr</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#jinja2.nodes.UnaryExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseclass for all unary expressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Expr" class="reference internal" href="#jinja2.nodes.Expr"><tt class="xref docutils literal"><span class="pre">Expr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Neg">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Neg</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Neg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make the expression negative.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.UnaryExpr" class="reference internal" href="#jinja2.nodes.UnaryExpr"><tt class="xref docutils literal"><span class="pre">UnaryExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Not">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Not</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Not" title="Permalink to this definition">¶</a></dt>
+<dd><p>Negate the expression.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.UnaryExpr" class="reference internal" href="#jinja2.nodes.UnaryExpr"><tt class="xref docutils literal"><span class="pre">UnaryExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Pos">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Pos</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make the expression positive (noop for most expressions)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.UnaryExpr" class="reference internal" href="#jinja2.nodes.UnaryExpr"><tt class="xref docutils literal"><span class="pre">UnaryExpr</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Helper">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Helper</tt><a class="headerlink" href="#jinja2.nodes.Helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nodes that exist in a specific context only.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Node" class="reference internal" href="#jinja2.nodes.Node"><tt class="xref docutils literal"><span class="pre">Node</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Keyword">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Keyword</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Keyword" title="Permalink to this definition">¶</a></dt>
+<dd><p>A key, value pair for keyword arguments where key is a string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Helper" class="reference internal" href="#jinja2.nodes.Helper"><tt class="xref docutils literal"><span class="pre">Helper</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Operand">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Operand</tt><big>(</big><em>op</em>, <em>expr</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Operand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Holds an operator and an expression.
+The following operators are available: <tt class="docutils literal"><span class="pre">%</span></tt>, <tt class="docutils literal"><span class="pre">**</span></tt>, <tt class="docutils literal"><span class="pre">*</span></tt>, <tt class="docutils literal"><span class="pre">+</span></tt>, <tt class="docutils literal"><span class="pre">-</span></tt>, <tt class="docutils literal"><span class="pre">//</span></tt>, <tt class="docutils literal"><span class="pre">/</span></tt>, <tt class="docutils literal"><span class="pre">eq</span></tt>, <tt class="docutils literal"><span class="pre">gt</span></tt>, <tt class="docutils literal"><span class="pre">gteq</span></tt>, <tt class="docutils literal"><span class="pre">in</span></tt>, <tt class="docutils literal"><span class="pre">lt</span></tt>, <tt class="docutils literal"><span class="pre">lteq</span></tt>, <tt class="docutils literal"><span class="pre">ne</span></tt>, <tt class="docutils literal"><span class="pre">not</span></tt>, <tt class="docutils literal"><span class="pre">notin</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Helper" class="reference internal" href="#jinja2.nodes.Helper"><tt class="xref docutils literal"><span class="pre">Helper</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Pair">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Pair</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>A key, value pair for dicts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Helper" class="reference internal" href="#jinja2.nodes.Helper"><tt class="xref docutils literal"><span class="pre">Helper</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Stmt">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Stmt</tt><a class="headerlink" href="#jinja2.nodes.Stmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base node for all statements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Node" class="reference internal" href="#jinja2.nodes.Node"><tt class="xref docutils literal"><span class="pre">Node</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Assign">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Assign</tt><big>(</big><em>target</em>, <em>node</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Assign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns an expression to a target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Block">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Block</tt><big>(</big><em>name</em>, <em>body</em>, <em>scoped</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Block" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node that represents a block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Break">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Break</tt><a class="headerlink" href="#jinja2.nodes.Break" title="Permalink to this definition">¶</a></dt>
+<dd><p>Break a loop.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.CallBlock">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">CallBlock</tt><big>(</big><em>call</em>, <em>args</em>, <em>defaults</em>, <em>body</em><big>)</big><a class="headerlink" href="#jinja2.nodes.CallBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like a macro without a name but a call instead.  <cite>call</cite> is called with
+the unnamed macro as <cite>caller</cite> argument this node holds.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Continue">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Continue</tt><a class="headerlink" href="#jinja2.nodes.Continue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Continue a loop.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.EvalContextModifier">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">EvalContextModifier</tt><big>(</big><em>options</em><big>)</big><a class="headerlink" href="#jinja2.nodes.EvalContextModifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modifies the eval context.  For each option that should be modified,
+a <a title="jinja2.nodes.Keyword" class="reference internal" href="#jinja2.nodes.Keyword"><tt class="xref docutils literal"><span class="pre">Keyword</span></tt></a> has to be added to the <tt class="xref docutils literal"><span class="pre">options</span></tt> list.</p>
+<p>Example to change the <cite>autoescape</cite> setting:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">EvalContextModifier</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="n">Keyword</span><span class="p">(</span><span class="s">&#39;autoescape&#39;</span><span class="p">,</span> <span class="n">Const</span><span class="p">(</span><span class="bp">True</span><span class="p">))])</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.ScopedEvalContextModifier">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">ScopedEvalContextModifier</tt><big>(</big><em>options</em>, <em>body</em><big>)</big><a class="headerlink" href="#jinja2.nodes.ScopedEvalContextModifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modifies the eval context and reverts it later.  Works exactly like
+<a title="jinja2.nodes.EvalContextModifier" class="reference internal" href="#jinja2.nodes.EvalContextModifier"><tt class="xref docutils literal"><span class="pre">EvalContextModifier</span></tt></a> but will only modify the
+<a title="jinja2.nodes.EvalContext" class="reference external" href="api.html#jinja2.nodes.EvalContext"><tt class="xref docutils literal"><span class="pre">EvalContext</span></tt></a> for nodes in the <tt class="xref docutils literal"><span class="pre">body</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.EvalContextModifier" class="reference internal" href="#jinja2.nodes.EvalContextModifier"><tt class="xref docutils literal"><span class="pre">EvalContextModifier</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.ExprStmt">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">ExprStmt</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#jinja2.nodes.ExprStmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>A statement that evaluates an expression and discards the result.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Extends">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Extends</tt><big>(</big><em>template</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Extends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents an extends statement.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.FilterBlock">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">FilterBlock</tt><big>(</big><em>body</em>, <em>filter</em><big>)</big><a class="headerlink" href="#jinja2.nodes.FilterBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Node for filter sections.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.For">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">For</tt><big>(</big><em>target</em>, <em>iter</em>, <em>body</em>, <em>else_</em>, <em>test</em>, <em>recursive</em><big>)</big><a class="headerlink" href="#jinja2.nodes.For" title="Permalink to this definition">¶</a></dt>
+<dd><p>The for loop.  <cite>target</cite> is the target for the iteration (usually a
+<a title="jinja2.nodes.Name" class="reference internal" href="#jinja2.nodes.Name"><tt class="xref docutils literal"><span class="pre">Name</span></tt></a> or <a title="jinja2.nodes.Tuple" class="reference internal" href="#jinja2.nodes.Tuple"><tt class="xref docutils literal"><span class="pre">Tuple</span></tt></a>), <cite>iter</cite> the iterable.  <cite>body</cite> is a list
+of nodes that are used as loop-body, and <cite>else_</cite> a list of nodes for the
+<cite>else</cite> block.  If no else node exists it has to be an empty list.</p>
+<p>For filtered nodes an expression can be stored as <cite>test</cite>, otherwise <cite>None</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.FromImport">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">FromImport</tt><big>(</big><em>template</em>, <em>names</em>, <em>with_context</em><big>)</big><a class="headerlink" href="#jinja2.nodes.FromImport" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node that represents the from import tag.  It&#8217;s important to not
+pass unsafe names to the name attribute.  The compiler translates the
+attribute lookups directly into getattr calls and does <em>not</em> use the
+subscript callback of the interface.  As exported variables may not
+start with double underscores (which the parser asserts) this is not a
+problem for regular Jinja code, but if this node is used in an extension
+extra care must be taken.</p>
+<p>The list of names may contain tuples if aliases are wanted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.If">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">If</tt><big>(</big><em>test</em>, <em>body</em>, <em>else_</em><big>)</big><a class="headerlink" href="#jinja2.nodes.If" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <cite>test</cite> is true, <cite>body</cite> is rendered, else <cite>else_</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Import">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Import</tt><big>(</big><em>template</em>, <em>target</em>, <em>with_context</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Import" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node that represents the import tag.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Include">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Include</tt><big>(</big><em>template</em>, <em>with_context</em>, <em>ignore_missing</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Include" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node that represents the include tag.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Macro">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Macro</tt><big>(</big><em>name</em>, <em>args</em>, <em>defaults</em>, <em>body</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Macro" title="Permalink to this definition">¶</a></dt>
+<dd><p>A macro definition.  <cite>name</cite> is the name of the macro, <cite>args</cite> a list of
+arguments and <cite>defaults</cite> a list of defaults if there are any.  <cite>body</cite> is
+a list of nodes for the macro body.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Output">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Output</tt><big>(</big><em>nodes</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Output" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node that holds multiple expressions which are then printed out.
+This is used both for the <cite>print</cite> statement and the regular template data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Scope">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Scope</tt><big>(</big><em>body</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Scope" title="Permalink to this definition">¶</a></dt>
+<dd><p>An artificial scope.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Stmt" class="reference internal" href="#jinja2.nodes.Stmt"><tt class="xref docutils literal"><span class="pre">Stmt</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="jinja2.nodes.Template">
+<em class="property">class </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Template</tt><big>(</big><em>body</em><big>)</big><a class="headerlink" href="#jinja2.nodes.Template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Node that represents a template.  This must be the outermost node that
+is passed to the compiler.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Node type:</th><td class="field-body"><a title="jinja2.nodes.Node" class="reference internal" href="#jinja2.nodes.Node"><tt class="xref docutils literal"><span class="pre">Node</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="exception">
+<dt id="jinja2.nodes.Impossible">
+<em class="property">exception </em><tt class="descclassname">jinja2.nodes.</tt><tt class="descname">Impossible</tt><a class="headerlink" href="#jinja2.nodes.Impossible" title="Permalink to this definition">¶</a></dt>
+<dd>Raised if the node could not perform a requested action.</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+      </div>
+    </div>
+    <div class="footer">
+      © Copyright 2010 by the <a href="http://pocoo.org/">Pocoo Team</a>,
+      documentation generated by <a href="http://sphinx.pocoo.org/">Sphinx</a>
+    </div>
+  </body>
+</html>
