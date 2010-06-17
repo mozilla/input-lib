@@ -4,9 +4,9 @@ packages/django-haystack
 packages/jinja2
 packages/python-memcached
 packages/setuptools
-packages/topia.termextract
-packages/Whoosh
-packages/zope.interface
+packages/topia.termextract/src
+packages/Whoosh/src
+packages/zope.interface/src
 src/django-mozilla-product-details
 src/jingo
 src/schematic
