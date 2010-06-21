@@ -1,0 +1,19 @@
+Metadata-Version: 1.0
+Name: django-view-cache-utils
+Version: 0.1.1
+Summary: Django app that provides a method to do advanced view caching.
+Home-page: http://bitbucket.org/kmike/django-view-cache-utils/
+Author: Mikhail Korobov
+Author-email: kmike84@gmail.com
+License: MIT license
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Plugins
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Natural Language :: Russian
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules

@@ -1,0 +1,8 @@
+README
+pip-egg-info/django_view_cache_utils.egg-info/PKG-INFO
+pip-egg-info/django_view_cache_utils.egg-info/SOURCES.txt
+pip-egg-info/django_view_cache_utils.egg-info/dependency_links.txt
+pip-egg-info/django_view_cache_utils.egg-info/top_level.txt
+view_cache_utils/__init__.py
+view_cache_utils/middleware.py
+view_cache_utils/prefix_functions.py
