@@ -1,12 +1,10 @@
 packages/Django
 packages/django-annoying
-packages/django-haystack
 packages/django-view-cache-utils
 packages/jinja2
 packages/python-memcached
 packages/setuptools
 packages/topia.termextract/src
-packages/Whoosh/src
 packages/zope.interface/src
 src/django-mozilla-product-details
 src/jingo
