@@ -7,5 +7,6 @@ packages/setuptools
 packages/topia.termextract/src
 packages/zope.interface/src
 src/django-mozilla-product-details
+src/django-multidb-router
 src/jingo
 src/schematic
