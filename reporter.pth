@@ -6,6 +6,7 @@ packages/python-memcached
 packages/setuptools
 packages/topia.termextract/src
 packages/zope.interface/src
+src/django-cache-machine
 src/django-mozilla-product-details
 src/django-multidb-router
 src/jingo
