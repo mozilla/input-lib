@@ -1,8 +1,10 @@
+packages/Babel
 packages/Django
 packages/django-annoying
 packages/django-view-cache-utils
 packages/jinja2
 packages/python-memcached
+packages/pytz
 packages/setuptools
 packages/topia.termextract/src
 packages/zope.interface/src
@@ -11,3 +13,4 @@ src/django-mozilla-product-details
 src/django-multidb-router
 src/jingo
 src/schematic
+src/tower
