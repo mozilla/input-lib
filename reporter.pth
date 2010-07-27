@@ -10,6 +10,7 @@ packages/topia.termextract/src
 packages/translate-toolkit
 packages/zope.interface/src
 src/django-cache-machine
+src/django-cronjobs
 src/django-mozilla-product-details
 src/django-multidb-router
 src/jingo
