@@ -16,3 +16,6 @@
 [submodule "src/tower"]
 	path = src/tower
 	url = git://github.com/clouserw/tower.git
+[submodule "src/django-cronjobs"]
+	path = src/django-cronjobs
+	url = git://github.com/jsocol/django-cronjobs
