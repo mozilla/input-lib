@@ -19,3 +19,6 @@
 [submodule "src/django-cronjobs"]
 	path = src/django-cronjobs
 	url = git://github.com/jsocol/django-cronjobs
+[submodule "src/textcluster"]
+	path = src/textcluster
+	url = git://github.com/davedash/textcluster

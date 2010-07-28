@@ -1,0 +1,12 @@
+setup.cfg
+setup.py
+stemming/__init__.py
+stemming/lovins.py
+stemming/paicehusk.py
+stemming/porter.py
+stemming/porter2.py
+stemming.egg-info/PKG-INFO
+stemming.egg-info/SOURCES.txt
+stemming.egg-info/dependency_links.txt
+stemming.egg-info/top_level.txt
+stemming.egg-info/zip-safe
