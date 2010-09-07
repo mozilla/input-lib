@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        
+        <title>
+    sqlalchemy.ext
+ &mdash; SQLAlchemy 0.6.3 Documentation</title>
+        
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/docs.css" type="text/css" />
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+          URL_ROOT:    '../../',
+          VERSION:     '0.6.3',
+          COLLAPSE_MODINDEX: false,
+          FILE_SUFFIX: '.html'
+      };
+    </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/init.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="SQLAlchemy 0.6.3 Documentation" href="../../index.html" />
+        <link rel="up" title="API Reference" href="../index.html" />
+        <link rel="next" title="declarative" href="declarative.html" />
+        <link rel="prev" title="MaxDB" href="../dialects/maxdb.html" />
+    
+
+    </head>
+    <body>
+        
+
+
+
+
+        <h1>SQLAlchemy 0.6.3 Documentation</h1>
+
+        <div id="search">
+        Search:
+        <form class="search" action="../../search.html" method="get">
+          <input type="text" name="q" size="18" /> <input type="submit" value="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        </div>
+
+        <div class="versionheader">
+            Version: <span class="versionnum">0.6.3</span> Last Updated: 07/15/2010 12:35:47
+        </div>
+        <div class="clearboth"></div>
+
+        <div class="topnav">
+            <div id="pagecontrol">
+                <a href="../index.html">API Reference</a>
+                |
+                <a href="../../genindex.html">Index</a>
+            
+                <div class="sourcelink">(<a href="../../_sources/reference/ext/index.txt">view source)</div>
+            </div>
+            
+            <div class="navbanner">
+                <a class="totoc" href="../../index.html">Table of Contents</a>
+                        » <a href="../index.html" title="API Reference">API Reference</a>
+                » 
+    sqlalchemy.ext
+ 
+                
+                
+<div class="prevnext">
+        Previous:
+        <a href="../dialects/maxdb.html" title="previous chapter">MaxDB</a>
+        Next:
+        <a href="declarative.html" title="next chapter">declarative</a>
+</div>
+
+                <h2>
+                    
+    sqlalchemy.ext
+ 
+                </h2>
+            </div>
+            <div class="clearboth"></div>
+        </div>
+        
+        <div class="document">
+            <div class="body">
+                
+<div class="section" id="sqlalchemy-ext">
+<span id="plugins"></span><span id="id1"></span><h1>sqlalchemy.ext<a class="headerlink" href="#sqlalchemy-ext" title="Permalink to this headline">¶</a></h1>
+<p>SQLAlchemy has a variety of extensions available which provide extra
+functionality to SA, either via explicit usage or by augmenting the
+core behavior.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="declarative.html">declarative</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#defining-attributes">Defining Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#association-of-metadata-and-engine">Association of Metadata and Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#configuring-relationships">Configuring Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#configuring-many-to-many-relationships">Configuring Many-to-Many Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#defining-synonyms">Defining Synonyms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#table-configuration">Table Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#mapper-configuration">Mapper Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#inheritance-configuration">Inheritance Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#joined-table-inheritance">Joined Table Inheritance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#single-table-inheritance">Single Table Inheritance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#concrete-table-inheritance">Concrete Table Inheritance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#mixin-classes">Mixin Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#mixing-in-columns">Mixing in Columns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#mixing-in-relationships">Mixing in Relationships</a></li>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#mixing-in-deferred-column-property-etc">Mixing in deferred(), column_property(), etc.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#controlling-table-inheritance-with-mixins">Controlling table inheritance with mixins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="declarative.html#combining-table-mapper-arguments-from-multiple-mixins">Combining Table/Mapper Arguments from Multiple Mixins</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#class-constructor">Class Constructor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#sessions">Sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="declarative.html#api-reference">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="associationproxy.html">associationproxy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="associationproxy.html#simplifying-relationships">Simplifying Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="associationproxy.html#simplifying-association-object-relationships">Simplifying Association Object Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="associationproxy.html#building-complex-views">Building Complex Views</a></li>
+<li class="toctree-l2"><a class="reference internal" href="associationproxy.html#api">API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="orderinglist.html">orderinglist</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="orderinglist.html#api-reference">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="serializer.html">serializer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sqlsoup.html">SqlSoup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sqlsoup.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sqlsoup.html#loading-objects">Loading objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sqlsoup.html#full-query-documentation">Full query documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sqlsoup.html#modifying-objects">Modifying objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sqlsoup.html#joins">Joins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sqlsoup.html#relationships">Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sqlsoup.html#advanced-use">Advanced Use</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sqlsoup.html#sessions-transations-and-application-integration">Sessions, Transations and Application Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sqlsoup.html#mapping-arbitrary-selectables">Mapping arbitrary Selectables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sqlsoup.html#raw-sql">Raw SQL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sqlsoup.html#dynamic-table-names">Dynamic table names</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compiler.html">compiler</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#dialect-specific-compilation-rules">Dialect-specific compilation rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#compiling-sub-elements-of-a-custom-expression-construct">Compiling sub-elements of a custom expression construct</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="compiler.html#cross-compiling-between-sql-and-ddl-compilers">Cross Compiling between SQL and DDL compilers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#changing-the-default-compilation-of-existing-constructs">Changing the default compilation of existing constructs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#changing-compilation-of-types">Changing Compilation of Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#subclassing-guidelines">Subclassing Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="horizontal_shard.html">Horizontal Shard</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="horizontal_shard.html#api-documentation">API Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+            </div>
+        </div>
+
+        
+        
+            <div class="bottomnav">
+                
+<div class="prevnext">
+        Previous:
+        <a href="../dialects/maxdb.html" title="previous chapter">MaxDB</a>
+        Next:
+        <a href="declarative.html" title="next chapter">declarative</a>
+</div>
+
+                <div class="doc_copyright">
+                    &copy; Copyright 2007, 2008, 2009, 2010, the SQLAlchemy authors and contributors.
+                    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2+.
+                </div>
+            </div>
+        
+
+
+
+
+
+
+    </body>
+</html>
+
+
+

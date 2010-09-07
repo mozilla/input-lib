@@ -10,6 +10,16 @@ packages/stemming
 packages/topia.termextract/src
 packages/translate-toolkit
 packages/zope.interface/src
+packages/amqplib/
+packages/anyjson/
+packages/carrot/
+packages/celery/
+packages/django-celery/
+packages/django-picklefield/src/
+packages/importlib/
+packages/pyparsing/
+packages/python-dateutil/
+packages/sqlalchemy/
 src/django-cache-machine
 src/django-cronjobs
 src/django-mozilla-product-details

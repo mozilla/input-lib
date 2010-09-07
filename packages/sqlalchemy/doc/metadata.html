@@ -1,0 +1,885 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        
+        <title>
+    Database Meta Data
+ &mdash; SQLAlchemy 0.6.3 Documentation</title>
+        
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/docs.css" type="text/css" />
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+          URL_ROOT:    '#',
+          VERSION:     '0.6.3',
+          COLLAPSE_MODINDEX: false,
+          FILE_SUFFIX: '.html'
+      };
+    </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/init.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="SQLAlchemy 0.6.3 Documentation" href="index.html" />
+        <link rel="next" title="Examples" href="examples.html" />
+        <link rel="prev" title="Database Engines" href="dbengine.html" />
+    
+
+    </head>
+    <body>
+        
+
+
+
+
+        <h1>SQLAlchemy 0.6.3 Documentation</h1>
+
+        <div id="search">
+        Search:
+        <form class="search" action="search.html" method="get">
+          <input type="text" name="q" size="18" /> <input type="submit" value="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        </div>
+
+        <div class="versionheader">
+            Version: <span class="versionnum">0.6.3</span> Last Updated: 07/15/2010 12:35:47
+        </div>
+        <div class="clearboth"></div>
+
+        <div class="topnav">
+            <div id="pagecontrol">
+                <a href="reference/index.html">API Reference</a>
+                |
+                <a href="genindex.html">Index</a>
+            
+                <div class="sourcelink">(<a href="_sources/metadata.txt">view source)</div>
+            </div>
+            
+            <div class="navbanner">
+                <a class="totoc" href="index.html">Table of Contents</a>
+                » 
+    Database Meta Data
+ 
+                
+                
+<div class="prevnext">
+        Previous:
+        <a href="dbengine.html" title="previous chapter">Database Engines</a>
+        Next:
+        <a href="examples.html" title="next chapter">Examples</a>
+</div>
+
+                <h2>
+                    
+    Database Meta Data
+ 
+                </h2>
+            </div>
+                <ul>
+<li><a class="reference internal" href="#">Database Meta Data</a><ul>
+<li><a class="reference internal" href="#describing-databases-with-metadata">Describing Databases with MetaData</a><ul>
+<li><a class="reference internal" href="#accessing-tables-and-columns">Accessing Tables and Columns</a></li>
+<li><a class="reference internal" href="#creating-and-dropping-database-tables">Creating and Dropping Database Tables</a></li>
+<li><a class="reference internal" href="#binding-metadata-to-an-engine-or-connection">Binding MetaData to an Engine or Connection</a></li>
+<li><a class="reference internal" href="#reflecting-tables">Reflecting Tables</a><ul>
+<li><a class="reference internal" href="#overriding-reflected-columns">Overriding Reflected Columns</a></li>
+<li><a class="reference internal" href="#reflecting-views">Reflecting Views</a></li>
+<li><a class="reference internal" href="#reflecting-all-tables-at-once">Reflecting All Tables at Once</a></li>
+<li><a class="reference internal" href="#fine-grained-reflection-with-inspector">Fine Grained Reflection with Inspector</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#specifying-the-schema-name">Specifying the Schema Name</a></li>
+<li><a class="reference internal" href="#backend-specific-options">Backend-Specific Options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#column-insert-update-defaults">Column Insert/Update Defaults</a><ul>
+<li><a class="reference internal" href="#scalar-defaults">Scalar Defaults</a></li>
+<li><a class="reference internal" href="#python-executed-functions">Python-Executed Functions</a><ul>
+<li><a class="reference internal" href="#context-sensitive-default-functions">Context-Sensitive Default Functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sql-expressions">SQL Expressions</a></li>
+<li><a class="reference internal" href="#server-side-defaults">Server Side Defaults</a></li>
+<li><a class="reference internal" href="#triggered-columns">Triggered Columns</a></li>
+<li><a class="reference internal" href="#defining-sequences">Defining Sequences</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#defining-constraints-and-indexes">Defining Constraints and Indexes</a><ul>
+<li><a class="reference internal" href="#defining-foreign-keys">Defining Foreign Keys</a><ul>
+<li><a class="reference internal" href="#creating-dropping-foreign-key-constraints-via-alter">Creating/Dropping Foreign Key Constraints via ALTER</a></li>
+<li><a class="reference internal" href="#on-update-and-on-delete">ON UPDATE and ON DELETE</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#unique-constraint">UNIQUE Constraint</a></li>
+<li><a class="reference internal" href="#check-constraint">CHECK Constraint</a></li>
+<li><a class="reference internal" href="#indexes">Indexes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#customizing-ddl">Customizing DDL</a><ul>
+<li><a class="reference internal" href="#controlling-ddl-sequences">Controlling DDL Sequences</a></li>
+<li><a class="reference internal" href="#custom-ddl">Custom DDL</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adapting-tables-to-alternate-metadata">Adapting Tables to Alternate Metadata</a></li>
+</ul>
+</li>
+</ul>
+
+            <div class="clearboth"></div>
+        </div>
+        
+        <div class="document">
+            <div class="body">
+                
+<div class="section" id="database-meta-data">
+<span id="metadata-toplevel"></span><h1>Database Meta Data<a class="headerlink" href="#database-meta-data" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="describing-databases-with-metadata">
+<h2>Describing Databases with MetaData<a class="headerlink" href="#describing-databases-with-metadata" title="Permalink to this headline">¶</a></h2>
+<p>The core of SQLAlchemy&#8217;s query and object mapping operations are supported by <em>database metadata</em>, which is comprised of Python objects that describe tables and other schema-level objects.  These objects are at the core of three major types of operations - issuing CREATE and DROP statements (known as <em>DDL</em>), constructing SQL queries, and expressing information about structures that already exist within the database.</p>
+<p>Database metadata can be expressed by explicitly naming the various components and their properties, using constructs such as <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a>, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a>, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a>, all of which are imported from the <tt class="docutils literal"><span class="pre">sqlalchemy.schema</span></tt> package.   It can also be generated by SQLAlchemy using a process called <em>reflection</em>, which means you start with a single object such as <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a>, assign it a name, and then instruct SQLAlchemy to load all the additional information related to that name from a particular engine source.</p>
+<p>A key feature of SQLAlchemy&#8217;s database metadata constructs is that they are designed to be used in a <em>declarative</em> style which closely resembles that of real DDL.   They are therefore most intuitive to those who have some background in creating real schema generation scripts.</p>
+<p>A collection of metadata entities is stored in an object aptly named <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">metadata</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span></pre></div>
+</div>
+<p><a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> is a container object that keeps together many different features of a database (or multiple databases) being described.</p>
+<p>To represent a table, use the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> class.  Its two primary arguments are the table name, then the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object which it will be associated with.   The remaining positional arguments are mostly <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> objects describing each column:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">user</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;user&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span> <span class="o">=</span> <span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span> <span class="n">nullable</span> <span class="o">=</span> <span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;email_address&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">)),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;password&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">nullable</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Above, a table called <tt class="docutils literal"><span class="pre">user</span></tt> is described, which contains four columns.   The primary key of the table consists of the <tt class="docutils literal"><span class="pre">user_id</span></tt> column.   Multiple columns may be assigned the <tt class="docutils literal"><span class="pre">primary_key=True</span></tt> flag which denotes a multi-column primary key, known as a <em>composite</em> primary key.</p>
+<p>Note also that each column describes its datatype using objects corresponding to genericized types, such as <a class="reference internal" href="reference/sqlalchemy/types.html#sqlalchemy.types.Integer" title="sqlalchemy.types.Integer"><tt class="xref py py-class docutils literal"><span class="pre">Integer</span></tt></a> and <a class="reference internal" href="reference/sqlalchemy/types.html#sqlalchemy.types.String" title="sqlalchemy.types.String"><tt class="xref py py-class docutils literal"><span class="pre">String</span></tt></a>.    SQLAlchemy features dozens of types of varying levels of specificity as well as the ability to create custom types.   Documentation on the type system can be found at <a class="reference internal" href="reference/sqlalchemy/types.html#types"><em>Column and Data Types</em></a>.</p>
+<div class="section" id="accessing-tables-and-columns">
+<h3>Accessing Tables and Columns<a class="headerlink" href="#accessing-tables-and-columns" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object contains all of the schema constructs we&#8217;ve associated with it.   It supports a few methods of accessing these table objects, such as the <tt class="docutils literal"><span class="pre">sorted_tables</span></tt> accessor which returns a list of each <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object in order of foreign key dependency (that is, each table is preceded by all tables which it references):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">sorted_tables</span><span class="p">:</span>
+<span class="gp">... </span>   <span class="k">print</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span>
+<span class="go">user</span>
+<span class="go">user_preference</span>
+<span class="go">invoice</span>
+<span class="go">invoice_item</span></pre></div>
+</div>
+<p>In most cases, individual <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> objects have been explicitly declared, and these objects are typically accessed directly as module-level variables in an application.
+Once a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> has been defined, it has a full set of accessors which allow inspection of its properties.  Given the following <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> definition:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">employees</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;employees&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;employee_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;employee_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;employee_dept&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;departments.department_id&quot;</span><span class="p">))</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Note the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> object used in this table - this construct defines a reference to a remote table, and is fully described in <a class="reference internal" href="#metadata-foreignkeys"><em>Defining Foreign Keys</em></a>.   Methods of accessing information about this table include:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># access the column &quot;EMPLOYEE_ID&quot;:</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">employee_id</span>
+
+<span class="c"># or just</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_id</span>
+
+<span class="c"># via string</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;employee_id&#39;</span><span class="p">]</span>
+
+<span class="c"># iterate through all columns</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">c</span>
+
+<span class="c"># get the table&#39;s primary key columns</span>
+<span class="k">for</span> <span class="n">primary_key</span> <span class="ow">in</span> <span class="n">employees</span><span class="o">.</span><span class="n">primary_key</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">primary_key</span>
+
+<span class="c"># get the table&#39;s foreign key objects:</span>
+<span class="k">for</span> <span class="n">fkey</span> <span class="ow">in</span> <span class="n">employees</span><span class="o">.</span><span class="n">foreign_keys</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">fkey</span>
+
+<span class="c"># access the table&#39;s MetaData:</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">metadata</span>
+
+<span class="c"># access the table&#39;s bound Engine or Connection, if its MetaData is bound:</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">bind</span>
+
+<span class="c"># access a column&#39;s name, type, nullable, primary key, foreign key</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_id</span><span class="o">.</span><span class="n">name</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_id</span><span class="o">.</span><span class="n">type</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_id</span><span class="o">.</span><span class="n">nullable</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_id</span><span class="o">.</span><span class="n">primary_key</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_dept</span><span class="o">.</span><span class="n">foreign_keys</span>
+
+<span class="c"># get the &quot;key&quot; of a column, which defaults to its name, but can</span>
+<span class="c"># be any user-defined string:</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_name</span><span class="o">.</span><span class="n">key</span>
+
+<span class="c"># access a column&#39;s table:</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_id</span><span class="o">.</span><span class="n">table</span> <span class="ow">is</span> <span class="n">employees</span>
+
+<span class="c"># get the table related by a foreign key</span>
+<span class="nb">list</span><span class="p">(</span><span class="n">employees</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">employee_dept</span><span class="o">.</span><span class="n">foreign_keys</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">column</span><span class="o">.</span><span class="n">table</span></pre></div>
+</div>
+</div>
+<div class="section" id="creating-and-dropping-database-tables">
+<span id="metadata-binding"></span><h3>Creating and Dropping Database Tables<a class="headerlink" href="#creating-and-dropping-database-tables" title="Permalink to this headline">¶</a></h3>
+<p>Once you&#8217;ve defined some <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> objects, assuming you&#8217;re working with a brand new database one thing you might want to do is issue CREATE statements for those tables and their related constructs (as an aside, it&#8217;s also quite possible that you <em>don&#8217;t</em> want to do this, if you already have some preferred methodology such as tools included with your database or an existing scripting system - if that&#8217;s the case, feel free to skip this section - SQLAlchemy has no requirement that it be used to create your tables).</p>
+<p>The usual way to issue CREATE is to use <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.create_all" title="sqlalchemy.schema.MetaData.create_all"><tt class="xref py py-func docutils literal"><span class="pre">create_all()</span></tt></a> on the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object.  This method will issue queries that first check for the existence of each individual table, and if not found will issue the CREATE statements:</p>
+<blockquote>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s">&#39;sqlite:///:memory:&#39;</span><span class="p">)</span>
+
+<span class="n">metadata</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;user&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span> <span class="o">=</span> <span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span> <span class="n">nullable</span> <span class="o">=</span> <span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;email_address&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;email&#39;</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;password&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">nullable</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">user_prefs</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;user_prefs&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;pref_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;user.user_id&quot;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;pref_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">40</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;pref_value&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+<span class="p">)</span>
+
+<a href='#' class='sql_link'>sql</a><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>PRAGMA table_info(user){}
+CREATE TABLE user(
+        user_id INTEGER NOT NULL PRIMARY KEY,
+        user_name VARCHAR(16) NOT NULL,
+        email_address VARCHAR(60),
+        password VARCHAR(20) NOT NULL
+)
+PRAGMA table_info(user_prefs){}
+CREATE TABLE user_prefs(
+        pref_id INTEGER NOT NULL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES user(user_id),
+        pref_name VARCHAR(40) NOT NULL,
+        pref_value VARCHAR(100)
+)</div></pre></div>
+</div>
+</blockquote>
+<p><a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.create_all" title="sqlalchemy.schema.MetaData.create_all"><tt class="xref py py-func docutils literal"><span class="pre">create_all()</span></tt></a> creates foreign key constraints between tables usually inline with the table definition itself, and for this reason it also generates the tables in order of their dependency.   There are options to change this behavior such that <tt class="docutils literal"><span class="pre">ALTER</span> <span class="pre">TABLE</span></tt> is used instead.</p>
+<p>Dropping all tables is similarly achieved using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.drop_all" title="sqlalchemy.schema.MetaData.drop_all"><tt class="xref py py-func docutils literal"><span class="pre">drop_all()</span></tt></a> method.  This method does the exact opposite of <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.create_all" title="sqlalchemy.schema.MetaData.create_all"><tt class="xref py py-func docutils literal"><span class="pre">create_all()</span></tt></a> - the presence of each table is checked first, and tables are dropped in reverse order of dependency.</p>
+<p>Creating and dropping individual tables can be done via the <tt class="docutils literal"><span class="pre">create()</span></tt> and <tt class="docutils literal"><span class="pre">drop()</span></tt> methods of <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a>.  These methods by default issue the CREATE or DROP regardless of the table being present:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s">&#39;sqlite:///:memory:&#39;</span><span class="p">)</span>
+
+<span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+
+<span class="n">employees</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;employees&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;employee_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;employee_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;name&#39;</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;employee_dept&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;departments.department_id&quot;</span><span class="p">))</span>
+<span class="p">)</span>
+<a href='#' class='sql_link'>sql</a><span class="n">employees</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE TABLE employees(
+employee_id SERIAL NOT NULL PRIMARY KEY,
+employee_name VARCHAR(60) NOT NULL,
+employee_dept INTEGER REFERENCES departments(department_id)
+)</div></pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">drop()</span></tt> method:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><a href='#' class='sql_link'>sql</a><span class="n">employees</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>DROP TABLE employee</div></pre></div>
+</div>
+<p>To enable the &#8220;check first for the table existing&#8221; logic, add the <tt class="docutils literal"><span class="pre">checkfirst=True</span></tt> argument to <tt class="docutils literal"><span class="pre">create()</span></tt> or <tt class="docutils literal"><span class="pre">drop()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">employees</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">checkfirst</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">employees</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">checkfirst</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span></pre></div>
+</div>
+</div>
+<div class="section" id="binding-metadata-to-an-engine-or-connection">
+<h3>Binding MetaData to an Engine or Connection<a class="headerlink" href="#binding-metadata-to-an-engine-or-connection" title="Permalink to this headline">¶</a></h3>
+<p>Notice in the previous section the creator/dropper methods accept an argument for the database engine in use.  When a schema construct is combined with an <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.Engine" title="sqlalchemy.engine.base.Engine"><tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></a> object, or an individual <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.Connection" title="sqlalchemy.engine.base.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a> object, we call this the <em>bind</em>.   In the above examples the bind is associated with the schema construct only for the duration of the operation.   However, the option exists to persistently associate a bind with a set of schema constructs via the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object&#8217;s <tt class="docutils literal"><span class="pre">bind</span></tt> attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s">&#39;sqlite://&#39;</span><span class="p">)</span>
+
+<span class="c"># create MetaData</span>
+<span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+
+<span class="c"># bind to an engine</span>
+<span class="n">meta</span><span class="o">.</span><span class="n">bind</span> <span class="o">=</span> <span class="n">engine</span></pre></div>
+</div>
+<p>We can now call methods like <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.create_all" title="sqlalchemy.schema.MetaData.create_all"><tt class="xref py py-func docutils literal"><span class="pre">create_all()</span></tt></a> without needing to pass the <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.Engine" title="sqlalchemy.engine.base.Engine"><tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">meta</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span></pre></div>
+</div>
+<p>The MetaData&#8217;s bind is used for anything that requires an active connection, such as loading the definition of a table from the database automatically (called <em>reflection</em>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># describe a table called &#39;users&#39;, query the database for its columns</span>
+<span class="n">users_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;users&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></pre></div>
+</div>
+<p>As well as for executing SQL constructs that are derived from that MetaData&#8217;s table objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># generate a SELECT statement and execute</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">users_table</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></pre></div>
+</div>
+<p>Binding the MetaData to the Engine is a <strong>completely optional</strong> feature.   The above operations can be achieved without the persistent bind using parameters:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># describe a table called &#39;users&#39;, query the database for its columns</span>
+<span class="n">users_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;users&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+
+<span class="c"># generate a SELECT statement and execute</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">users_table</span><span class="o">.</span><span class="n">select</span><span class="p">())</span></pre></div>
+</div>
+<p>Should you use bind ?   It&#8217;s probably best to start without it, and wait for a specific need to arise.  Bind is useful if:</p>
+<ul class="simple">
+<li>You aren&#8217;t using the ORM, are usually using &#8220;connectionless&#8221; execution, and find yourself constantly needing to specify the same <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.Engine" title="sqlalchemy.engine.base.Engine"><tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></a> object throughout the entire application.  Bind can be used here to provide &#8220;implicit&#8221; execution.</li>
+<li>Your application has multiple schemas that correspond to different engines.  Using one <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> for each schema, bound to each engine, provides a decent place to delineate between the schemas.  The ORM will also integrate with this approach, where the <tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt> will naturally use the engine that is bound to each table via its metadata (provided the <tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt> itself has no <tt class="docutils literal"><span class="pre">bind</span></tt> configured.).</li>
+</ul>
+<p>Alternatively, the <tt class="docutils literal"><span class="pre">bind</span></tt> attribute of <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> is <em>confusing</em> if:</p>
+<ul class="simple">
+<li>Your application talks to multiple database engines at different times, which use the <em>same</em> set of <tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt> objects.   It&#8217;s usually confusing and unnecessary to begin to create &#8220;copies&#8221; of <tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt> objects just so that different engines can be used for different operations.  An example is an application that writes data to a &#8220;master&#8221; database while performing read-only operations from a &#8220;read slave&#8221;.   A global <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object is <em>not</em> appropriate for per-request switching like this, although a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ThreadLocalMetaData" title="sqlalchemy.schema.ThreadLocalMetaData"><tt class="xref py py-class docutils literal"><span class="pre">ThreadLocalMetaData</span></tt></a> object is.</li>
+<li>You are using the ORM <tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt> to handle which class/table is bound to which engine, or you are using the <tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt> to manage switching between engines.   Its a good idea to keep the &#8220;binding of tables to engines&#8221; in one place - either using <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> only (the <tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt> can of course be present, it just has no <tt class="docutils literal"><span class="pre">bind</span></tt> configured), or using <tt class="xref py py-class docutils literal"><span class="pre">Session</span></tt> only (the <tt class="docutils literal"><span class="pre">bind</span></tt> attribute of <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> is left empty).</li>
+</ul>
+</div>
+<div class="section" id="reflecting-tables">
+<span id="metadata-reflection"></span><h3>Reflecting Tables<a class="headerlink" href="#reflecting-tables" title="Permalink to this headline">¶</a></h3>
+<p>A <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object can be instructed to load information about itself from the corresponding database schema object already existing within the database.  This process is called <em>reflection</em>.   Most simply you need only specify the table name, a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object, and the <tt class="docutils literal"><span class="pre">autoload=True</span></tt> flag.  If the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> is not persistently bound, also add the <tt class="docutils literal"><span class="pre">autoload_with</span></tt> argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">messages</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;messages&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">messages</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="go">[&#39;message_id&#39;, &#39;message_name&#39;, &#39;date&#39;]</span></pre></div>
+</div>
+<p>The above operation will use the given engine to query the database for information about the <tt class="docutils literal"><span class="pre">messages</span></tt> table, and will then generate <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a>, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a>, and other objects corresponding to this information as though the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object were hand-constructed in Python.</p>
+<p>When tables are reflected, if a given table references another one via foreign key, a second <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object is created within the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object representing the connection.   Below, assume the table <tt class="docutils literal"><span class="pre">shopping_cart_items</span></tt> references a table named <tt class="docutils literal"><span class="pre">shopping_carts</span></tt>.   Reflecting the <tt class="docutils literal"><span class="pre">shopping_cart_items</span></tt> table has the effect such that the <tt class="docutils literal"><span class="pre">shopping_carts</span></tt> table will also be loaded:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">shopping_cart_items</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;shopping_cart_items&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;shopping_carts&#39;</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">tables</span><span class="p">:</span>
+<span class="go">True</span></pre></div>
+</div>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> has an interesting &#8220;singleton-like&#8221; behavior such that if you requested both tables individually, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> will ensure that exactly one <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object is created for each distinct table name.  The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> constructor actually returns to you the already-existing <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object if one already exists with the given name.  Such as below, we can access the already generated <tt class="docutils literal"><span class="pre">shopping_carts</span></tt> table just by naming it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">shopping_carts</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;shopping_carts&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span></pre></div>
+</div>
+<p>Of course, it&#8217;s a good idea to use <tt class="docutils literal"><span class="pre">autoload=True</span></tt> with the above table regardless.  This is so that the table&#8217;s attributes will be loaded if they have not been already.  The autoload operation only occurs for the table if it hasn&#8217;t already been loaded; once loaded, new calls to <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> with the same name will not re-issue any reflection queries.</p>
+<div class="section" id="overriding-reflected-columns">
+<h4>Overriding Reflected Columns<a class="headerlink" href="#overriding-reflected-columns" title="Permalink to this headline">¶</a></h4>
+<p>Individual columns can be overridden with explicit values when reflecting tables; this is handy for specifying custom datatypes, constraints such as primary keys that may not be configured within the database, etc.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mytable</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;mytable&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+<span class="gp">... </span><span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>   <span class="c"># override reflected &#39;id&#39; to have primary key</span>
+<span class="gp">... </span><span class="n">Column</span><span class="p">(</span><span class="s">&#39;mydata&#39;</span><span class="p">,</span> <span class="n">Unicode</span><span class="p">(</span><span class="mi">50</span><span class="p">)),</span>    <span class="c"># override reflected &#39;mydata&#39; to be Unicode</span>
+<span class="gp">... </span><span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></pre></div>
+</div>
+</div>
+<div class="section" id="reflecting-views">
+<h4>Reflecting Views<a class="headerlink" href="#reflecting-views" title="Permalink to this headline">¶</a></h4>
+<p>The reflection system can also reflect views.   Basic usage is the same as that of a table:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_view</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&quot;some_view&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></pre></div>
+</div>
+<p>Above, <tt class="docutils literal"><span class="pre">my_view</span></tt> is a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object with <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> objects representing the names and types
+of each column within the view &#8220;some_view&#8221;.</p>
+<p>Usually, it&#8217;s desired to have at least a primary key constraint when reflecting a view, if not
+foreign keys as well.  View reflection doesn&#8217;t extrapolate these constraints.</p>
+<p>Use the &#8220;override&#8221; technique for this, specifying explicitly those columns
+which are part of the primary key or have foreign key constraints:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_view</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&quot;some_view&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">Column</span><span class="p">(</span><span class="s">&quot;view_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+                <span class="n">Column</span><span class="p">(</span><span class="s">&quot;related_thing&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;othertable.thing_id&quot;</span><span class="p">)),</span>
+                <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span></pre></div>
+</div>
+</div>
+<div class="section" id="reflecting-all-tables-at-once">
+<h4>Reflecting All Tables at Once<a class="headerlink" href="#reflecting-all-tables-at-once" title="Permalink to this headline">¶</a></h4>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object can also get a listing of tables and reflect the full set.  This is achieved by using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.reflect" title="sqlalchemy.schema.MetaData.reflect"><tt class="xref py py-func docutils literal"><span class="pre">reflect()</span></tt></a> method.  After calling it, all located tables are present within the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object&#8217;s dictionary of tables:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+<span class="n">meta</span><span class="o">.</span><span class="n">reflect</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">someengine</span><span class="p">)</span>
+<span class="n">users_table</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">tables</span><span class="p">[</span><span class="s">&#39;users&#39;</span><span class="p">]</span>
+<span class="n">addresses_table</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">tables</span><span class="p">[</span><span class="s">&#39;addresses&#39;</span><span class="p">]</span></pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">metadata.reflect()</span></tt> also provides a handy way to clear or delete all the rows in a database:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+<span class="n">meta</span><span class="o">.</span><span class="n">reflect</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">someengine</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">sorted_tables</span><span class="p">):</span>
+    <span class="n">someengine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">delete</span><span class="p">())</span></pre></div>
+</div>
+</div>
+<div class="section" id="fine-grained-reflection-with-inspector">
+<h4>Fine Grained Reflection with Inspector<a class="headerlink" href="#fine-grained-reflection-with-inspector" title="Permalink to this headline">¶</a></h4>
+<p>A low level interface which provides a backend-agnostic system of loading lists of schema, table, column, and constraint descriptions from a given database is also available.  This is known as the &#8220;Inspector&#8221; and is described in the API documentation at <a class="reference internal" href="reference/sqlalchemy/inspector.html"><em>Schema Introspection</em></a>.</p>
+</div>
+</div>
+<div class="section" id="specifying-the-schema-name">
+<h3>Specifying the Schema Name<a class="headerlink" href="#specifying-the-schema-name" title="Permalink to this headline">¶</a></h3>
+<p>Some databases support the concept of multiple schemas.  A <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> can reference this by specifying the <tt class="docutils literal"><span class="pre">schema</span></tt> keyword argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">financial_info</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;financial_info&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;value&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">schema</span><span class="o">=</span><span class="s">&#39;remote_banks&#39;</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Within the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> collection, this table will be identified by the combination of <tt class="docutils literal"><span class="pre">financial_info</span></tt> and <tt class="docutils literal"><span class="pre">remote_banks</span></tt>.  If another table called <tt class="docutils literal"><span class="pre">financial_info</span></tt> is referenced without the <tt class="docutils literal"><span class="pre">remote_banks</span></tt> schema, it will refer to a different <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a>.  <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> objects can specify references to columns in this table using the form <tt class="docutils literal"><span class="pre">remote_banks.financial_info.id</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">schema</span></tt> argument should be used for any name qualifiers required, including Oracle&#8217;s &#8220;owner&#8221; attribute and similar.  It also can accommodate a dotted name for longer schemes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">schema</span><span class="o">=</span><span class="s">&quot;dbo.scott&quot;</span></pre></div>
+</div>
+</div>
+<div class="section" id="backend-specific-options">
+<h3>Backend-Specific Options<a class="headerlink" href="#backend-specific-options" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> supports database-specific options.   For example, MySQL has different table backend types, including &#8220;MyISAM&#8221; and &#8220;InnoDB&#8221;.   This can be expressed with <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> using <tt class="docutils literal"><span class="pre">mysql_engine</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">addresses</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;engine_email_addresses&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;address_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span> <span class="o">=</span> <span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;remote_user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">users</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">user_id</span><span class="p">)),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;email_address&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">)),</span>
+    <span class="n">mysql_engine</span><span class="o">=</span><span class="s">&#39;InnoDB&#39;</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Other backends may support table-level options as well.  See the API documentation for each backend for further details.</p>
+</div>
+</div>
+<div class="section" id="column-insert-update-defaults">
+<h2>Column Insert/Update Defaults<a class="headerlink" href="#column-insert-update-defaults" title="Permalink to this headline">¶</a></h2>
+<p>SQLAlchemy provides a very rich featureset regarding column level events which take place during INSERT and UPDATE statements.  Options include:</p>
+<ul class="simple">
+<li>Scalar values used as defaults during INSERT and UPDATE operations</li>
+<li>Python functions which execute upon INSERT and UPDATE operations</li>
+<li>SQL expressions which are embedded in INSERT statements (or in some cases execute beforehand)</li>
+<li>SQL expressions which are embedded in UPDATE statements</li>
+<li>Server side default values used during INSERT</li>
+<li>Markers for server-side triggers used during UPDATE</li>
+</ul>
+<p>The general rule for all insert/update defaults is that they only take effect if no value for a particular column is passed as an <tt class="docutils literal"><span class="pre">execute()</span></tt> parameter; otherwise, the given value is used.</p>
+<div class="section" id="scalar-defaults">
+<h3>Scalar Defaults<a class="headerlink" href="#scalar-defaults" title="Permalink to this headline">¶</a></h3>
+<p>The simplest kind of default is a scalar value used as the default value of a column:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Table</span><span class="p">(</span><span class="s">&quot;mytable&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;somecolumn&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Above, the value &#8220;12&#8221; will be bound as the column value during an INSERT if no other value is supplied.</p>
+<p>A scalar value may also be associated with an UPDATE statement, though this is not very common (as UPDATE statements are usually looking for dynamic defaults):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Table</span><span class="p">(</span><span class="s">&quot;mytable&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;somecolumn&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+</div>
+<div class="section" id="python-executed-functions">
+<h3>Python-Executed Functions<a class="headerlink" href="#python-executed-functions" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">default</span></tt> and <tt class="docutils literal"><span class="pre">onupdate</span></tt> keyword arguments also accept Python functions.   These functions are invoked at the time of insert or update if no other value for that column is supplied, and the value returned is used for the column&#8217;s value.  Below illustrates a crude &#8220;sequence&#8221; that assigns an incrementing counter to a primary key column:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># a function which counts upwards</span>
+<span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">def</span> <span class="nf">mydefault</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">i</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">i</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&quot;mytable&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">mydefault</span><span class="p">),</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>It should be noted that for real &#8220;incrementing sequence&#8221; behavior, the built-in capabilities of the database should normally be used, which may include sequence objects or other autoincrementing capabilities.  For primary key columns, SQLAlchemy will in most cases use these capabilities automatically.   See the API documentation for <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> including the <tt class="docutils literal"><span class="pre">autoincrement</span></tt> flag, as well as the section on <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> later in this chapter for background on standard primary key generation techniques.</p>
+<p>To illustrate onupdate, we assign the Python <tt class="docutils literal"><span class="pre">datetime</span></tt> function <tt class="docutils literal"><span class="pre">now</span></tt> to the <tt class="docutils literal"><span class="pre">onupdate</span></tt> attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&quot;mytable&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+
+    <span class="c"># define &#39;last_updated&#39; to be populated with datetime.now()</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;last_updated&#39;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">),</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>When an update statement executes and no value is passed for <tt class="docutils literal"><span class="pre">last_updated</span></tt>, the <tt class="docutils literal"><span class="pre">datetime.datetime.now()</span></tt> Python function is executed and its return value used as the value for <tt class="docutils literal"><span class="pre">last_updated</span></tt>.   Notice that we provide <tt class="docutils literal"><span class="pre">now</span></tt> as the function itself without calling it (i.e. there are no parenthesis following) - SQLAlchemy will execute the function at the time the statement executes.</p>
+<div class="section" id="context-sensitive-default-functions">
+<h4>Context-Sensitive Default Functions<a class="headerlink" href="#context-sensitive-default-functions" title="Permalink to this headline">¶</a></h4>
+<p>The Python functions used by <tt class="docutils literal"><span class="pre">default</span></tt> and <tt class="docutils literal"><span class="pre">onupdate</span></tt> may also make use of the current statement&#8217;s context in order to determine a value.  The <cite>context</cite> of a statement is an internal SQLAlchemy object which contains all information about the statement being executed, including its source expression, the parameters associated with it and the cursor.  The typical use case for this context with regards to default generation is to have access to the other values being inserted or updated on the row.   To access the context, provide a function that accepts a single <tt class="docutils literal"><span class="pre">context</span></tt> argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">mydefault</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">context</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s">&#39;counter&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">12</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;mytable&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;counter&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;counter_plus_twelve&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">mydefault</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">mydefault</span><span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Above we illustrate a default function which will execute for all INSERT and UPDATE statements where a value for <tt class="docutils literal"><span class="pre">counter_plus_twelve</span></tt> was otherwise not provided, and the value will be that of whatever value is present in the execution for the <tt class="docutils literal"><span class="pre">counter</span></tt> column, plus the number 12.</p>
+<p>While the context object passed to the default function has many attributes, the <tt class="docutils literal"><span class="pre">current_parameters</span></tt> member is a special member provided only during the execution of a default function for the purposes of deriving defaults from its existing values.  For a single statement that is executing many sets of bind parameters, the user-defined function is called for each set of parameters, and <tt class="docutils literal"><span class="pre">current_parameters</span></tt> will be provided with each individual parameter set for each execution.</p>
+</div>
+</div>
+<div class="section" id="sql-expressions">
+<h3>SQL Expressions<a class="headerlink" href="#sql-expressions" title="Permalink to this headline">¶</a></h3>
+<p>The &#8220;default&#8221; and &#8220;onupdate&#8221; keywords may also be passed SQL expressions, including select statements or direct function calls:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&quot;mytable&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+
+    <span class="c"># define &#39;create_date&#39; to default to now()</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;create_date&#39;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="n">now</span><span class="p">()),</span>
+
+    <span class="c"># define &#39;key&#39; to pull its default from the &#39;keyvalues&#39; table</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;key&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="n">keyvalues</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">keyvalues</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">type</span><span class="o">=</span><span class="s">&#39;type1&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
+
+    <span class="c"># define &#39;last_modified&#39; to use the current_timestamp SQL function on update</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;last_modified&#39;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="n">utc_timestamp</span><span class="p">())</span>
+    <span class="p">)</span></pre></div>
+</div>
+<p>Above, the <tt class="docutils literal"><span class="pre">create_date</span></tt> column will be populated with the result of the <tt class="docutils literal"><span class="pre">now()</span></tt> SQL function (which, depending on backend, compiles into <tt class="docutils literal"><span class="pre">NOW()</span></tt> or <tt class="docutils literal"><span class="pre">CURRENT_TIMESTAMP</span></tt> in most cases) during an INSERT statement, and the <tt class="docutils literal"><span class="pre">key</span></tt> column with the result of a SELECT subquery from another table.   The <tt class="docutils literal"><span class="pre">last_modified</span></tt> column will be populated with the value of <tt class="docutils literal"><span class="pre">UTC_TIMESTAMP()</span></tt>, a function specific to MySQL, when an UPDATE statement is emitted for this table.</p>
+<p>Note that when using <tt class="docutils literal"><span class="pre">func</span></tt> functions, unlike when using Python <cite>datetime</cite> functions we <em>do</em> call the function, i.e. with parenthesis &#8220;()&#8221; - this is because what we want in this case is the return value of the function, which is the SQL expression construct that will be rendered into the INSERT or UPDATE statement.</p>
+<p>The above SQL functions are usually executed &#8220;inline&#8221; with the INSERT or UPDATE statement being executed, meaning, a single statement is executed which embeds the given expressions or subqueries within the VALUES or SET clause of the statement.  Although in some cases, the function is &#8220;pre-executed&#8221; in a SELECT statement of its own beforehand.  This happens when all of the following is true:</p>
+<ul class="simple">
+<li>the column is a primary key column</li>
+<li>the database dialect does not support a usable <tt class="docutils literal"><span class="pre">cursor.lastrowid</span></tt> accessor (or equivalent); this currently includes PostgreSQL, Oracle, and Firebird, as well as some MySQL dialects.</li>
+<li>the dialect does not support the &#8220;RETURNING&#8221; clause or similar, or the <tt class="docutils literal"><span class="pre">implicit_returning</span></tt> flag is set to <tt class="xref docutils literal"><span class="pre">False</span></tt> for the dialect.  Dialects which support RETURNING currently include Postgresql, Oracle, Firebird, and MS-SQL.</li>
+<li>the statement is a single execution, i.e. only supplies one set of parameters and doesn&#8217;t use &#8220;executemany&#8221; behavior</li>
+<li>the <tt class="docutils literal"><span class="pre">inline=True</span></tt> flag is not set on the <a class="reference internal" href="reference/sqlalchemy/expressions.html#sqlalchemy.sql.expression.Insert" title="sqlalchemy.sql.expression.Insert"><tt class="xref py py-class docutils literal"><span class="pre">Insert()</span></tt></a> or <a class="reference internal" href="reference/sqlalchemy/expressions.html#sqlalchemy.sql.expression.Update" title="sqlalchemy.sql.expression.Update"><tt class="xref py py-class docutils literal"><span class="pre">Update()</span></tt></a> construct, and the statement has not defined an explicit <cite>returning()</cite> clause.</li>
+</ul>
+<p>Whether or not the default generation clause &#8220;pre-executes&#8221; is not something that normally needs to be considered, unless it is being addressed for performance reasons.</p>
+<p>When the statement is executed with a single set of parameters (that is, it is not an &#8220;executemany&#8221; style execution), the returned <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.ResultProxy" title="sqlalchemy.engine.base.ResultProxy"><tt class="xref py py-class docutils literal"><span class="pre">ResultProxy</span></tt></a> will contain a collection accessible via <tt class="docutils literal"><span class="pre">result.postfetch_cols()</span></tt> which contains a list of all <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> objects which had an inline-executed default.  Similarly, all parameters which were bound to the statement, including all Python and SQL expressions which were pre-executed, are present in the <tt class="docutils literal"><span class="pre">last_inserted_params()</span></tt> or <tt class="docutils literal"><span class="pre">last_updated_params()</span></tt> collections on <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.ResultProxy" title="sqlalchemy.engine.base.ResultProxy"><tt class="xref py py-class docutils literal"><span class="pre">ResultProxy</span></tt></a>.  The <tt class="docutils literal"><span class="pre">inserted_primary_key</span></tt> collection contains a list of primary key values for the row inserted (a list so that single-column and composite-column primary keys are represented in the same format).</p>
+</div>
+<div class="section" id="server-side-defaults">
+<h3>Server Side Defaults<a class="headerlink" href="#server-side-defaults" title="Permalink to this headline">¶</a></h3>
+<p>A variant on the SQL expression default is the <tt class="docutils literal"><span class="pre">server_default</span></tt>, which gets placed in the CREATE TABLE statement during a <tt class="docutils literal"><span class="pre">create()</span></tt> operation:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;test&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">server_default</span><span class="o">=</span><span class="s">&#39;abc&#39;</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;created_at&#39;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span> <span class="n">server_default</span><span class="o">=</span><span class="n">text</span><span class="p">(</span><span class="s">&quot;sysdate&quot;</span><span class="p">))</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>A create call for the above table will produce:</p>
+<div class="highlight-python"><pre>CREATE TABLE test (
+    abc varchar(20) default 'abc',
+    created_at datetime default sysdate
+)</pre>
+</div>
+<p>The behavior of <tt class="docutils literal"><span class="pre">server_default</span></tt> is similar to that of a regular SQL default; if it&#8217;s placed on a primary key column for a database which doesn&#8217;t have a way to &#8220;postfetch&#8221; the ID, and the statement is not &#8220;inlined&#8221;, the SQL expression is pre-executed; otherwise, SQLAlchemy lets the default fire off on the database side normally.</p>
+</div>
+<div class="section" id="triggered-columns">
+<h3>Triggered Columns<a class="headerlink" href="#triggered-columns" title="Permalink to this headline">¶</a></h3>
+<p>Columns with values set by a database trigger or other external process may be called out with a marker:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;test&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">server_default</span><span class="o">=</span><span class="n">FetchedValue</span><span class="p">()),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;def&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">server_onupdate</span><span class="o">=</span><span class="n">FetchedValue</span><span class="p">())</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>These markers do not emit a &#8220;default&#8221; clause when the table is created, however they do set the same internal flags as a static <tt class="docutils literal"><span class="pre">server_default</span></tt> clause, providing hints to higher-level tools that a &#8220;post-fetch&#8221; of these rows should be performed after an insert or update.</p>
+</div>
+<div class="section" id="defining-sequences">
+<h3>Defining Sequences<a class="headerlink" href="#defining-sequences" title="Permalink to this headline">¶</a></h3>
+<p>SQLAlchemy represents database sequences using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> object, which is considered to be a special case of &#8220;column default&#8221;.   It only has an effect on databases which have explicit support for sequences, which currently includes Postgresql, Oracle, and Firebird.  The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> object is otherwise ignored.</p>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> may be placed on any column as a &#8220;default&#8221; generator to be used during INSERT operations, and can also be configured to fire off during UPDATE operations if desired.  It is most commonly used in conjunction with a single integer primary key column:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&quot;cartitems&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;cart_id&quot;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">(</span><span class="s">&#39;cart_id_seq&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;description&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">40</span><span class="p">)),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;createdate&quot;</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">())</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Where above, the table &#8220;cartitems&#8221; is associated with a sequence named &#8220;cart_id_seq&#8221;.   When INSERT statements take place for &#8220;cartitems&#8221;, and no value is passed for the &#8220;cart_id&#8221; column, the &#8220;cart_id_seq&#8221; sequence will be used to generate a value.</p>
+<p>When the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> is associated with a table, CREATE and DROP statements issued for that table will also issue CREATE/DROP for the sequence object as well, thus &#8220;bundling&#8221; the sequence object with its parent table.</p>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> object also implements special functionality to accommodate Postgresql&#8217;s SERIAL datatype.   The SERIAL type in PG automatically generates a sequence that is used implicitly during inserts.  This means that if a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object defines a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> on its primary key column so that it works with Oracle and Firebird, the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> would get in the way of the &#8220;implicit&#8221; sequence that PG would normally use.  For this use case, add the flag <tt class="docutils literal"><span class="pre">optional=True</span></tt> to the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> object - this indicates that the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> should only be used if the database provides no other option for generating primary key identifiers.</p>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a> object also has the ability to be executed standalone like a SQL expression, which has the effect of calling its &#8220;next value&#8221; function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">seq</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="s">&#39;some_sequence&#39;</span><span class="p">)</span>
+<span class="n">nextid</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span></pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="defining-constraints-and-indexes">
+<h2>Defining Constraints and Indexes<a class="headerlink" href="#defining-constraints-and-indexes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="defining-foreign-keys">
+<span id="metadata-foreignkeys"></span><h3>Defining Foreign Keys<a class="headerlink" href="#defining-foreign-keys" title="Permalink to this headline">¶</a></h3>
+<p>A <em>foreign key</em> in SQL is a table-level construct that constrains one or more columns in that table to only allow values that are present in a different set of columns, typically but not always located on a different table.  We call the columns which are constrained the <em>foreign key</em> columns and the columns which they are constrained towards the <em>referenced</em> columns.  The referenced columns almost always define the primary key for their owning table, though there are exceptions to this.  The foreign key is the &#8220;joint&#8221; that connects together pairs of rows which have a relationship with each other, and SQLAlchemy assigns very deep importance to this concept in virtually every area of its operation.</p>
+<p>In SQLAlchemy as well as in DDL, foreign key constraints can be defined as additional attributes within the table clause, or for single-column foreign keys they may optionally be specified within the definition of a single column.   The single column foreign key is more common, and at the column level is specified by constructing a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> object as an argument to a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">user_preference</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;user_preference&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;pref_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&quot;user.user_id&quot;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;pref_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">40</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;pref_value&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Above, we define a new table <tt class="docutils literal"><span class="pre">user_preference</span></tt> for which each row must contain a value in the <tt class="docutils literal"><span class="pre">user_id</span></tt> column that also exists in the <tt class="docutils literal"><span class="pre">user</span></tt> table&#8217;s <tt class="docutils literal"><span class="pre">user_id</span></tt> column.</p>
+<p>The argument to <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> is most commonly a string of the form <em>&lt;tablename&gt;.&lt;columnname&gt;</em>, or for a table in a remote schema or &#8220;owner&#8221; of the form <em>&lt;schemaname&gt;.&lt;tablename&gt;.&lt;columnname&gt;</em>.   It may also be an actual <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> object, which as we&#8217;ll see later is accessed from an existing <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object via its <tt class="docutils literal"><span class="pre">c</span></tt> collection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ForeignKey</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span></pre></div>
+</div>
+<p>The advantage to using a string is that the in-python linkage between <tt class="docutils literal"><span class="pre">user</span></tt> and <tt class="docutils literal"><span class="pre">user_preference</span></tt> is resolved only when first needed, so that table objects can be easily spread across multiple modules and defined in any order.</p>
+<p>Foreign keys may also be defined at the table level, using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKeyConstraint" title="sqlalchemy.schema.ForeignKeyConstraint"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></tt></a> object.   This object can describe a single- or multi-column foreign key.  A multi-column foreign key is known as a <em>composite</em> foreign key, and almost always references a table that has a composite primary key.  Below we define a table <tt class="docutils literal"><span class="pre">invoice</span></tt> which has a composite primary key:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">invoice</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;invoice&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;invoice_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;ref_num&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;description&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>And then a table <tt class="docutils literal"><span class="pre">invoice_item</span></tt> with a composite foreign key referencing <tt class="docutils literal"><span class="pre">invoice</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">invoice_item</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;invoice_item&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;item_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;item_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;invoice_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;ref_num&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">ForeignKeyConstraint</span><span class="p">([</span><span class="s">&#39;invoice_id&#39;</span><span class="p">,</span> <span class="s">&#39;ref_num&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;invoice.invoice_id&#39;</span><span class="p">,</span> <span class="s">&#39;invoice.ref_num&#39;</span><span class="p">])</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>It&#8217;s important to note that the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKeyConstraint" title="sqlalchemy.schema.ForeignKeyConstraint"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></tt></a> is the only way to define a composite foreign key.   While we could also have placed individual <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> objects on both the <tt class="docutils literal"><span class="pre">invoice_item.invoice_id</span></tt> and <tt class="docutils literal"><span class="pre">invoice_item.ref_num</span></tt> columns, SQLAlchemy would not be aware that these two values should be paired together - it would be two individual foreign key constraints instead of a single composite foreign key referencing two columns.</p>
+<div class="section" id="creating-dropping-foreign-key-constraints-via-alter">
+<h4>Creating/Dropping Foreign Key Constraints via ALTER<a class="headerlink" href="#creating-dropping-foreign-key-constraints-via-alter" title="Permalink to this headline">¶</a></h4>
+<p>In all the above examples, the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> object causes the &#8220;REFERENCES&#8221; keyword to be added inline to a column definition within a &#8220;CREATE TABLE&#8221; statement when <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.create_all" title="sqlalchemy.schema.MetaData.create_all"><tt class="xref py py-func docutils literal"><span class="pre">create_all()</span></tt></a> is issued, and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKeyConstraint" title="sqlalchemy.schema.ForeignKeyConstraint"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></tt></a> invokes the &#8220;CONSTRAINT&#8221; keyword inline with &#8220;CREATE TABLE&#8221;.    There are some cases where this is undesireable, particularly when two tables reference each other mutually, each with a foreign key referencing the other.   In such a situation at least one of the foreign key constraints must be generated after both tables have been built.  To support such a scheme, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKeyConstraint" title="sqlalchemy.schema.ForeignKeyConstraint"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></tt></a> offer the flag <tt class="docutils literal"><span class="pre">use_alter=True</span></tt>.  When using this flag, the constraint will be generated using a definition similar to &#8220;ALTER TABLE &lt;tablename&gt; ADD CONSTRAINT &lt;name&gt; ...&#8221;.   Since a name is required, the <tt class="docutils literal"><span class="pre">name</span></tt> attribute must also be specified.  For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">node</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;node&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;node_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;primary_element&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span>
+        <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;element.element_id&#39;</span><span class="p">,</span> <span class="n">use_alter</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;fk_node_element_id&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">element</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;element&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;element_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;parent_node_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">ForeignKeyConstraint</span><span class="p">(</span>
+        <span class="p">[</span><span class="s">&#39;parent_node_id&#39;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s">&#39;node.node_id&#39;</span><span class="p">],</span>
+        <span class="n">use_alter</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">&#39;fk_element_parent_node_id&#39;</span>
+    <span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+</div>
+<div class="section" id="on-update-and-on-delete">
+<h4>ON UPDATE and ON DELETE<a class="headerlink" href="#on-update-and-on-delete" title="Permalink to this headline">¶</a></h4>
+<p>Most databases support <em>cascading</em> of foreign key values, that is the when a parent row is updated the new value is placed in child rows, or when the parent row is deleted all corresponding child rows are set to null or deleted.  In data definition language these are specified using phrases like &#8220;ON UPDATE CASCADE&#8221;, &#8220;ON DELETE CASCADE&#8221;, and &#8220;ON DELETE SET NULL&#8221;, corresponding to foreign key constraints.  The phrase after &#8220;ON UPDATE&#8221; or &#8220;ON DELETE&#8221; may also other allow other phrases that are specific to the database in use.  The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKey" title="sqlalchemy.schema.ForeignKey"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKey</span></tt></a> and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKeyConstraint" title="sqlalchemy.schema.ForeignKeyConstraint"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></tt></a> objects support the generation of this clause via the <tt class="docutils literal"><span class="pre">onupdate</span></tt> and <tt class="docutils literal"><span class="pre">ondelete</span></tt> keyword arguments.  The value is any string which will be output after the appropriate &#8220;ON UPDATE&#8221; or &#8220;ON DELETE&#8221; phrase:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">child</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;child&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;parent.id&#39;</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="s">&quot;CASCADE&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s">&quot;CASCADE&quot;</span><span class="p">),</span>
+            <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">composite</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;composite&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;rev_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;note_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">ForeignKeyConstraint</span><span class="p">(</span>
+                <span class="p">[</span><span class="s">&#39;rev_id&#39;</span><span class="p">,</span> <span class="s">&#39;note_id&#39;</span><span class="p">],</span>
+                <span class="p">[</span><span class="s">&#39;revisions.id&#39;</span><span class="p">,</span> <span class="s">&#39;revisions.note_id&#39;</span><span class="p">],</span>
+                <span class="n">onupdate</span><span class="o">=</span><span class="s">&quot;CASCADE&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s">&quot;SET NULL&quot;</span>
+    <span class="p">)</span>
+<span class="p">)</span></pre></div>
+</div>
+<p>Note that these clauses are not supported on SQLite, and require <tt class="docutils literal"><span class="pre">InnoDB</span></tt> tables when used with MySQL.  They may also not be supported on other databases.</p>
+</div>
+</div>
+<div class="section" id="unique-constraint">
+<h3>UNIQUE Constraint<a class="headerlink" href="#unique-constraint" title="Permalink to this headline">¶</a></h3>
+<p>Unique constraints can be created anonymously on a single column using the <tt class="docutils literal"><span class="pre">unique</span></tt> keyword on <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a>.  Explicitly named unique constraints and/or those with multiple columns are created via the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.UniqueConstraint" title="sqlalchemy.schema.UniqueConstraint"><tt class="xref py py-class docutils literal"><span class="pre">UniqueConstraint</span></tt></a> table-level construct.</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+<span class="n">mytable</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;mytable&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+
+    <span class="c"># per-column anonymous unique constraint</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col1&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col2&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col3&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+
+    <span class="c"># explicit/composite unique constraint.  &#39;name&#39; is optional.</span>
+    <span class="n">UniqueConstraint</span><span class="p">(</span><span class="s">&#39;col2&#39;</span><span class="p">,</span> <span class="s">&#39;col3&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;uix_1&#39;</span><span class="p">)</span>
+    <span class="p">)</span></pre></div>
+</div>
+</div>
+<div class="section" id="check-constraint">
+<h3>CHECK Constraint<a class="headerlink" href="#check-constraint" title="Permalink to this headline">¶</a></h3>
+<p>Check constraints can be named or unnamed and can be created at the Column or Table level, using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.CheckConstraint" title="sqlalchemy.schema.CheckConstraint"><tt class="xref py py-class docutils literal"><span class="pre">CheckConstraint</span></tt></a> construct.  The text of the check constraint is passed directly through to the database, so there is limited &#8220;database independent&#8221; behavior.  Column level check constraints generally should only refer to the column to which they are placed, while table level constraints can refer to any columns in the table.</p>
+<p>Note that some databases do not actively support check constraints such as MySQL and SQLite.</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+<span class="n">mytable</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;mytable&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+
+    <span class="c"># per-column CHECK constraint</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col1&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">CheckConstraint</span><span class="p">(</span><span class="s">&#39;col1&gt;5&#39;</span><span class="p">)),</span>
+
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col2&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col3&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+
+    <span class="c"># table level CHECK constraint.  &#39;name&#39; is optional.</span>
+    <span class="n">CheckConstraint</span><span class="p">(</span><span class="s">&#39;col2 &gt; col3 + 5&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;check1&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<a href='#' class='sql_link'>sql</a><span class="n">mytable</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE TABLE mytable (
+    col1 INTEGER  CHECK (col1>5),
+    col2 INTEGER,
+    col3 INTEGER,
+    CONSTRAINT check1  CHECK (col2 > col3 + 5)
+)</div></pre></div>
+</div>
+</div>
+<div class="section" id="indexes">
+<h3>Indexes<a class="headerlink" href="#indexes" title="Permalink to this headline">¶</a></h3>
+<p>Indexes can be created anonymously (using an auto-generated name <tt class="docutils literal"><span class="pre">ix_&lt;column</span> <span class="pre">label&gt;</span></tt>) for a single column using the inline <tt class="docutils literal"><span class="pre">index</span></tt> keyword on <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a>, which also modifies the usage of <tt class="docutils literal"><span class="pre">unique</span></tt> to apply the uniqueness to the index itself, instead of adding a separate UNIQUE constraint.  For indexes with specific names or which encompass more than one column, use the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Index" title="sqlalchemy.schema.Index"><tt class="xref py py-class docutils literal"><span class="pre">Index</span></tt></a> construct, which requires a name.</p>
+<p>Note that the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Index" title="sqlalchemy.schema.Index"><tt class="xref py py-class docutils literal"><span class="pre">Index</span></tt></a> construct is created <strong>externally</strong> to the table which it corresponds, using <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Column" title="sqlalchemy.schema.Column"><tt class="xref py py-class docutils literal"><span class="pre">Column</span></tt></a> objects and not strings.</p>
+<p>Below we illustrate a <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> with several <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Index" title="sqlalchemy.schema.Index"><tt class="xref py py-class docutils literal"><span class="pre">Index</span></tt></a> objects associated.  The DDL for &#8220;CREATE INDEX&#8221; is issued right after the create statements for the table:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">meta</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+<span class="n">mytable</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;mytable&#39;</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span>
+    <span class="c"># an indexed column, with index &quot;ix_mytable_col1&quot;</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col1&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+
+    <span class="c"># a uniquely indexed column with index &quot;ix_mytable_col2&quot;</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col2&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col3&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col4&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col5&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="n">Column</span><span class="p">(</span><span class="s">&#39;col6&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">),</span>
+    <span class="p">)</span>
+
+<span class="c"># place an index on col3, col4</span>
+<span class="n">Index</span><span class="p">(</span><span class="s">&#39;idx_col34&#39;</span><span class="p">,</span> <span class="n">mytable</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">col3</span><span class="p">,</span> <span class="n">mytable</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">col4</span><span class="p">)</span>
+
+<span class="c"># place a unique index on col5, col6</span>
+<span class="n">Index</span><span class="p">(</span><span class="s">&#39;myindex&#39;</span><span class="p">,</span> <span class="n">mytable</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">col5</span><span class="p">,</span> <span class="n">mytable</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">col6</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<a href='#' class='sql_link'>sql</a><span class="n">mytable</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE TABLE mytable (
+    col1 INTEGER,
+    col2 INTEGER,
+    col3 INTEGER,
+    col4 INTEGER,
+    col5 INTEGER,
+    col6 INTEGER
+)
+CREATE INDEX ix_mytable_col1 ON mytable (col1)
+CREATE UNIQUE INDEX ix_mytable_col2 ON mytable (col2)
+CREATE UNIQUE INDEX myindex ON mytable (col5, col6)
+CREATE INDEX idx_col34 ON mytable (col3, col4)</div></pre></div>
+</div>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Index" title="sqlalchemy.schema.Index"><tt class="xref py py-class docutils literal"><span class="pre">Index</span></tt></a> object also supports its own <tt class="docutils literal"><span class="pre">create()</span></tt> method:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="n">Index</span><span class="p">(</span><span class="s">&#39;someindex&#39;</span><span class="p">,</span> <span class="n">mytable</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">col5</span><span class="p">)</span>
+<a href='#' class='sql_link'>sql</a><span class="n">i</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE INDEX someindex ON mytable (col5)</div></pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="customizing-ddl">
+<h2>Customizing DDL<a class="headerlink" href="#customizing-ddl" title="Permalink to this headline">¶</a></h2>
+<p>In the preceding sections we&#8217;ve discussed a variety of schema constructs including <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a>, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.ForeignKeyConstraint" title="sqlalchemy.schema.ForeignKeyConstraint"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyConstraint</span></tt></a>, <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.CheckConstraint" title="sqlalchemy.schema.CheckConstraint"><tt class="xref py py-class docutils literal"><span class="pre">CheckConstraint</span></tt></a>, and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Sequence" title="sqlalchemy.schema.Sequence"><tt class="xref py py-class docutils literal"><span class="pre">Sequence</span></tt></a>.   Throughout, we&#8217;ve relied upon the <tt class="docutils literal"><span class="pre">create()</span></tt> and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData.create_all" title="sqlalchemy.schema.MetaData.create_all"><tt class="xref py py-func docutils literal"><span class="pre">create_all()</span></tt></a> methods of <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> and <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> in order to issue data definition language (DDL) for all constructs.   When issued, a pre-determined order of operations is invoked, and DDL to create each table is created unconditionally including all constraints and other objects associated with it.   For more complex scenarios where database-specific DDL is required, SQLAlchemy offers two techniques which can be used to add any DDL based on any condition, either accompanying the standard generation of tables or by itself.</p>
+<div class="section" id="controlling-ddl-sequences">
+<h3>Controlling DDL Sequences<a class="headerlink" href="#controlling-ddl-sequences" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">sqlalchemy.schema</span></tt> package contains SQL expression constructs that provide DDL expressions.   For example, to produce a <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">TABLE</span></tt> statement:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sqlalchemy.schema</span> <span class="kn">import</span> <span class="n">CreateTable</span>
+<a href='#' class='sql_link'>sql</a><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">CreateTable</span><span class="p">(</span><span class="n">mytable</span><span class="p">))</span>
+<div class='popup_sql'>CREATE TABLE mytable (
+    col1 INTEGER,
+    col2 INTEGER,
+    col3 INTEGER,
+    col4 INTEGER,
+    col5 INTEGER,
+    col6 INTEGER
+)</div></pre></div>
+</div>
+<p>Above, the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.CreateTable" title="sqlalchemy.schema.CreateTable"><tt class="xref py py-class docutils literal"><span class="pre">CreateTable</span></tt></a> construct works like any other expression construct (such as <tt class="docutils literal"><span class="pre">select()</span></tt>, <tt class="docutils literal"><span class="pre">table.insert()</span></tt>, etc.).  A full reference of available constructs is in <a class="reference internal" href="reference/sqlalchemy/schema.html#schema-api-ddl"><em>DDL Generation</em></a>.</p>
+<p>The DDL constructs all extend a common base class which provides the capability to be associated with an individual <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> or <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object, to be invoked upon create/drop events.   Consider the example of a table which contains a CHECK constraint:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">users</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;users&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+               <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+               <span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_name&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">(</span><span class="mi">40</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+               <span class="n">CheckConstraint</span><span class="p">(</span><span class="s">&#39;length(user_name) &gt;= 8&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;cst_user_name_length&quot;</span><span class="p">)</span>
+               <span class="p">)</span>
+
+<a href='#' class='sql_link'>sql</a><span class="n">users</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE TABLE users (
+    user_id SERIAL NOT NULL,
+    user_name VARCHAR(40) NOT NULL,
+    PRIMARY KEY (user_id),
+    CONSTRAINT cst_user_name_length  CHECK (length(user_name) >= 8)
+)</div></pre></div>
+</div>
+<p>The above table contains a column &#8220;user_name&#8221; which is subject to a CHECK constraint that validates that the length of the string is at least eight characters.   When a <tt class="docutils literal"><span class="pre">create()</span></tt> is issued for this table, DDL for the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.CheckConstraint" title="sqlalchemy.schema.CheckConstraint"><tt class="xref py py-class docutils literal"><span class="pre">CheckConstraint</span></tt></a> will also be issued inline within the table definition.</p>
+<p>The <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.CheckConstraint" title="sqlalchemy.schema.CheckConstraint"><tt class="xref py py-class docutils literal"><span class="pre">CheckConstraint</span></tt></a> construct can also be constructed externally and associated with the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> afterwards:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">constraint</span> <span class="o">=</span> <span class="n">CheckConstraint</span><span class="p">(</span><span class="s">&#39;length(user_name) &gt;= 8&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;cst_user_name_length&quot;</span><span class="p">)</span>
+<span class="n">users</span><span class="o">.</span><span class="n">append_constraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span></pre></div>
+</div>
+<p>So far, the effect is the same.  However, if we create DDL elements corresponding to the creation and removal of this constraint, and associate them with the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> as events, these new events will take over the job of issuing DDL for the constraint.  Additionally, the constraint will be added via ALTER:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">AddConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;after-create&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+<span class="n">DropConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;before-drop&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+
+<a href='#' class='sql_link'>sql</a><span class="n">users</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE TABLE users (
+    user_id SERIAL NOT NULL,
+    user_name VARCHAR(40) NOT NULL,
+    PRIMARY KEY (user_id)
+)
+
+ALTER TABLE users ADD CONSTRAINT cst_user_name_length  CHECK (length(user_name) >= 8)</div>
+<a href='#' class='sql_link'>sql</a><span class="n">users</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>ALTER TABLE users DROP CONSTRAINT cst_user_name_length
+DROP TABLE user</div></pre></div>
+</div>
+<p>The real usefulness of the above becomes clearer once we illustrate the <tt class="docutils literal"><span class="pre">on</span></tt> attribute of a DDL event.  The <tt class="docutils literal"><span class="pre">on</span></tt> parameter is part of the constructor, and may be a string name of a database dialect name, a tuple containing dialect names, or a Python callable.   This will limit the execution of the item to just those dialects, or when the return value of the callable is <tt class="xref docutils literal"><span class="pre">True</span></tt>.  So if our <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.CheckConstraint" title="sqlalchemy.schema.CheckConstraint"><tt class="xref py py-class docutils literal"><span class="pre">CheckConstraint</span></tt></a> was only supported by Postgresql and not other databases, we could limit it to just that dialect:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AddConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s">&#39;postgresql&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;after-create&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+<span class="n">DropConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s">&#39;postgresql&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;before-drop&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span></pre></div>
+</div>
+<p>Or to any set of dialects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AddConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;postgresql&#39;</span><span class="p">,</span> <span class="s">&#39;mysql&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;after-create&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+<span class="n">DropConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;postgresql&#39;</span><span class="p">,</span> <span class="s">&#39;mysql&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;before-drop&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span></pre></div>
+</div>
+<p>When using a callable, the callable is passed the ddl element, event name, the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> or <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object whose &#8220;create&#8221; or &#8220;drop&#8221; event is in progress, and the <a class="reference internal" href="reference/sqlalchemy/connections.html#sqlalchemy.engine.base.Connection" title="sqlalchemy.engine.base.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a> object being used for the operation, as well as additional information as keyword arguments.  The callable can perform checks, such as whether or not a given item already exists.  Below we define <tt class="docutils literal"><span class="pre">should_create()</span></tt> and <tt class="docutils literal"><span class="pre">should_drop()</span></tt> callables that check for the presence of our named constraint:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="k">def</span> <span class="nf">should_create</span><span class="p">(</span><span class="n">ddl</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;select conname from pg_constraint where conname=&#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">ddl</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">should_drop</span><span class="p">(</span><span class="n">ddl</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="n">should_create</span><span class="p">(</span><span class="n">ddl</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+<span class="n">AddConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">should_create</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;after-create&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+<span class="n">DropConstraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">should_drop</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;before-drop&quot;</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+
+<a href='#' class='sql_link'>sql</a><span class="n">users</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>CREATE TABLE users (
+    user_id SERIAL NOT NULL,
+    user_name VARCHAR(40) NOT NULL,
+    PRIMARY KEY (user_id)
+)
+
+select conname from pg_constraint where conname='cst_user_name_length'
+ALTER TABLE users ADD CONSTRAINT cst_user_name_length  CHECK (length(user_name) >= 8)</div>
+<a href='#' class='sql_link'>sql</a><span class="n">users</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+<div class='popup_sql'>select conname from pg_constraint where conname='cst_user_name_length'
+ALTER TABLE users DROP CONSTRAINT cst_user_name_length
+DROP TABLE user</div></pre></div>
+</div>
+</div>
+<div class="section" id="custom-ddl">
+<h3>Custom DDL<a class="headerlink" href="#custom-ddl" title="Permalink to this headline">¶</a></h3>
+<p>Custom DDL phrases are most easily achieved using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.DDL" title="sqlalchemy.schema.DDL"><tt class="xref py py-class docutils literal"><span class="pre">DDL</span></tt></a> construct.  This construct works like all the other DDL elements except it accepts a string which is the
+text to be emitted:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="n">DDL</span><span class="p">(</span><span class="s">&quot;ALTER TABLE users ADD CONSTRAINT &quot;</span>
+    <span class="s">&quot;cst_user_name_length &quot;</span>
+    <span class="s">&quot; CHECK (length(user_name) &gt;= 8)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">execute_at</span><span class="p">(</span><span class="s">&quot;after-create&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span></pre></div>
+</div>
+<p>A more comprehensive method of creating libraries of DDL constructs is to use the <a class="reference internal" href="reference/ext/compiler.html"><em>compiler</em></a> extension.   See that chapter for full details.</p>
+</div>
+</div>
+<div class="section" id="adapting-tables-to-alternate-metadata">
+<h2>Adapting Tables to Alternate Metadata<a class="headerlink" href="#adapting-tables-to-alternate-metadata" title="Permalink to this headline">¶</a></h2>
+<p>A <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table" title="sqlalchemy.schema.Table"><tt class="xref py py-class docutils literal"><span class="pre">Table</span></tt></a> object created against a specific <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.MetaData" title="sqlalchemy.schema.MetaData"><tt class="xref py py-class docutils literal"><span class="pre">MetaData</span></tt></a> object can be re-created against a new MetaData using the <a class="reference internal" href="reference/sqlalchemy/schema.html#sqlalchemy.schema.Table.tometadata" title="sqlalchemy.schema.Table.tometadata"><tt class="xref py py-func docutils literal"><span class="pre">tometadata()</span></tt></a> method:</p>
+<div class="highlight-python+sql"><div class="highlight"><pre><span class="c"># create two metadata</span>
+<span class="n">meta1</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">(</span><span class="s">&#39;sqlite:///querytest.db&#39;</span><span class="p">)</span>
+<span class="n">meta2</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
+
+<span class="c"># load &#39;users&#39; from the sqlite engine</span>
+<span class="n">users_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s">&#39;users&#39;</span><span class="p">,</span> <span class="n">meta1</span><span class="p">,</span> <span class="n">autoload</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c"># create the same Table object for the plain metadata</span>
+<span class="n">users_table_2</span> <span class="o">=</span> <span class="n">users_table</span><span class="o">.</span><span class="n">tometadata</span><span class="p">(</span><span class="n">meta2</span><span class="p">)</span></pre></div>
+</div>
+</div>
+</div>
+
+            </div>
+        </div>
+
+        
+        
+            <div class="bottomnav">
+                
+<div class="prevnext">
+        Previous:
+        <a href="dbengine.html" title="previous chapter">Database Engines</a>
+        Next:
+        <a href="examples.html" title="next chapter">Examples</a>
+</div>
+
+                <div class="doc_copyright">
+                    &copy; Copyright 2007, 2008, 2009, 2010, the SQLAlchemy authors and contributors.
+                    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2+.
+                </div>
+            </div>
+        
+
+
+
+
+
+
+    </body>
+</html>
+
+
+

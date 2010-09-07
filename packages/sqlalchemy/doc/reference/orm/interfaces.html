@@ -1,0 +1,685 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        
+        <title>
+    Interfaces
+ &mdash; SQLAlchemy 0.6.3 Documentation</title>
+        
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/docs.css" type="text/css" />
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+          URL_ROOT:    '../../',
+          VERSION:     '0.6.3',
+          COLLAPSE_MODINDEX: false,
+          FILE_SUFFIX: '.html'
+      };
+    </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/init.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="SQLAlchemy 0.6.3 Documentation" href="../../index.html" />
+        <link rel="up" title="sqlalchemy.orm" href="index.html" />
+        <link rel="next" title="Utilities" href="utilities.html" />
+        <link rel="prev" title="Sessions" href="sessions.html" />
+    
+
+    </head>
+    <body>
+        
+
+
+
+
+        <h1>SQLAlchemy 0.6.3 Documentation</h1>
+
+        <div id="search">
+        Search:
+        <form class="search" action="../../search.html" method="get">
+          <input type="text" name="q" size="18" /> <input type="submit" value="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        </div>
+
+        <div class="versionheader">
+            Version: <span class="versionnum">0.6.3</span> Last Updated: 07/15/2010 12:35:47
+        </div>
+        <div class="clearboth"></div>
+
+        <div class="topnav">
+            <div id="pagecontrol">
+                <a href="../index.html">API Reference</a>
+                |
+                <a href="../../genindex.html">Index</a>
+            
+                <div class="sourcelink">(<a href="../../_sources/reference/orm/interfaces.txt">view source)</div>
+            </div>
+            
+            <div class="navbanner">
+                <a class="totoc" href="../../index.html">Table of Contents</a>
+                        » <a href="../index.html" title="API Reference">API Reference</a>
+                        » <a href="index.html" title="sqlalchemy.orm">sqlalchemy.orm</a>
+                » 
+    Interfaces
+ 
+                
+                
+<div class="prevnext">
+        Previous:
+        <a href="sessions.html" title="previous chapter">Sessions</a>
+        Next:
+        <a href="utilities.html" title="next chapter">Utilities</a>
+</div>
+
+                <h2>
+                    
+    Interfaces
+ 
+                </h2>
+            </div>
+            <div class="clearboth"></div>
+        </div>
+        
+        <div class="document">
+            <div class="body">
+                
+<div class="section" id="module-sqlalchemy.orm.interfaces">
+<span id="interfaces"></span><h1>Interfaces<a class="headerlink" href="#module-sqlalchemy.orm.interfaces" title="Permalink to this headline">¶</a></h1>
+<p>Semi-private module containing various base classes used throughout the ORM.</p>
+<p>Defines the extension classes <a class="reference internal" href="#sqlalchemy.orm.interfaces.MapperExtension" title="sqlalchemy.orm.interfaces.MapperExtension"><tt class="xref py py-class docutils literal"><span class="pre">MapperExtension</span></tt></a>,
+<a class="reference internal" href="#sqlalchemy.orm.interfaces.SessionExtension" title="sqlalchemy.orm.interfaces.SessionExtension"><tt class="xref py py-class docutils literal"><span class="pre">SessionExtension</span></tt></a>, and <a class="reference internal" href="#sqlalchemy.orm.interfaces.AttributeExtension" title="sqlalchemy.orm.interfaces.AttributeExtension"><tt class="xref py py-class docutils literal"><span class="pre">AttributeExtension</span></tt></a> as
+well as other user-subclassable extension objects.</p>
+<dl class="class">
+<dt id="sqlalchemy.orm.interfaces.AttributeExtension">
+<em class="property">class </em><tt class="descclassname">sqlalchemy.orm.interfaces.</tt><tt class="descname">AttributeExtension</tt><a class="headerlink" href="#sqlalchemy.orm.interfaces.AttributeExtension" title="Permalink to this definition">¶</a></dt>
+<dd><p>An event handler for individual attribute change events.</p>
+<p>AttributeExtension is assembled within the descriptors associated
+with a mapped class.</p>
+<dl class="attribute">
+<dt id="sqlalchemy.orm.interfaces.AttributeExtension.active_history">
+<tt class="descname">active_history</tt><a class="headerlink" href="#sqlalchemy.orm.interfaces.AttributeExtension.active_history" title="Permalink to this definition">¶</a></dt>
+<dd><p>indicates that the set() method would like to receive the &#8216;old&#8217; value,
+even if it means firing lazy callables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.AttributeExtension.append">
+<tt class="descname">append</tt><big>(</big><em>state</em>, <em>value</em>, <em>initiator</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.AttributeExtension.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a collection append event.</p>
+<p>The returned value will be used as the actual value to be
+appended.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.AttributeExtension.remove">
+<tt class="descname">remove</tt><big>(</big><em>state</em>, <em>value</em>, <em>initiator</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.AttributeExtension.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a remove event.</p>
+<p>No return value is defined.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.AttributeExtension.set">
+<tt class="descname">set</tt><big>(</big><em>state</em>, <em>value</em>, <em>oldvalue</em>, <em>initiator</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.AttributeExtension.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a set event.</p>
+<p>The returned value will be used as the actual value to be
+set.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager">
+<em class="property">class </em><tt class="descclassname">sqlalchemy.orm.interfaces.</tt><tt class="descname">InstrumentationManager</tt><big>(</big><em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>User-defined class instrumentation extension.</p>
+<p>The API for this class should be considered as semi-stable,
+and may change slightly with new releases.</p>
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.dict_getter">
+<tt class="descname">dict_getter</tt><big>(</big><em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.dict_getter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.dispose">
+<tt class="descname">dispose</tt><big>(</big><em>class_</em>, <em>manager</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.dispose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.get_instance_dict">
+<tt class="descname">get_instance_dict</tt><big>(</big><em>class_</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.get_instance_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.initialize_instance_dict">
+<tt class="descname">initialize_instance_dict</tt><big>(</big><em>class_</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.initialize_instance_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.install_descriptor">
+<tt class="descname">install_descriptor</tt><big>(</big><em>class_</em>, <em>key</em>, <em>inst</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.install_descriptor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.install_member">
+<tt class="descname">install_member</tt><big>(</big><em>class_</em>, <em>key</em>, <em>implementation</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.install_member" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.install_state">
+<tt class="descname">install_state</tt><big>(</big><em>class_</em>, <em>instance</em>, <em>state</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.install_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.instrument_attribute">
+<tt class="descname">instrument_attribute</tt><big>(</big><em>class_</em>, <em>key</em>, <em>inst</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.instrument_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.instrument_collection_class">
+<tt class="descname">instrument_collection_class</tt><big>(</big><em>class_</em>, <em>key</em>, <em>collection_class</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.instrument_collection_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.manage">
+<tt class="descname">manage</tt><big>(</big><em>class_</em>, <em>manager</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.manage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.manager_getter">
+<tt class="descname">manager_getter</tt><big>(</big><em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.manager_getter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.post_configure_attribute">
+<tt class="descname">post_configure_attribute</tt><big>(</big><em>class_</em>, <em>key</em>, <em>inst</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.post_configure_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.remove_state">
+<tt class="descname">remove_state</tt><big>(</big><em>class_</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.remove_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.state_getter">
+<tt class="descname">state_getter</tt><big>(</big><em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.state_getter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.uninstall_descriptor">
+<tt class="descname">uninstall_descriptor</tt><big>(</big><em>class_</em>, <em>key</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.uninstall_descriptor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.InstrumentationManager.uninstall_member">
+<tt class="descname">uninstall_member</tt><big>(</big><em>class_</em>, <em>key</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.InstrumentationManager.uninstall_member" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension">
+<em class="property">class </em><tt class="descclassname">sqlalchemy.orm.interfaces.</tt><tt class="descname">MapperExtension</tt><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base implementation for customizing <tt class="docutils literal"><span class="pre">Mapper</span></tt> behavior.</p>
+<p>New extension classes subclass <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> and are specified
+using the <tt class="docutils literal"><span class="pre">extension</span></tt> mapper() argument, which is a single
+<tt class="docutils literal"><span class="pre">MapperExtension</span></tt> or a list of such.   A single mapper
+can maintain a chain of <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> objects.  When a
+particular mapping event occurs, the corresponding method 
+on each <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> is invoked serially, and each method
+has the ability to halt the chain from proceeding further.</p>
+<p>Each <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> method returns the symbol
+EXT_CONTINUE by default.   This symbol generally means &#8220;move
+to the next <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> for processing&#8221;.  For methods
+that return objects like translated rows or new object
+instances, EXT_CONTINUE means the result of the method
+should be ignored.   In some cases it&#8217;s required for a 
+default mapper activity to be performed, such as adding a 
+new instance to a result list.</p>
+<p>The symbol EXT_STOP has significance within a chain
+of <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> objects that the chain will be stopped
+when this symbol is returned.  Like EXT_CONTINUE, it also
+has additional significance in some cases that a default
+mapper activity will not be performed.</p>
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.after_delete">
+<tt class="descname">after_delete</tt><big>(</big><em>mapper</em>, <em>connection</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.after_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance after that instance is deleted.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.after_insert">
+<tt class="descname">after_insert</tt><big>(</big><em>mapper</em>, <em>connection</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.after_insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance after that instance is inserted.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.after_update">
+<tt class="descname">after_update</tt><big>(</big><em>mapper</em>, <em>connection</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.after_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance after that instance is updated.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.append_result">
+<tt class="descname">append_result</tt><big>(</big><em>mapper</em>, <em>selectcontext</em>, <em>row</em>, <em>instance</em>, <em>result</em>, <em>**flags</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.append_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance before that instance is appended
+to a result list.</p>
+<p>If this method returns EXT_CONTINUE, result appending will proceed
+normally.  if this method returns any other value or None,
+result appending will not proceed for this instance, giving
+this extension an opportunity to do the appending itself, if
+desired.</p>
+<dl class="docutils">
+<dt>mapper</dt>
+<dd>The mapper doing the operation.</dd>
+<dt>selectcontext</dt>
+<dd>The QueryContext generated from the Query.</dd>
+<dt>row</dt>
+<dd>The result row from the database.</dd>
+<dt>instance</dt>
+<dd>The object instance to be appended to the result.</dd>
+<dt>result</dt>
+<dd>List to which results are being appended.</dd>
+<dt>**flags</dt>
+<dd><p class="first">extra information about the row, same as criterion in
+<tt class="docutils literal"><span class="pre">create_row_processor()</span></tt> method of</p>
+<blockquote class="last">
+<a class="reference internal" href="mapping.html#sqlalchemy.orm.interfaces.MapperProperty" title="sqlalchemy.orm.interfaces.MapperProperty"><tt class="xref py py-class docutils literal"><span class="pre">MapperProperty</span></tt></a></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.before_delete">
+<tt class="descname">before_delete</tt><big>(</big><em>mapper</em>, <em>connection</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.before_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance before that instance is deleted.</p>
+<p>Note that <em>no</em> changes to the overall flush plan can be made
+here; and manipulation of the <tt class="docutils literal"><span class="pre">Session</span></tt> will not have the
+desired effect. To manipulate the <tt class="docutils literal"><span class="pre">Session</span></tt> within an
+extension, use <tt class="docutils literal"><span class="pre">SessionExtension</span></tt>.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.before_insert">
+<tt class="descname">before_insert</tt><big>(</big><em>mapper</em>, <em>connection</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.before_insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance before that instance is inserted
+into its table.</p>
+<p>This is a good place to set up primary key values and such
+that aren&#8217;t handled otherwise.</p>
+<p>Column-based attributes can be modified within this method
+which will result in the new value being inserted.  However
+<em>no</em> changes to the overall flush plan can be made, and 
+manipulation of the <tt class="docutils literal"><span class="pre">Session</span></tt> will not have the desired effect.
+To manipulate the <tt class="docutils literal"><span class="pre">Session</span></tt> within an extension, use 
+<tt class="docutils literal"><span class="pre">SessionExtension</span></tt>.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.before_update">
+<tt class="descname">before_update</tt><big>(</big><em>mapper</em>, <em>connection</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.before_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance before that instance is updated.</p>
+<p>Note that this method is called for all instances that are marked as
+&#8220;dirty&#8221;, even those which have no net changes to their column-based
+attributes. An object is marked as dirty when any of its column-based
+attributes have a &#8220;set attribute&#8221; operation called or when any of its
+collections are modified. If, at update time, no column-based
+attributes have any net changes, no UPDATE statement will be issued.
+This means that an instance being sent to before_update is <em>not</em> a
+guarantee that an UPDATE statement will be issued (although you can
+affect the outcome here).</p>
+<p>To detect if the column-based attributes on the object have net
+changes, and will therefore generate an UPDATE statement, use
+<tt class="docutils literal"><span class="pre">object_session(instance).is_modified(instance,</span>
+<span class="pre">include_collections=False)</span></tt>.</p>
+<p>Column-based attributes can be modified within this method
+which will result in the new value being updated.  However
+<em>no</em> changes to the overall flush plan can be made, and 
+manipulation of the <tt class="docutils literal"><span class="pre">Session</span></tt> will not have the desired effect.
+To manipulate the <tt class="docutils literal"><span class="pre">Session</span></tt> within an extension, use 
+<tt class="docutils literal"><span class="pre">SessionExtension</span></tt>.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.create_instance">
+<tt class="descname">create_instance</tt><big>(</big><em>mapper</em>, <em>selectcontext</em>, <em>row</em>, <em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.create_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a row when a new object instance is about to be
+created from that row.</p>
+<p>The method can choose to create the instance itself, or it can return
+EXT_CONTINUE to indicate normal object creation should take place.</p>
+<dl class="docutils">
+<dt>mapper</dt>
+<dd>The mapper doing the operation</dd>
+<dt>selectcontext</dt>
+<dd>The QueryContext generated from the Query.</dd>
+<dt>row</dt>
+<dd>The result row from the database</dd>
+<dt>class_</dt>
+<dd>The class we are mapping.</dd>
+<dt>return value</dt>
+<dd>A new object instance, or EXT_CONTINUE</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.init_failed">
+<tt class="descname">init_failed</tt><big>(</big><em>mapper</em>, <em>class_</em>, <em>oldinit</em>, <em>instance</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.init_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an instance when it&#8217;s constructor has been called, 
+and raised an exception.</p>
+<p>This method is only called during a userland construction of 
+an object.  It is not called when an object is loaded from the
+database.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.init_instance">
+<tt class="descname">init_instance</tt><big>(</big><em>mapper</em>, <em>class_</em>, <em>oldinit</em>, <em>instance</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.init_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an instance when it&#8217;s constructor is called.</p>
+<p>This method is only called during a userland construction of 
+an object.  It is not called when an object is loaded from the
+database.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.instrument_class">
+<tt class="descname">instrument_class</tt><big>(</big><em>mapper</em>, <em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.instrument_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a class when the mapper is first constructed, and has
+applied instrumentation to the mapped class.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.populate_instance">
+<tt class="descname">populate_instance</tt><big>(</big><em>mapper</em>, <em>selectcontext</em>, <em>row</em>, <em>instance</em>, <em>**flags</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.populate_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an instance before that instance has
+its attributes populated.</p>
+<p>This usually corresponds to a newly loaded instance but may
+also correspond to an already-loaded instance which has
+unloaded attributes to be populated.  The method may be called
+many times for a single instance, as multiple result rows are
+used to populate eagerly loaded collections.</p>
+<p>If this method returns EXT_CONTINUE, instance population will
+proceed normally.  If any other value or None is returned,
+instance population will not proceed, giving this extension an
+opportunity to populate the instance itself, if desired.</p>
+<p>As of 0.5, most usages of this hook are obsolete.  For a
+generic &#8220;object has been newly created from a row&#8221; hook, use
+<tt class="docutils literal"><span class="pre">reconstruct_instance()</span></tt>, or the <tt class="docutils literal"><span class="pre">&#64;orm.reconstructor</span></tt>
+decorator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.reconstruct_instance">
+<tt class="descname">reconstruct_instance</tt><big>(</big><em>mapper</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.reconstruct_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive an object instance after it has been created via
+<tt class="docutils literal"><span class="pre">__new__</span></tt>, and after initial attribute population has
+occurred.</p>
+<p>This typically occurs when the instance is created based on
+incoming result rows, and is only called once for that
+instance&#8217;s lifetime.</p>
+<p>Note that during a result-row load, this method is called upon
+the first row received for this instance.  Note that some 
+attributes and collections may or may not be loaded or even 
+initialized, depending on what&#8217;s present in the result rows.</p>
+<p>The return value is only significant within the <tt class="docutils literal"><span class="pre">MapperExtension</span></tt> 
+chain; the parent mapper&#8217;s behavior isn&#8217;t modified by this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.MapperExtension.translate_row">
+<tt class="descname">translate_row</tt><big>(</big><em>mapper</em>, <em>context</em>, <em>row</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.MapperExtension.translate_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform pre-processing on the given result row and return a
+new row instance.</p>
+<p>This is called when the mapper first receives a row, before
+the object identity or the instance itself has been derived
+from that row.   The given row may or may not be a 
+<tt class="docutils literal"><span class="pre">RowProxy</span></tt> object - it will always be a dictionary-like
+object which contains mapped columns as keys.  The 
+returned object should also be a dictionary-like object
+which recognizes mapped columns as keys.</p>
+<p>If the ultimate return value is EXT_CONTINUE, the row
+is not translated.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sqlalchemy.orm.interfaces.PropComparator">
+<em class="property">class </em><tt class="descclassname">sqlalchemy.orm.interfaces.</tt><tt class="descname">PropComparator</tt><big>(</big><em>prop</em>, <em>mapper</em>, <em>adapter=None</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator" title="Permalink to this definition">¶</a></dt>
+<dd><p>defines comparison operations for MapperProperty objects.</p>
+<p>PropComparator instances should also define an accessor &#8216;property&#8217;
+which returns the MapperProperty associated with this
+PropComparator.</p>
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>prop</em>, <em>mapper</em>, <em>adapter=None</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.adapted">
+<tt class="descname">adapted</tt><big>(</big><em>adapter</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.adapted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of this PropComparator which will use the given
+adaption function on the local side of generated expressions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.any">
+<tt class="descname">any</tt><big>(</big><em>criterion=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.any" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if this collection contains any member that meets the
+given criterion.</p>
+<dl class="docutils">
+<dt>criterion</dt>
+<dd>an optional ClauseElement formulated against the member class&#8217; table
+or attributes.</dd>
+<dt>**kwargs</dt>
+<dd>key/value pairs corresponding to member class attribute names which
+will be compared via equality to the corresponding values.</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.any_op">
+<em class="property">static </em><tt class="descname">any_op</tt><big>(</big><em>a</em>, <em>b</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.any_op" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.has">
+<tt class="descname">has</tt><big>(</big><em>criterion=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.has" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if this element references a member which meets the
+given criterion.</p>
+<dl class="docutils">
+<dt>criterion</dt>
+<dd>an optional ClauseElement formulated against the member class&#8217; table
+or attributes.</dd>
+<dt>**kwargs</dt>
+<dd>key/value pairs corresponding to member class attribute names which
+will be compared via equality to the corresponding values.</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.has_op">
+<em class="property">static </em><tt class="descname">has_op</tt><big>(</big><em>a</em>, <em>b</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.has_op" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.of_type">
+<tt class="descname">of_type</tt><big>(</big><em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.of_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redefine this object in terms of a polymorphic subclass.</p>
+<p>Returns a new PropComparator from which further criterion can be
+evaluated.</p>
+<p>e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Company</span><span class="o">.</span><span class="n">employees</span><span class="o">.</span><span class="n">of_type</span><span class="p">(</span><span class="n">Engineer</span><span class="p">))</span><span class="o">.</span>\
+   <span class="nb">filter</span><span class="p">(</span><span class="n">Engineer</span><span class="o">.</span><span class="n">name</span><span class="o">==</span><span class="s">&#39;foo&#39;</span><span class="p">)</span></pre></div>
+</div>
+<dl class="docutils">
+<dt>class_</dt>
+<dd>a class or mapper indicating that criterion will be against
+this specific subclass.</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="sqlalchemy.orm.interfaces.PropComparator.of_type_op">
+<em class="property">static </em><tt class="descname">of_type_op</tt><big>(</big><em>a</em>, <em>class_</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.PropComparator.of_type_op" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension">
+<em class="property">class </em><tt class="descclassname">sqlalchemy.orm.interfaces.</tt><tt class="descname">SessionExtension</tt><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension" title="Permalink to this definition">¶</a></dt>
+<dd><p>An extension hook object for Sessions.  Subclasses may be
+installed into a Session (or sessionmaker) using the <tt class="docutils literal"><span class="pre">extension</span></tt>
+keyword argument.</p>
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_attach">
+<tt class="descname">after_attach</tt><big>(</big><em>session</em>, <em>instance</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_attach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after an instance is attached to a session.</p>
+<p>This is called after an add, delete or merge.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_begin">
+<tt class="descname">after_begin</tt><big>(</big><em>session</em>, <em>transaction</em>, <em>connection</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_begin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after a transaction is begun on a connection</p>
+<p><cite>transaction</cite> is the SessionTransaction. This method is called
+after an engine level transaction is begun on a connection.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_bulk_delete">
+<tt class="descname">after_bulk_delete</tt><big>(</big><em>session</em>, <em>query</em>, <em>query_context</em>, <em>result</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_bulk_delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after a bulk delete operation to the session.</p>
+<p>This is called after a session.query(...).delete()</p>
+<p><cite>query</cite> is the query object that this delete operation was
+called on. <cite>query_context</cite> was the query context object.
+<cite>result</cite> is the result object returned from the bulk operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_bulk_update">
+<tt class="descname">after_bulk_update</tt><big>(</big><em>session</em>, <em>query</em>, <em>query_context</em>, <em>result</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_bulk_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after a bulk update operation to the session.</p>
+<p>This is called after a session.query(...).update()</p>
+<p><cite>query</cite> is the query object that this update operation was
+called on. <cite>query_context</cite> was the query context object.
+<cite>result</cite> is the result object returned from the bulk operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_commit">
+<tt class="descname">after_commit</tt><big>(</big><em>session</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after a commit has occured.</p>
+<p>Note that this may not be per-flush if a longer running
+transaction is ongoing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_flush">
+<tt class="descname">after_flush</tt><big>(</big><em>session</em>, <em>flush_context</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after flush has completed, but before commit has been
+called.</p>
+<p>Note that the session&#8217;s state is still in pre-flush, i.e. &#8216;new&#8217;,
+&#8216;dirty&#8217;, and &#8216;deleted&#8217; lists still show pre-flush state as well
+as the history settings on instance attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_flush_postexec">
+<tt class="descname">after_flush_postexec</tt><big>(</big><em>session</em>, <em>flush_context</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_flush_postexec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after flush has completed, and after the post-exec
+state occurs.</p>
+<p>This will be when the &#8216;new&#8217;, &#8216;dirty&#8217;, and &#8216;deleted&#8217; lists are in
+their final state.  An actual commit() may or may not have
+occured, depending on whether or not the flush started its own
+transaction or participated in a larger transaction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.after_rollback">
+<tt class="descname">after_rollback</tt><big>(</big><em>session</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.after_rollback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute after a rollback has occured.</p>
+<p>Note that this may not be per-flush if a longer running
+transaction is ongoing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.before_commit">
+<tt class="descname">before_commit</tt><big>(</big><em>session</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.before_commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute right before commit is called.</p>
+<p>Note that this may not be per-flush if a longer running
+transaction is ongoing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sqlalchemy.orm.interfaces.SessionExtension.before_flush">
+<tt class="descname">before_flush</tt><big>(</big><em>session</em>, <em>flush_context</em>, <em>instances</em><big>)</big><a class="headerlink" href="#sqlalchemy.orm.interfaces.SessionExtension.before_flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute before flush process has started.</p>
+<p><cite>instances</cite> is an optional list of objects which were passed to
+the <tt class="docutils literal"><span class="pre">flush()</span></tt> method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+            </div>
+        </div>
+
+        
+        
+            <div class="bottomnav">
+                
+<div class="prevnext">
+        Previous:
+        <a href="sessions.html" title="previous chapter">Sessions</a>
+        Next:
+        <a href="utilities.html" title="next chapter">Utilities</a>
+</div>
+
+                <div class="doc_copyright">
+                    &copy; Copyright 2007, 2008, 2009, 2010, the SQLAlchemy authors and contributors.
+                    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2+.
+                </div>
+            </div>
+        
+
+
+
+
+
+
+    </body>
+</html>
+
+
+

@@ -1,0 +1,6 @@
+python-dateutil
+sqlalchemy
+anyjson
+carrot>=0.10.5
+pyparsing
+multiprocessing==2.6.2.1
