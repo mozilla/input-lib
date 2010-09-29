@@ -25,6 +25,7 @@ src/django-cronjobs
 src/django-mozilla-product-details
 src/django-multidb-router
 src/jingo
+src/nuggets
 src/schematic
 src/textcluster
 src/tower
