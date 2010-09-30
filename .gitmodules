@@ -21,4 +21,7 @@
 	url = git://github.com/jsocol/django-cronjobs
 [submodule "src/textcluster"]
 	path = src/textcluster
-	url = git://github.com/davedash/textcluster
+    url = git://github.com/davedash/textcluster
+[submodule "src/nuggets"]
+	path = src/nuggets
+    url = git://github.com/mozilla/nuggets.git
