@@ -20,6 +20,7 @@ packages/importlib/
 packages/pyparsing/
 packages/python-dateutil/
 packages/sqlalchemy/
+src/commonware
 src/django-cache-machine
 src/django-cronjobs
 src/django-mozilla-product-details
