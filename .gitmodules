@@ -25,3 +25,6 @@
 [submodule "src/nuggets"]
 	path = src/nuggets
     url = git://github.com/mozilla/nuggets.git
+[submodule "src/commonware"]
+	path = src/commonware
+	url = git://github.com/jsocol/commonware.git
