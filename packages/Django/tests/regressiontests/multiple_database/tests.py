@@ -883,7 +883,13 @@ class QueryTestCase(TestCase):
         self.assertRaises(ValueError, str, qs.query)
 
         # Evaluating the query shouldn't work, either
-        self.assertRaises(ValueError, list, qs)
+        try:
+            for obj in qs:
+                pass
+            self.fail('Iterating over query should raise ValueError')
+        except ValueError:
+            pass
+
 
 class TestRouter(object):
     # A test router. The behaviour is vaguely master/slave, but the
@@ -1491,18 +1497,9 @@ class AuthTestCase(TestCase):
         self.old_routers = router.routers
         router.routers = [AuthRouter()]
 
-        # Redirect stdout to a buffer so we can test
-        # the output of a management command
-        self.old_stdout = sys.stdout
-        self.stdout = StringIO()
-        sys.stdout = self.stdout
-
     def tearDown(self):
         # Restore the 'other' database as an independent database
         router.routers = self.old_routers
-
-        # Restore stdout
-        sys.stdout = self.old_stdout
 
     def test_auth_manager(self):
         "The methods on the auth manager obey database hints"
@@ -1539,14 +1536,16 @@ class AuthTestCase(TestCase):
 
         # Check that dumping the default database doesn't try to include auth
         # because allow_syncdb prohibits auth on default
-        self.stdout.flush()
-        management.call_command('dumpdata', 'auth', format='json', database='default')
-        self.assertEquals(self.stdout.getvalue(), '[]\n')
+        new_io = StringIO()
+        management.call_command('dumpdata', 'auth', format='json', database='default', stdout=new_io)
+        command_output = new_io.getvalue().strip()
+        self.assertEqual(command_output, '[]')
 
         # Check that dumping the other database does include auth
-        self.stdout.flush()
-        management.call_command('dumpdata', 'auth', format='json', database='other')
-        self.assertTrue('alice@example.com' in self.stdout.getvalue())
+        new_io = StringIO()
+        management.call_command('dumpdata', 'auth', format='json', database='other', stdout=new_io)
+        command_output = new_io.getvalue().strip()
+        self.assertTrue('"email": "alice@example.com",' in command_output)
 
 class UserProfileTestCase(TestCase):
     def setUp(self):
@@ -1570,10 +1569,30 @@ class UserProfileTestCase(TestCase):
         self.assertEquals(alice.get_profile().flavor, 'chocolate')
         self.assertEquals(bob.get_profile().flavor, 'crunchy frog')
 
+class AntiPetRouter(object):
+    # A router that only expresses an opinion on syncdb,
+    # passing pets to the 'other' database
+
+    def allow_syncdb(self, db, model):
+        "Make sure the auth app only appears on the 'other' db"
+        if db == 'other':
+            return model._meta.object_name == 'Pet'
+        else:
+            return model._meta.object_name != 'Pet'
+        return None
 
 class FixtureTestCase(TestCase):
     multi_db = True
     fixtures = ['multidb-common', 'multidb']
+
+    def setUp(self):
+        # Install the anti-pet router
+        self.old_routers = router.routers
+        router.routers = [AntiPetRouter()]
+
+    def tearDown(self):
+        # Restore the 'other' database as an independent database
+        router.routers = self.old_routers
 
     def test_fixture_loading(self):
         "Multi-db fixtures are loaded correctly"
@@ -1611,6 +1630,14 @@ class FixtureTestCase(TestCase):
             Book.objects.using('other').get(title="The Definitive Guide to Django")
         except Book.DoesNotExist:
             self.fail('"The Definitive Guide to Django" should exist on both databases')
+
+    def test_pseudo_empty_fixtures(self):
+        "A fixture can contain entries, but lead to nothing in the database; this shouldn't raise an error (ref #14068)"
+        new_io = StringIO()
+        management.call_command('loaddata', 'pets', stdout=new_io, stderr=new_io)
+        command_output = new_io.getvalue().strip()
+        # No objects will actually be loaded
+        self.assertTrue("Installed 0 object(s) (of 2) from 1 fixture(s)" in command_output)
 
 class PickleQuerySetTestCase(TestCase):
     multi_db = True
