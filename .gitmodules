@@ -28,3 +28,6 @@
 [submodule "src/commonware"]
 	path = src/commonware
 	url = git://github.com/jsocol/commonware.git
+[submodule "src/jingo-minify"]
+	path = src/jingo-minify
+	url = git://github.com/jsocol/jingo-minify.git
