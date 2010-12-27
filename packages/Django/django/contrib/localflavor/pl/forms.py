@@ -7,7 +7,6 @@ import re
 from django.forms import ValidationError
 from django.forms.fields import Select, RegexField
 from django.utils.translation import ugettext_lazy as _
-from django.core.validators import EMPTY_VALUES
 
 class PLProvinceSelect(Select):
     """
@@ -46,8 +45,6 @@ class PLPESELField(RegexField):
 
     def clean(self,value):
         super(PLPESELField, self).clean(value)
-        if value in EMPTY_VALUES:
-            return u''
         if not self.has_valid_checksum(value):
             raise ValidationError(self.error_messages['checksum'])
         return u'%s' % value
@@ -81,8 +78,6 @@ class PLNIPField(RegexField):
 
     def clean(self,value):
         super(PLNIPField, self).clean(value)
-        if value in EMPTY_VALUES:
-            return u''
         value = re.sub("[-]", "", value)
         if not self.has_valid_checksum(value):
             raise ValidationError(self.error_messages['checksum'])
@@ -121,8 +116,6 @@ class PLREGONField(RegexField):
 
     def clean(self,value):
         super(PLREGONField, self).clean(value)
-        if value in EMPTY_VALUES:
-            return u''
         if not self.has_valid_checksum(value):
             raise ValidationError(self.error_messages['checksum'])
         return u'%s' % value

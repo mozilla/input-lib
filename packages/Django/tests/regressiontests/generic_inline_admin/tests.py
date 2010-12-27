@@ -1,13 +1,12 @@
 # coding: utf-8
 
+from django.test import TestCase
 from django.conf import settings
 from django.contrib.contenttypes.generic import generic_inlineformset_factory
-from django.test import TestCase
 
 # local test models
 from models import Episode, EpisodeExtra, EpisodeMaxNum, EpisodeExclude, \
                    Media, EpisodePermanent, MediaPermanentInline
-
 
 class GenericAdminViewTest(TestCase):
     fixtures = ['users.xml']
@@ -42,14 +41,14 @@ class GenericAdminViewTest(TestCase):
         A smoke test to ensure GET on the add_view works.
         """
         response = self.client.get('/generic_inline_admin/admin/generic_inline_admin/episode/add/')
-        self.assertEqual(response.status_code, 200)
+        self.failUnlessEqual(response.status_code, 200)
 
     def testBasicEditGet(self):
         """
         A smoke test to ensure GET on the change_view works.
         """
         response = self.client.get('/generic_inline_admin/admin/generic_inline_admin/episode/%d/' % self.episode_pk)
-        self.assertEqual(response.status_code, 200)
+        self.failUnlessEqual(response.status_code, 200)
 
     def testBasicAddPost(self):
         """
@@ -63,7 +62,7 @@ class GenericAdminViewTest(TestCase):
             "generic_inline_admin-media-content_type-object_id-MAX_NUM_FORMS": u"0",
         }
         response = self.client.post('/generic_inline_admin/admin/generic_inline_admin/episode/add/', post_data)
-        self.assertEqual(response.status_code, 302) # redirect somewhere
+        self.failUnlessEqual(response.status_code, 302) # redirect somewhere
 
     def testBasicEditPost(self):
         """
@@ -84,7 +83,7 @@ class GenericAdminViewTest(TestCase):
         }
         url = '/generic_inline_admin/admin/generic_inline_admin/episode/%d/' % self.episode_pk
         response = self.client.post(url, post_data)
-        self.assertEqual(response.status_code, 302) # redirect somewhere
+        self.failUnlessEqual(response.status_code, 302) # redirect somewhere
 
     def testGenericInlineFormset(self):
         EpisodeMediaFormSet = generic_inlineformset_factory(Media, can_delete=False, extra=3)
@@ -119,7 +118,7 @@ class GenericAdminViewTest(TestCase):
         # Regression test for #12340.
         e = Episode.objects.get(name='This Week in Django')
         formset = inline_formset(instance=e)
-        self.assertTrue(formset.get_queryset().ordered)
+        self.failUnless(formset.get_queryset().ordered)
 
 class GenericInlineAdminParametersTest(TestCase):
     fixtures = ['users.xml']
@@ -179,7 +178,7 @@ class GenericInlineAdminParametersTest(TestCase):
         e = self._create_object(EpisodeExclude)
         response = self.client.get('/generic_inline_admin/admin/generic_inline_admin/episodeexclude/%s/' % e.pk)
         formset = response.context['inline_admin_formsets'][0].formset
-        self.assertFalse('url' in formset.forms[0], 'The formset has excluded "url" field.')
+        self.failIf('url' in formset.forms[0], 'The formset has excluded "url" field.')
 
 class GenericInlineAdminWithUniqueTogetherTest(TestCase):
     fixtures = ['users.xml']
@@ -201,9 +200,8 @@ class GenericInlineAdminWithUniqueTogetherTest(TestCase):
             "generic_inline_admin-phonenumber-content_type-object_id-0-phone_number": "555-555-5555",
         }
         response = self.client.get('/generic_inline_admin/admin/generic_inline_admin/contact/add/')
-        self.assertEqual(response.status_code, 200)
         response = self.client.post('/generic_inline_admin/admin/generic_inline_admin/contact/add/', post_data)
-        self.assertEqual(response.status_code, 302) # redirect somewhere
+        self.failUnlessEqual(response.status_code, 302) # redirect somewhere
 
 class NoInlineDeletionTest(TestCase):
     def test_no_deletion(self):

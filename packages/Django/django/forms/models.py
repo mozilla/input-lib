@@ -244,8 +244,10 @@ class BaseModelForm(BaseForm):
             # if we didn't get an instance, instantiate a new one
             self.instance = opts.model()
             object_data = {}
+            self.instance._adding = True
         else:
             self.instance = instance
+            self.instance._adding = False
             object_data = model_to_dict(instance, opts.fields, opts.exclude)
         # if initial was provided, it should override the values from instance
         if initial is not None:
@@ -514,9 +516,10 @@ class BaseModelFormSet(BaseFormSet):
                 # it's already invalid
                 if not hasattr(form, "cleaned_data"):
                     continue
-                # get data for each field of each of unique_check
-                row_data = tuple([form.cleaned_data[field] for field in unique_check if field in form.cleaned_data])
-                if row_data and not None in row_data:
+                # get each of the fields for which we have data on this form
+                if [f for f in unique_check if f in form.cleaned_data and form.cleaned_data[f] is not None]:
+                    # get the data itself
+                    row_data = tuple([form.cleaned_data[field] for field in unique_check])
                     # if we've aready seen it then we have a uniqueness failure
                     if row_data in seen_data:
                         # poke error messages into the right places and mark
@@ -993,7 +996,7 @@ class ModelChoiceField(ChoiceField):
         try:
             key = self.to_field_name or 'pk'
             value = self.queryset.get(**{key: value})
-        except (ValueError, self.queryset.model.DoesNotExist):
+        except self.queryset.model.DoesNotExist:
             raise ValidationError(self.error_messages['invalid_choice'])
         return value
 
@@ -1035,9 +1038,6 @@ class ModelMultipleChoiceField(ModelChoiceField):
         for val in value:
             if force_unicode(val) not in pks:
                 raise ValidationError(self.error_messages['invalid_choice'] % val)
-        # Since this overrides the inherited ModelChoiceField.clean
-        # we run custom validators here
-        self.run_validators(value)
         return qs
 
     def prepare_value(self, value):

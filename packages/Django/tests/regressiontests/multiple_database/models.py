@@ -30,21 +30,7 @@ class Person(models.Model):
     class Meta:
         ordering = ('name',)
 
-# This book manager doesn't do anything interesting; it just
-# exists to strip out the 'extra_arg' argument to certain
-# calls. This argument is used to establish that the BookManager
-# is actually getting used when it should be.
-class BookManager(models.Manager):
-    def create(self, *args, **kwargs):
-        kwargs.pop('extra_arg', None)
-        return super(BookManager, self).create(*args, **kwargs)
-
-    def get_or_create(self, *args, **kwargs):
-        kwargs.pop('extra_arg', None)
-        return super(BookManager, self).get_or_create(*args, **kwargs)
-
 class Book(models.Model):
-    objects = BookManager()
     title = models.CharField(max_length=100)
     published = models.DateField()
     authors = models.ManyToManyField(Person)
@@ -74,3 +60,4 @@ class UserProfile(models.Model):
 
     class Meta:
         ordering = ('flavor',)
+

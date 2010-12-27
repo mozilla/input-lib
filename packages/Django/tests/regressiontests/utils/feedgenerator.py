@@ -1,9 +1,9 @@
 import datetime
-import unittest
+from unittest import TestCase
 
 from django.utils import feedgenerator, tzinfo
 
-class FeedgeneratorTest(unittest.TestCase):
+class FeedgeneratorTest(TestCase):
     """
     Tests for the low-level syndication feed framework.
     """

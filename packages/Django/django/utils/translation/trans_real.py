@@ -439,11 +439,10 @@ def templatize(src):
                 else:
                     singular.append('%%(%s)s' % t.contents)
             elif t.token_type == TOKEN_TEXT:
-                contents = t.contents.replace('%', '%%')
                 if inplural:
-                    plural.append(contents)
+                    plural.append(t.contents)
                 else:
-                    singular.append(contents)
+                    singular.append(t.contents)
         else:
             if t.token_type == TOKEN_BLOCK:
                 imatch = inline_re.match(t.contents)

@@ -28,13 +28,11 @@ class CommentsAdmin(admin.ModelAdmin):
     def get_actions(self, request):
         actions = super(CommentsAdmin, self).get_actions(request)
         # Only superusers should be able to delete the comments from the DB.
-        if not request.user.is_superuser and 'delete_selected' in actions:
+        if not request.user.is_superuser:
             actions.pop('delete_selected')
         if not request.user.has_perm('comments.can_moderate'):
-            if 'approve_comments' in actions:
-                actions.pop('approve_comments')
-            if 'remove_comments' in actions:
-                actions.pop('remove_comments')
+            actions.pop('approve_comments')
+            actions.pop('remove_comments')
         return actions
 
     def flag_comments(self, request, queryset):

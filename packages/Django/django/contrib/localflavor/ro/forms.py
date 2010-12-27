@@ -20,7 +20,7 @@ class ROCIFField(RegexField):
     }
 
     def __init__(self, *args, **kwargs):
-        super(ROCIFField, self).__init__(r'^(RO)?[0-9]{2,10}', max_length=10,
+        super(ROCIFField, self).__init__(r'^[0-9]{2,10}', max_length=10,
                 min_length=2, *args, **kwargs)
 
     def clean(self, value):
@@ -65,8 +65,6 @@ class ROCNPField(RegexField):
         CNP validations
         """
         value = super(ROCNPField, self).clean(value)
-        if value in EMPTY_VALUES:
-            return u''
         # check birthdate digits
         import datetime
         try:
@@ -152,8 +150,6 @@ class ROIBANField(RegexField):
         Strips - and spaces, performs country code and checksum validation
         """
         value = super(ROIBANField, self).clean(value)
-        if value in EMPTY_VALUES:
-            return u''
         value = value.replace('-','')
         value = value.replace(' ','')
         value = value.upper()
@@ -184,8 +180,6 @@ class ROPhoneNumberField(RegexField):
         Strips -, (, ) and spaces. Checks the final length.
         """
         value = super(ROPhoneNumberField, self).clean(value)
-        if value in EMPTY_VALUES:
-            return u''
         value = value.replace('-','')
         value = value.replace('(','')
         value = value.replace(')','')

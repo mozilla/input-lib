@@ -1,11 +1,10 @@
-import re
+import re, os, unittest
 from django.db import connection
 from django.contrib.gis import gdal
-from django.contrib.gis.geos import fromstr, GEOSGeometry, \
-    Point, LineString, LinearRing, Polygon, GeometryCollection
+from django.contrib.gis.geos import *
 from django.contrib.gis.measure import Distance
 from django.contrib.gis.tests.utils import \
-    no_mysql, no_oracle, no_spatialite, \
+    no_mysql, no_oracle, no_postgis, no_spatialite, \
     mysql, oracle, postgis, spatialite
 from django.test import TestCase
 
@@ -733,3 +732,11 @@ class GeoModelTest(TestCase):
 from test_feeds import GeoFeedTest
 from test_regress import GeoRegressionTests
 from test_sitemaps import GeoSitemapTest
+
+def suite():
+    s = unittest.TestSuite()
+    s.addTest(unittest.makeSuite(GeoModelTest))
+    s.addTest(unittest.makeSuite(GeoFeedTest))
+    s.addTest(unittest.makeSuite(GeoSitemapTest))
+    s.addTest(unittest.makeSuite(GeoRegressionTests))
+    return s

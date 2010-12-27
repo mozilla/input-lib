@@ -101,11 +101,7 @@ cStringIO_ library as a temporary holding place for your PDF file. The cStringIO
 library provides a file-like object interface that is particularly efficient.
 Here's the above "Hello World" example rewritten to use ``cStringIO``::
 
-    # Fall back to StringIO in environments where cStringIO is not available
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+    from cStringIO import StringIO
     from reportlab.pdfgen import canvas
     from django.http import HttpResponse
 

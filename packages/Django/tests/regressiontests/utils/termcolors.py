@@ -1,8 +1,8 @@
-import unittest
+from unittest import TestCase
 
 from django.utils.termcolors import parse_color_setting, PALETTES, DEFAULT_PALETTE, LIGHT_PALETTE, DARK_PALETTE, NOCOLOR_PALETTE
 
-class TermColorTests(unittest.TestCase):
+class TermColorTests(TestCase):
 
     def test_empty_string(self):
         self.assertEquals(parse_color_setting(''), PALETTES[DEFAULT_PALETTE])

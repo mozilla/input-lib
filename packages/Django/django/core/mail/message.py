@@ -67,11 +67,7 @@ def forbid_multi_line_headers(name, val, encoding):
             result = []
             for nm, addr in getaddresses((val,)):
                 nm = str(Header(nm.encode(encoding), encoding))
-                try:
-                    addr = addr.encode('ascii')
-                except UnicodeEncodeError:  # IDN
-                    addr = str(Header(addr.encode(encoding), encoding))
-                result.append(formataddr((nm, addr)))
+                result.append(formataddr((nm, str(addr))))
             val = ', '.join(result)
         else:
             val = Header(val.encode(encoding), encoding)

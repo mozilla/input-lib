@@ -2,7 +2,6 @@ import datetime
 import os
 import re
 import sys
-import types
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseServerError, HttpResponseNotFound
@@ -276,13 +275,8 @@ def technical_404_response(request, exception):
             # tried exists but is an empty list. The URLconf must've been empty.
             return empty_urlconf(request)
 
-    urlconf = getattr(request, 'urlconf', settings.ROOT_URLCONF)
-    if isinstance(urlconf, types.ModuleType):
-        urlconf = urlconf.__name__
-
     t = Template(TECHNICAL_404_TEMPLATE, name='Technical 404 template')
     c = Context({
-        'urlconf': urlconf,
         'root_urlconf': settings.ROOT_URLCONF,
         'request_path': request.path_info[1:], # Trim leading slash
         'urlpatterns': tried,
@@ -779,7 +773,7 @@ TECHNICAL_404_TEMPLATE = """
   <div id="info">
     {% if urlpatterns %}
       <p>
-      Using the URLconf defined in <code>{{ urlconf }}</code>,
+      Using the URLconf defined in <code>{{ settings.ROOT_URLCONF }}</code>,
       Django tried these URL patterns, in this order:
       </p>
       <ol>

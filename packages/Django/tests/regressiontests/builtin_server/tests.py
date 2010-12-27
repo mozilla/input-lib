@@ -47,5 +47,5 @@ class WSGIFileWrapperTests(TestCase):
         err = StringIO()
         handler = FileWrapperHandler(None, StringIO(), err, env)
         handler.run(wsgi_app)
-        self.assertFalse(handler._used_sendfile)
+        self.failIf(handler._used_sendfile)
         self.assertEqual(handler.stdout.getvalue().splitlines()[-1],'Hello World!')

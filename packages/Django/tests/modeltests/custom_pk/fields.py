@@ -3,7 +3,6 @@ import string
 
 from django.db import models
 
-
 class MyWrapper(object):
     def __init__(self, value):
         self.value = value

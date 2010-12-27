@@ -1,7 +1,6 @@
 from django.contrib.admin.filterspecs import FilterSpec
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib.admin.util import quote
-from django.core.exceptions import SuspiciousOperation
 from django.core.paginator import Paginator, InvalidPage
 from django.db import models
 from django.db.models.query import QuerySet
@@ -117,7 +116,7 @@ class ChangeList(object):
             try:
                 result_list = paginator.page(self.page_num+1).object_list
             except InvalidPage:
-                raise IncorrectLookupParameters
+                result_list = ()
 
         self.result_count = result_count
         self.full_result_count = full_result_count
@@ -188,18 +187,13 @@ class ChangeList(object):
                 else:
                     lookup_params[key] = True
 
-            if not self.model_admin.lookup_allowed(key):
-                raise SuspiciousOperation(
-                    "Filtering by %s not allowed" % key
-                )
-
         # Apply lookup parameters from the query string.
         try:
             qs = qs.filter(**lookup_params)
         # Naked except! Because we don't have any other way of validating "params".
         # They might be invalid if the keyword arguments are incorrect, or if the
         # values are not in the correct type, so we might get FieldError, ValueError,
-        # ValicationError, or ? from a custom field that raises yet something else
+        # ValicationError, or ? from a custom field that raises yet something else 
         # when handed impossible data.
         except:
             raise IncorrectLookupParameters

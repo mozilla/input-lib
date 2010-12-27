@@ -1,7 +1,5 @@
 from datetime import date
 
-from django.conf import settings
-from django.db import connection
 from django.db.models.sql.query import InvalidQuery
 from django.test import TestCase
 
@@ -54,16 +52,6 @@ class RawQueryTests(TestCase):
                 annotation, value = expected_annotations[index]
                 self.assertTrue(hasattr(result, annotation))
                 self.assertEqual(getattr(result, annotation), value)
-
-    def assert_num_queries(self, n, func, *args, **kwargs):
-        old_DEBUG = settings.DEBUG
-        settings.DEBUG = True
-        starting_queries = len(connection.queries)
-        try:
-            func(*args, **kwargs)
-        finally:
-            settings.DEBUG = old_DEBUG
-        self.assertEqual(starting_queries + n, len(connection.queries))
 
     def testSimpleRawQuery(self):
         """
@@ -228,9 +216,4 @@ class RawQueryTests(TestCase):
         query = "SELECT * FROM raw_query_friendlyauthor"
         self.assertEqual(
             [o.pk for o in FriendlyAuthor.objects.raw(query)], [f.pk]
-        )
-
-    def test_query_count(self):
-        self.assert_num_queries(1,
-            list, Author.objects.raw("SELECT * FROM raw_query_author")
         )

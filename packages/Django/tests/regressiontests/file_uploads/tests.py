@@ -1,6 +1,6 @@
 #! -*- coding: utf-8 -*-
-import errno
 import os
+import errno
 import shutil
 import unittest
 from StringIO import StringIO
@@ -14,7 +14,6 @@ from django.http.multipartparser import MultiPartParser
 
 from models import FileModel, temp_storage, UPLOAD_TO
 import uploadhandler
-
 
 UNICODE_FILENAME = u'test-0123456789_中文_Orléans.jpg'
 

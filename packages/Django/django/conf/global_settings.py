@@ -258,7 +258,7 @@ SECRET_KEY = ''
 # Default file storage mechanism that holds media.
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# Absolute filesystem path to the directory that will hold user-uploaded files.
+# Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = ''
 
@@ -292,34 +292,34 @@ FILE_UPLOAD_PERMISSIONS = None
 FORMAT_MODULE_PATH = None
 
 # Default formatting for date objects. See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 DATE_FORMAT = 'N j, Y'
 
 # Default formatting for datetime objects. See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 DATETIME_FORMAT = 'N j, Y, P'
 
 # Default formatting for time objects. See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 TIME_FORMAT = 'P'
 
 # Default formatting for date objects when only the year and month are relevant.
 # See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 YEAR_MONTH_FORMAT = 'F Y'
 
 # Default formatting for date objects when only the month and day are relevant.
 # See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 MONTH_DAY_FORMAT = 'F j'
 
 # Default short formatting for date objects. See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 SHORT_DATE_FORMAT = 'm/d/Y'
 
 # Default short formatting for datetime objects.
 # See all available format strings here:
-# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+# http://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
 SHORT_DATETIME_FORMAT = 'm/d/Y P'
 
 # Default formats to be used when parsing dates from input boxes, in order
@@ -370,8 +370,8 @@ DECIMAL_SEPARATOR = '.'
 # Boolean that sets whether to add thousand separator when formatting numbers
 USE_THOUSAND_SEPARATOR = False
 
-# Number of digits that will be together, when spliting them by
-# THOUSAND_SEPARATOR. 0 means no grouping, 3 means splitting by thousands...
+# Number of digits that will be togheter, when spliting them by THOUSAND_SEPARATOR
+# 0 means no grouping, 3 means splitting by thousands...
 NUMBER_GROUPING = 0
 
 # Thousand separator symbol

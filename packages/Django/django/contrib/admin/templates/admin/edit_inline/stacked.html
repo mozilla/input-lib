@@ -53,10 +53,7 @@
                 var field = $(this);
                 var input = field.find('input, select, textarea');
                 var dependency_list = input.data('dependency_list') || [];
-                var dependencies = [];
-                $.each(dependency_list, function(i, field_name) {
-                  dependencies.push('#' + row.find(field_name).find('input, select, textarea').attr('id'));
-                });
+                var dependencies = row.find(dependency_list.join(',')).find('input, select, textarea');
                 if (dependencies.length) {
                     input.prepopulate(dependencies, input.attr('maxlength'));
                 }

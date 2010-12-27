@@ -2,7 +2,6 @@
 Sphinx plugins for Django documentation.
 """
 import os
-import re
 
 from docutils import nodes, transforms
 try:
@@ -22,9 +21,6 @@ from sphinx.writers.html import SmartyPantsHTMLTranslator
 from sphinx.util.console import bold
 from sphinx.util.compat import Directive
 
-# RE for option descriptions without a '--' prefix
-simple_option_desc_re = re.compile(
-    r'([-_a-zA-Z0-9]+)(\s*.*?)(?=,\s+(?:/|-|--)|$)')
 
 def setup(app):
     app.add_crossref_type(
@@ -211,16 +207,6 @@ def parse_django_adminopt_node(env, sig, signode):
         if not count:
             firstname = optname
         count += 1
-    if not count:
-        for m in simple_option_desc_re.finditer(sig):
-            optname, args = m.groups()
-            if count:
-                signode += addnodes.desc_addname(', ', ', ')
-            signode += addnodes.desc_name(optname, optname)
-            signode += addnodes.desc_addname(args, args)
-            if not count:
-                firstname = optname
-            count += 1
     if not firstname:
         raise ValueError
     return firstname
@@ -240,23 +226,13 @@ class DjangoStandaloneHTMLBuilder(StandaloneHTMLBuilder):
             return
         self.info(bold("writing templatebuiltins.js..."))
         try:
-            # Sphinx < 1.0
-            xrefs = self.env.reftargets.items()
-            templatebuiltins = dict([('ttags', [n for ((t,n),(l,a)) in xrefs
-                                                if t == 'ttag' and
-                                                l == 'ref/templates/builtins']),
-                                     ('tfilters', [n for ((t,n),(l,a)) in xrefs
-                                                   if t == 'tfilter' and
-                                                   l == 'ref/templates/builtins'])])
+            xrefs = self.env.reftargets.keys()
+            templatebuiltins = dict([('ttags', [n for (t,n) in xrefs if t == 'ttag']),
+                                     ('tfilters', [n for (t,n) in xrefs if t == 'tfilter'])])
         except AttributeError:
-            # Sphinx >= 1.0
             xrefs = self.env.domaindata["std"]["objects"]
-            templatebuiltins = dict([('ttags', [n for ((t,n), (l,a)) in xrefs.items()
-                                                if t == 'templatetag' and
-                                                l == 'ref/templates/builtins' ]),
-                                     ('tfilters', [n for ((t,n), (l,a)) in xrefs.items()
-                                                   if t == 'templatefilter' and
-                                                   t == 'ref/templates/builtins'])])
+            templatebuiltins = dict([('ttags', [n for (t,n) in xrefs if t == 'templatetag']),
+                                     ('tfilters', [n for (t,n) in xrefs if t == 'templatefilter'])])
         outfilename = os.path.join(self.outdir, "templatebuiltins.js")
         f = open(outfilename, 'wb')
         f.write('var django_template_builtins = ')

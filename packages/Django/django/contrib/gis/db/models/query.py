@@ -48,10 +48,7 @@ class GeoQuerySet(QuerySet):
             s['procedure_args']['tolerance'] = tolerance
             s['select_field'] = AreaField('sq_m') # Oracle returns area in units of meters.
         elif backend.postgis or backend.spatialite:
-            if backend.geography:
-                # Geography fields support area calculation, returns square meters.
-                s['select_field'] = AreaField('sq_m')
-            elif not geo_field.geodetic(connection):
+            if not geo_field.geodetic(connection):
                 # Getting the area units of the geographic field.
                 s['select_field'] = AreaField(Area.unit_attname(geo_field.units_name(connection)))
             else:

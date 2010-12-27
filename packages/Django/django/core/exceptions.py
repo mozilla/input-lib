@@ -1,9 +1,4 @@
-"""
-Global Django exception and warning classes.
-"""
-
-class DjangoRuntimeWarning(RuntimeWarning):
-   pass
+"Global Django exceptions"
 
 class ObjectDoesNotExist(Exception):
     "The requested object does not exist"

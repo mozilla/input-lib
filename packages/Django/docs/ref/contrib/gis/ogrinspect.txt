@@ -13,7 +13,6 @@ OGR Inspection
 ==============
 
 .. function:: ogrinspect(data_source, model_name[, **kwargs])
-    :noindex:
 
 ``mapping``
 ===========

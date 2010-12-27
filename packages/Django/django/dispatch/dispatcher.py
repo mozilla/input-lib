@@ -1,5 +1,4 @@
 import weakref
-import threading
 
 from django.dispatch import saferef
 
@@ -31,7 +30,6 @@ class Signal(object):
         if providing_args is None:
             providing_args = []
         self.providing_args = set(providing_args)
-        self.lock = threading.Lock()
 
     def connect(self, receiver, sender=None, weak=True, dispatch_uid=None):
         """
@@ -43,7 +41,7 @@ class Signal(object):
                 A function or an instance method which is to receive signals.
                 Receivers must be hashable objects.
 
-                If weak is True, then receiver must be weak-referencable (more
+                if weak is True, then receiver must be weak-referencable (more
                 precisely saferef.safeRef() must be able to create a reference
                 to the receiver).
         
@@ -54,11 +52,11 @@ class Signal(object):
                 dispatch_uid.
 
             sender
-                The sender to which the receiver should respond. Must either be
+                The sender to which the receiver should respond Must either be
                 of type Signal, or None to receive events from any sender.
 
             weak
-                Whether to use weak references to the receiver. By default, the
+                Whether to use weak references to the receiver By default, the
                 module will attempt to use weak references to the receiver
                 objects. If this parameter is false, then strong references will
                 be used.
@@ -99,15 +97,11 @@ class Signal(object):
         if weak:
             receiver = saferef.safeRef(receiver, onDelete=self._remove_receiver)
 
-        self.lock.acquire()
-        try:
-            for r_key, _ in self.receivers:
-                if r_key == lookup_key:
-                    break
-            else:
-                self.receivers.append((lookup_key, receiver))
-        finally:
-            self.lock.release()
+        for r_key, _ in self.receivers:
+            if r_key == lookup_key:
+                break
+        else:
+            self.receivers.append((lookup_key, receiver))
 
     def disconnect(self, receiver=None, sender=None, weak=True, dispatch_uid=None):
         """
@@ -136,15 +130,11 @@ class Signal(object):
         else:
             lookup_key = (_make_id(receiver), _make_id(sender))
         
-        self.lock.acquire()
-        try:
-            for index in xrange(len(self.receivers)):
-                (r_key, _) = self.receivers[index]
-                if r_key == lookup_key:
-                    del self.receivers[index]
-                    break
-        finally:
-            self.lock.release()
+        for index in xrange(len(self.receivers)):
+            (r_key, _) = self.receivers[index]
+            if r_key == lookup_key:
+                del self.receivers[index]
+                break
 
     def send(self, sender, **named):
         """
@@ -180,7 +170,7 @@ class Signal(object):
         Arguments:
         
             sender
-                The sender of the signal. Can be any python object (normally one
+                The sender of the signal Can be any python object (normally one
                 registered with a connect if you actually want something to
                 occur).
 
@@ -192,7 +182,7 @@ class Signal(object):
         Return a list of tuple pairs [(receiver, response), ... ]. May raise
         DispatcherKeyError.
 
-        If any receiver raises an error (specifically any subclass of
+        if any receiver raises an error (specifically any subclass of
         Exception), the error instance is returned as the result for that
         receiver.
         """
@@ -237,20 +227,11 @@ class Signal(object):
         Remove dead receivers from connections.
         """
 
-        self.lock.acquire()
-        try:
-            to_remove = []
-            for key, connected_receiver in self.receivers:
-                if connected_receiver == receiver:
-                    to_remove.append(key)
-            for key in to_remove:
-                last_idx = len(self.receivers) - 1
-                # enumerate in reverse order so that indexes are valid even
-                # after we delete some items
-                for idx, (r_key, _) in enumerate(reversed(self.receivers)):
-                    if r_key == key:
-                        del self.receivers[last_idx-idx]
-        finally:
-            self.lock.release()
-
-
+        to_remove = []
+        for key, connected_receiver in self.receivers:
+            if connected_receiver == receiver:
+                to_remove.append(key)
+        for key in to_remove:
+            for idx, (r_key, _) in enumerate(self.receivers):
+                if r_key == key:
+                    del self.receivers[idx]

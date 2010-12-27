@@ -1,17 +1,9 @@
 "Base Cache class."
 
-import warnings
-
-from django.core.exceptions import ImproperlyConfigured, DjangoRuntimeWarning
+from django.core.exceptions import ImproperlyConfigured
 
 class InvalidCacheBackendError(ImproperlyConfigured):
     pass
-
-class CacheKeyWarning(DjangoRuntimeWarning):
-    pass
-
-# Memcached does not accept keys longer than this.
-MEMCACHE_MAX_KEY_LENGTH = 250
 
 class BaseCache(object):
     def __init__(self, params):
@@ -124,21 +116,3 @@ class BaseCache(object):
     def clear(self):
         """Remove *all* values from the cache at once."""
         raise NotImplementedError
-
-    def validate_key(self, key):
-        """
-        Warn about keys that would not be portable to the memcached
-        backend. This encourages (but does not force) writing backend-portable
-        cache code.
-
-        """
-        if len(key) > MEMCACHE_MAX_KEY_LENGTH:
-            warnings.warn('Cache key will cause errors if used with memcached: '
-                    '%s (longer than %s)' % (key, MEMCACHE_MAX_KEY_LENGTH),
-                    CacheKeyWarning)
-        for char in key:
-            if ord(char) < 33 or ord(char) == 127:
-                warnings.warn('Cache key contains characters that will cause '
-                        'errors if used with memcached: %r' % key,
-                              CacheKeyWarning)
-

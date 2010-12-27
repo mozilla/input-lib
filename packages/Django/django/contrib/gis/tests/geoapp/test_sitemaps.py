@@ -1,14 +1,11 @@
-import cStringIO
+import unittest, zipfile, cStringIO
 from xml.dom import minidom
-import zipfile
-from django.test import TestCase
 
+from django.test import Client
 from models import City, Country
 
-
-class GeoSitemapTest(TestCase):
-
-    urls = 'django.contrib.gis.tests.geoapp.urls'
+class GeoSitemapTest(unittest.TestCase):
+    client = Client()
 
     def assertChildNodes(self, elem, expected):
         "Taken from regressiontests/syndication/tests.py."
@@ -19,7 +16,7 @@ class GeoSitemapTest(TestCase):
     def test_geositemap_index(self):
         "Tests geographic sitemap index."
         # Getting the geo index.
-        doc = minidom.parseString(self.client.get('/sitemap.xml').content)
+        doc = minidom.parseString(self.client.get('/geoapp/sitemap.xml').content)
         index = doc.firstChild
         self.assertEqual(index.getAttribute(u'xmlns'), u'http://www.sitemaps.org/schemas/sitemap/0.9')
         self.assertEqual(3, len(index.getElementsByTagName('sitemap')))
@@ -27,13 +24,13 @@ class GeoSitemapTest(TestCase):
     def test_geositemap_kml(self):
         "Tests KML/KMZ geographic sitemaps."
         for kml_type in ('kml', 'kmz'):
-            doc = minidom.parseString(self.client.get('/sitemaps/%s.xml' % kml_type).content)
+            doc = minidom.parseString(self.client.get('/geoapp/sitemaps/%s.xml' % kml_type).content)
 
             # Ensuring the right sitemaps namespaces are present.
             urlset = doc.firstChild
             self.assertEqual(urlset.getAttribute(u'xmlns'), u'http://www.sitemaps.org/schemas/sitemap/0.9')
             self.assertEqual(urlset.getAttribute(u'xmlns:geo'), u'http://www.google.com/geo/schemas/sitemap/1.0')
-
+        
             urls = urlset.getElementsByTagName('url')
             self.assertEqual(2, len(urls)) # Should only be 2 sitemaps.
             for url in urls:
@@ -45,7 +42,7 @@ class GeoSitemapTest(TestCase):
 
                 # Getting the relative URL since we don't have a real site.
                 kml_url = url.getElementsByTagName('loc')[0].childNodes[0].data.split('http://example.com')[1]
-
+                
                 if kml_type == 'kml':
                     kml_doc = minidom.parseString(self.client.get(kml_url).content)
                 elif kml_type == 'kmz':
@@ -55,7 +52,7 @@ class GeoSitemapTest(TestCase):
                     self.assertEqual(1, len(zf.filelist))
                     self.assertEqual('doc.kml', zf.filelist[0].filename)
                     kml_doc = minidom.parseString(zf.read('doc.kml'))
-
+                
                 # Ensuring the correct number of placemarks are in the KML doc.
                 if 'city' in kml_url:
                     model = City
@@ -67,8 +64,8 @@ class GeoSitemapTest(TestCase):
         "Tests GeoRSS geographic sitemaps."
         from feeds import feed_dict
 
-        doc = minidom.parseString(self.client.get('/sitemaps/georss.xml').content)
-
+        doc = minidom.parseString(self.client.get('/geoapp/sitemaps/georss.xml').content)
+   
         # Ensuring the right sitemaps namespaces are present.
         urlset = doc.firstChild
         self.assertEqual(urlset.getAttribute(u'xmlns'), u'http://www.sitemaps.org/schemas/sitemap/0.9')

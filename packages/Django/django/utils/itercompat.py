@@ -37,9 +37,3 @@ def all(iterable):
         if not item:
             return False
     return True
-
-def any(iterable):
-    for item in iterable:
-        if item:
-            return True
-    return False
