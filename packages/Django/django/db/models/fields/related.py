@@ -420,7 +420,7 @@ class ForeignRelatedObjectsDescriptor(object):
             def create(self, **kwargs):
                 kwargs.update({rel_field.name: instance})
                 db = router.db_for_write(rel_model, instance=instance)
-                return super(RelatedManager, self).using(db).create(**kwargs)
+                return super(RelatedManager, self.db_manager(db)).create(**kwargs)
             create.alters_data = True
 
             def get_or_create(self, **kwargs):
@@ -428,7 +428,7 @@ class ForeignRelatedObjectsDescriptor(object):
                 # ForeignRelatedObjectsDescriptor knows about.
                 kwargs.update({rel_field.name: instance})
                 db = router.db_for_write(rel_model, instance=instance)
-                return super(RelatedManager, self).using(db).get_or_create(**kwargs)
+                return super(RelatedManager, self.db_manager(db)).get_or_create(**kwargs)
             get_or_create.alters_data = True
 
             # remove() and clear() are only provided if the ForeignKey can have a value of null.
@@ -517,7 +517,7 @@ def create_many_related_manager(superclass, rel=False):
                 opts = through._meta
                 raise AttributeError("Cannot use create() on a ManyToManyField which specifies an intermediary model. Use %s.%s's Manager instead." % (opts.app_label, opts.object_name))
             db = router.db_for_write(self.instance.__class__, instance=self.instance)
-            new_obj = super(ManyRelatedManager, self).using(db).create(**kwargs)
+            new_obj = super(ManyRelatedManager, self.db_manager(db)).create(**kwargs)
             self.add(new_obj)
             return new_obj
         create.alters_data = True
@@ -525,7 +525,7 @@ def create_many_related_manager(superclass, rel=False):
         def get_or_create(self, **kwargs):
             db = router.db_for_write(self.instance.__class__, instance=self.instance)
             obj, created = \
-                super(ManyRelatedManager, self).using(db).get_or_create(**kwargs)
+                super(ManyRelatedManager, self.db_manager(db)).get_or_create(**kwargs)
             # We only need to add() if created because if we got an object back
             # from get() then the relationship already exists.
             if created:
@@ -829,7 +829,10 @@ class ForeignKey(RelatedField, Field):
         if value is None:
             return
 
-        qs = self.rel.to._default_manager.filter(**{self.rel.field_name:value})
+        using = router.db_for_read(model_instance.__class__, instance=model_instance)
+        qs = self.rel.to._default_manager.using(using).filter(
+                **{self.rel.field_name: value}
+             )
         qs = qs.complex_filter(self.rel.limit_choices_to)
         if not qs.exists():
             raise exceptions.ValidationError(self.error_messages['invalid'] % {

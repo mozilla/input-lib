@@ -3,7 +3,6 @@ Management utility to create superusers.
 """
 
 import getpass
-import os
 import re
 import sys
 from optparse import make_option
@@ -30,10 +29,10 @@ class Command(BaseCommand):
         make_option('--email', dest='email', default=None,
             help='Specifies the email address for the superuser.'),
         make_option('--noinput', action='store_false', dest='interactive', default=True,
-            help='Tells Django to NOT prompt the user for input of any kind. '    \
-                 'You must use --username and --email with --noinput, and '      \
-                 'superusers created with --noinput will not be able to log in '  \
-                 'until they\'re given a valid password.'),
+            help=('Tells Django to NOT prompt the user for input of any kind. '
+                  'You must use --username and --email with --noinput, and '
+                  'superusers created with --noinput will not be able to log '
+                  'in until they\'re given a valid password.')),
     )
     help = 'Used to create a superuser.'
 
@@ -41,7 +40,8 @@ class Command(BaseCommand):
         username = options.get('username', None)
         email = options.get('email', None)
         interactive = options.get('interactive')
-        
+        verbosity = int(options.get('verbosity', 1))
+
         # Do quick and dirty validation if --noinput
         if not interactive:
             if not username or not email:
@@ -57,12 +57,11 @@ class Command(BaseCommand):
 
         # Try to determine the current system user's username to use as a default.
         try:
-            import pwd
-            default_username = pwd.getpwuid(os.getuid())[0].replace(' ', '').lower()
+            default_username = getpass.getuser().replace(' ', '').lower()
         except (ImportError, KeyError):
-            # KeyError will be raised by getpwuid() if there is no
-            # corresponding entry in the /etc/passwd file (a very restricted
-            # chroot environment, for example).
+            # KeyError will be raised by os.getpwuid() (called by getuser())
+            # if there is no corresponding entry in the /etc/passwd file
+            # (a very restricted chroot environment, for example).
             default_username = ''
 
         # Determine whether the default username is taken, so we don't display
@@ -79,7 +78,7 @@ class Command(BaseCommand):
         # try/except to trap for a keyboard interrupt and exit gracefully.
         if interactive:
             try:
-            
+
                 # Get a username
                 while 1:
                     if not username:
@@ -100,7 +99,7 @@ class Command(BaseCommand):
                     else:
                         sys.stderr.write("Error: That username is already taken.\n")
                         username = None
-            
+
                 # Get an email
                 while 1:
                     if not email:
@@ -112,7 +111,7 @@ class Command(BaseCommand):
                         email = None
                     else:
                         break
-            
+
                 # Get a password
                 while 1:
                     if not password:
@@ -130,6 +129,8 @@ class Command(BaseCommand):
             except KeyboardInterrupt:
                 sys.stderr.write("\nOperation cancelled.\n")
                 sys.exit(1)
-        
+
         User.objects.create_superuser(username, email, password)
-        print "Superuser created successfully."
+        if verbosity >= 1:
+          self.stdout.write("Superuser created successfully.\n")
+

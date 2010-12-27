@@ -5,7 +5,8 @@ import django.db.models.manager     # Imported to register signal handler.
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, FieldError, ValidationError, NON_FIELD_ERRORS
 from django.core import validators
 from django.db.models.fields import AutoField, FieldDoesNotExist
-from django.db.models.fields.related import OneToOneRel, ManyToOneRel, OneToOneField
+from django.db.models.fields.related import (OneToOneRel, ManyToOneRel,
+    OneToOneField, add_lazy_relation)
 from django.db.models.query import delete_objects, Q
 from django.db.models.query_utils import CollectedObjects, DeferredAttribute
 from django.db.models.options import Options
@@ -223,8 +224,25 @@ class ModelBase(type):
         if opts.order_with_respect_to:
             cls.get_next_in_order = curry(cls._get_next_or_previous_in_order, is_next=True)
             cls.get_previous_in_order = curry(cls._get_next_or_previous_in_order, is_next=False)
-            setattr(opts.order_with_respect_to.rel.to, 'get_%s_order' % cls.__name__.lower(), curry(method_get_order, cls))
-            setattr(opts.order_with_respect_to.rel.to, 'set_%s_order' % cls.__name__.lower(), curry(method_set_order, cls))
+            # defer creating accessors on the foreign class until we are
+            # certain it has been created
+            def make_foreign_order_accessors(field, model, cls):
+                setattr(
+                    field.rel.to,
+                    'get_%s_order' % cls.__name__.lower(),
+                    curry(method_get_order, cls)
+                )
+                setattr(
+                    field.rel.to,
+                    'set_%s_order' % cls.__name__.lower(),
+                    curry(method_set_order, cls)
+                )
+            add_lazy_relation(
+                cls,
+                opts.order_with_respect_to,
+                opts.order_with_respect_to.rel.to,
+                make_foreign_order_accessors
+            )
 
         # Give the class a docstring -- its definition.
         if cls.__doc__ is None:
@@ -242,6 +260,10 @@ class ModelState(object):
     """
     def __init__(self, db=None):
         self.db = db
+        # If true, uniqueness validation checks will consider this a new, as-yet-unsaved object.
+        # Necessary for correct validation of new instances of objects with explicit (non-auto) PKs.
+        # This impacts validation only; it has no effect on the actual save.
+        self.adding = True
 
 class Model(object):
     __metaclass__ = ModelBase
@@ -535,11 +557,14 @@ class Model(object):
 
         # Store the database on which the object was saved
         self._state.db = using
+        # Once saved, this is no longer a to-be-added instance.
+        self._state.adding = False
 
         # Signal that the save is complete
         if origin and not meta.auto_created:
             signals.post_save.send(sender=origin, instance=self,
                 created=(not record_exists), raw=raw)
+
 
     save_base.alters_data = True
 
@@ -765,7 +790,7 @@ class Model(object):
                 if lookup_value is None:
                     # no value, skip the lookup
                     continue
-                if f.primary_key and not getattr(self, '_adding', False):
+                if f.primary_key and not self._state.adding:
                     # no need to check for unique primary key when editing
                     continue
                 lookup_kwargs[str(field_name)] = lookup_value
@@ -778,7 +803,7 @@ class Model(object):
 
             # Exclude the current object from the query if we are editing an
             # instance (as opposed to creating a new one)
-            if not getattr(self, '_adding', False) and self.pk is not None:
+            if not self._state.adding and self.pk is not None:
                 qs = qs.exclude(pk=self.pk)
 
             if qs.exists():
@@ -808,7 +833,7 @@ class Model(object):
             qs = model_class._default_manager.filter(**lookup_kwargs)
             # Exclude the current object from the query if we are editing an
             # instance (as opposed to creating a new one)
-            if not getattr(self, '_adding', False) and self.pk is not None:
+            if not self._state.adding and self.pk is not None:
                 qs = qs.exclude(pk=self.pk)
 
             if qs.exists():

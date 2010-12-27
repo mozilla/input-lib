@@ -22,7 +22,7 @@ class BaseDatabaseWrapper(local):
         self.alias = alias
 
     def __eq__(self, other):
-        return self.settings_dict == other.settings_dict
+        return self.alias == other.alias
 
     def __ne__(self, other):
         return not self == other
@@ -232,6 +232,13 @@ class BaseDatabaseOperations(object):
         placeholder for the column being searched against.
         """
         return "%s"
+
+    def max_in_list_size(self):
+        """
+        Returns the maximum number of items that can be passed in a single 'IN'
+        list condition, or None if the backend does not impose a limit.
+        """
+        return None
 
     def max_name_length(self):
         """

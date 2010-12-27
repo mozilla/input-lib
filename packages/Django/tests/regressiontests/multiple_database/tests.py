@@ -580,6 +580,12 @@ class QueryTestCase(TestCase):
         self.assertEquals(Person.objects.using('other').count(), 0)
         self.assertEquals(Pet.objects.using('other').count(), 0)
 
+    def test_foreign_key_validation(self):
+        "ForeignKey.validate() uses the correct database"
+        mickey = Person.objects.using('other').create(name="Mickey")
+        pluto = Pet.objects.using('other').create(name="Pluto", owner=mickey)
+        self.assertEquals(None, pluto.full_clean())
+
     def test_o2o_separation(self):
         "OneToOne fields are constrained to a single database"
         # Create a user and profile on the default database
@@ -852,10 +858,10 @@ class QueryTestCase(TestCase):
         "test the raw() method across databases"
         dive = Book.objects.using('other').create(title="Dive into Python",
             published=datetime.date(2009, 5, 4))
-        val = Book.objects.db_manager("other").raw('SELECT id FROM "multiple_database_book"')
+        val = Book.objects.db_manager("other").raw('SELECT id FROM multiple_database_book')
         self.assertEqual(map(lambda o: o.pk, val), [dive.pk])
 
-        val = Book.objects.raw('SELECT id FROM "multiple_database_book"').using('other')
+        val = Book.objects.raw('SELECT id FROM multiple_database_book').using('other')
         self.assertEqual(map(lambda o: o.pk, val), [dive.pk])
 
     def test_select_related(self):
@@ -890,6 +896,28 @@ class QueryTestCase(TestCase):
         except ValueError:
             pass
 
+    def test_related_manager(self):
+        "Related managers return managers, not querysets"
+        mark = Person.objects.using('other').create(name="Mark Pilgrim")
+
+        # extra_arg is removed by the BookManager's implementation of
+        # create(); but the BookManager's implementation won't get called
+        # unless edited returns a Manager, not a queryset
+        mark.book_set.create(title="Dive into Python",
+                             published=datetime.date(2009, 5, 4),
+                             extra_arg=True)
+
+        mark.book_set.get_or_create(title="Dive into Python",
+                                    published=datetime.date(2009, 5, 4),
+                                    extra_arg=True)
+
+        mark.edited.create(title="Dive into Water",
+                           published=datetime.date(2009, 5, 4),
+                           extra_arg=True)
+
+        mark.edited.get_or_create(title="Dive into Water",
+                                  published=datetime.date(2009, 5, 4),
+                                  extra_arg=True)
 
 class TestRouter(object):
     # A test router. The behaviour is vaguely master/slave, but the
@@ -1547,13 +1575,17 @@ class AuthTestCase(TestCase):
         command_output = new_io.getvalue().strip()
         self.assertTrue('"email": "alice@example.com",' in command_output)
 
+_missing = object()
 class UserProfileTestCase(TestCase):
     def setUp(self):
-        self.old_auth_profile_module = getattr(settings, 'AUTH_PROFILE_MODULE', None)
+        self.old_auth_profile_module = getattr(settings, 'AUTH_PROFILE_MODULE', _missing)
         settings.AUTH_PROFILE_MODULE = 'multiple_database.UserProfile'
 
     def tearDown(self):
-        settings.AUTH_PROFILE_MODULE = self.old_auth_profile_module
+        if self.old_auth_profile_module is _missing:
+            del settings.AUTH_PROFILE_MODULE
+        else:
+            settings.AUTH_PROFILE_MODULE = self.old_auth_profile_module
 
     def test_user_profiles(self):
 

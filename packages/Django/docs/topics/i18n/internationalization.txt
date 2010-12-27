@@ -87,13 +87,13 @@ The strings you pass to ``_()`` or ``ugettext()`` can take placeholders,
 specified with Python's standard named-string interpolation syntax. Example::
 
     def my_view(request, m, d):
-        output = _('Today is %(month)s, %(day)s.') % {'month': m, 'day': d}
+        output = _('Today is %(month)s %(day)s.') % {'month': m, 'day': d}
         return HttpResponse(output)
 
 This technique lets language-specific translations reorder the placeholder
-text. For example, an English translation may be ``"Today is November, 26."``,
+text. For example, an English translation may be ``"Today is November 26."``,
 while a Spanish translation may be ``"Hoy es 26 de Noviembre."`` -- with the
-placeholders (the month and the day) with their positions swapped.
+the month and the day placeholders swapped.
 
 For this reason, you should use named-string interpolation (e.g., ``%(day)s``)
 instead of positional interpolation (e.g., ``%s`` or ``%d``) whenever you
@@ -179,7 +179,7 @@ cardinality of the elements at play.
         count = Report.objects.count()
         d = {
             'count': count,
-            'name': Report._meta.verbose_name
+            'name': Report._meta.verbose_name,
             'plural_name': Report._meta.verbose_name_plural
         }
         text = ungettext(
@@ -190,8 +190,7 @@ cardinality of the elements at play.
 
     You would get a ``a format specification for argument 'name', as in
     'msgstr[0]', doesn't exist in 'msgid'`` error when running
-    ``django-admin.py compilemessages`` or a ``KeyError`` Python exception at
-    runtime.
+    ``django-admin.py compilemessages``.
 
 .. _lazy-translations:
 
@@ -387,15 +386,14 @@ separate the pieces with ``and``::
     This is {{ book_t }} by {{ author_t }}
     {% endblocktrans %}
 
-This tag is also in charge of handling another functionality: Pluralization.
-To make use of it you should:
+This tag also provides for pluralization. To use it:
 
-    * Designate and bind a counter value by using ``count``, such value will
+    * Designate and bind a counter value with the name ``count``. This value will
       be the one used to select the right plural form.
 
     * Specify both the singular and plural forms separating them with the
-      ``{% plural %}`` tag, which appears within ``{% blocktrans %}`` and
-      ``{% endblocktrans %}``.
+      ``{% plural %}`` tag within the ``{% blocktrans %}`` and
+      ``{% endblocktrans %}`` tags.
 
 An example::
 
@@ -413,8 +411,8 @@ A more complex example::
     That will cost $ {{ amount }} per {{ years }} years.
     {% endblocktrans %}
 
-When you both use the pluralization feature and bind values to local variables
-in addition to the counter value, have in mind that the ``blocktrans``
+When you use both the pluralization feature and bind values to local variables
+in addition to the counter value, keep in mind that the ``blocktrans``
 construct is internally converted to an ``ungettext`` call. This means the
 same :ref:`notes regarding ungettext variables <pluralization-var-notes>`
 apply.

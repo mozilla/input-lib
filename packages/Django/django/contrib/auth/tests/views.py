@@ -16,7 +16,7 @@ class AuthViewsTestCase(TestCase):
     Helper base class for all the follow test cases.
     """
     fixtures = ['authtestdata.json']
-    urls = 'django.contrib.auth.urls'
+    urls = 'django.contrib.auth.tests.urls'
 
     def setUp(self):
         self.old_LANGUAGES = settings.LANGUAGES
@@ -79,6 +79,12 @@ class PasswordResetTest(AuthViewsTestCase):
         path = path[:-5] + ("0"*4) + path[-1]
 
         response = self.client.get(path)
+        self.assertEquals(response.status_code, 200)
+        self.assert_("The password reset link was invalid" in response.content)
+
+    def test_confirm_invalid_user(self):
+        # Ensure that we get a 200 response for a non-existant user, not a 404
+        response = self.client.get('/reset/123456-1-1/')
         self.assertEquals(response.status_code, 200)
         self.assert_("The password reset link was invalid" in response.content)
 
@@ -248,6 +254,12 @@ class LogoutTest(AuthViewsTestCase):
         self.assertEquals(200, response.status_code)
         self.assert_('Logged out' in response.content)
         self.confirm_logged_out()
+
+    def test_14377(self):
+        # Bug 14377
+        self.login()
+        response = self.client.get('/logout/')
+        self.assertTrue('site' in response.context)
 
     def test_logout_with_next_page_specified(self): 
         "Logout with next_page option given redirects to specified resource"

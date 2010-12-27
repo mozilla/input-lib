@@ -30,10 +30,25 @@ All attributes except ``session`` should be considered read-only.
 
 .. attribute:: HttpRequest.path
 
-   A string representing the full path to the requested page, not including
-   the domain.
+    A string representing the full path to the requested page, not including
+    the domain.
 
-   Example: ``"/music/bands/the_beatles/"``
+    Example: ``"/music/bands/the_beatles/"``
+
+.. attribute:: HttpRequest.path_info
+
+    Under some web server configurations, the portion of the URL after the host
+    name is split up into a script prefix portion and a path info portion
+    (this happens, for example, when using the ``django.root`` option
+    with the :ref:`modpython handler from Apache <howto-deployment-modpython>`).
+    The ``path_info`` attribute always contains the path info portion of the
+    path, no matter what web server is being used. Using this instead of
+    attr:`~HttpRequest.path` can make your code much easier to move between test
+    and deployment servers.
+
+    For example, if the ``django.root`` for your application is set to 
+    ``"/minfo"``, then ``path`` might be ``"/minfo/music/bands/the_beatles/"``
+    and ``path_info`` would be ``"/music/bands/the_beatles/"``.
 
 .. attribute:: HttpRequest.method
 
@@ -47,24 +62,22 @@ All attributes except ``session`` should be considered read-only.
 
 .. attribute:: HttpRequest.encoding
 
-    .. versionadded:: 1.0
-
     A string representing the current encoding used to decode form submission
-    data (or ``None``, which means the ``DEFAULT_CHARSET`` setting is used).
-    You can write to this attribute to change the encoding used when accessing
-    the form data. Any subsequent attribute accesses (such as reading from
-    ``GET`` or ``POST``) will use the new ``encoding`` value.  Useful if you
-    know the form data is not in the ``DEFAULT_CHARSET`` encoding.
+    data (or ``None``, which means the :setting:`DEFAULT_CHARSET` setting is
+    used). You can write to this attribute to change the encoding used when
+    accessing the form data. Any subsequent attribute accesses (such as reading
+    from ``GET`` or ``POST``) will use the new ``encoding`` value.  Useful if
+    you know the form data is not in the :setting:`DEFAULT_CHARSET` encoding.
 
 .. attribute:: HttpRequest.GET
 
     A dictionary-like object containing all given HTTP GET parameters. See the
-    ``QueryDict`` documentation below.
+    :class:`QueryDict` documentation below.
 
 .. attribute:: HttpRequest.POST
 
     A dictionary-like object containing all given HTTP POST parameters. See the
-    ``QueryDict`` documentation below.
+    :class:`QueryDict` documentation below.
 
     It's possible that a request can come in via POST with an empty ``POST``
     dictionary -- if, say, a form is requested via the POST HTTP method but
@@ -95,14 +108,7 @@ All attributes except ``session`` should be considered read-only.
 
     A dictionary-like object containing all uploaded files. Each key in
     ``FILES`` is the ``name`` from the ``<input type="file" name="" />``. Each
-    value in ``FILES`` is an ``UploadedFile`` object containing the following
-    attributes:
-
-        * ``read(num_bytes=None)`` -- Read a number of bytes from the file.
-        * ``name`` -- The name of the uploaded file.
-        * ``size`` -- The size, in bytes, of the uploaded file.
-        * ``chunks(chunk_size=None)`` -- A generator that yields sequential
-          chunks of data.
+    value in ``FILES`` is an :class:`UploadedFile` as described below.
 
     See :doc:`/topics/files` for more information.
 
@@ -115,11 +121,11 @@ All attributes except ``session`` should be considered read-only.
 
     In previous versions of Django, ``request.FILES`` contained simple ``dict``
     objects representing uploaded files. This is no longer true -- files are
-    represented by ``UploadedFile`` objects as described below.
+    represented by :class:`UploadedFile` objects.
 
-    These ``UploadedFile`` objects will emulate the old-style ``dict``
-    interface, but this is deprecated and will be removed in the next release of
-    Django.
+    These :class:`UploadedFile` objects will emulate the old-style ``dict``
+    interface, but this is deprecated and will be removed in the next release
+    of Django.
 
 .. attribute:: HttpRequest.META
 
@@ -137,7 +143,7 @@ All attributes except ``session`` should be considered read-only.
         * ``QUERY_STRING`` -- The query string, as a single (unparsed) string.
         * ``REMOTE_ADDR`` -- The IP address of the client.
         * ``REMOTE_HOST`` -- The hostname of the client.
-        * ``REMOTE_USER`` -- The user authenticated by the web server, if any.
+        * ``REMOTE_USER`` -- The user authenticated by the Web server, if any.
         * ``REQUEST_METHOD`` -- A string such as ``"GET"`` or ``"POST"``.
         * ``SERVER_NAME`` -- The hostname of the server.
         * ``SERVER_PORT`` -- The port of the server.
@@ -181,24 +187,45 @@ All attributes except ``session`` should be considered read-only.
 
     Not defined by Django itself, but will be read if other code (e.g., a custom
     middleware class) sets it. When present, this will be used as the root
-    URLconf for the current request, overriding the ``ROOT_URLCONF`` setting.
-    See :ref:`how-django-processes-a-request` for details.
+    URLconf for the current request, overriding the :setting:`ROOT_URLCONF`
+    setting. See :ref:`how-django-processes-a-request` for details.
 
 Methods
 -------
 
 .. method:: HttpRequest.get_host()
 
-   .. versionadded:: 1.0
+    Returns the originating host of the request using information from the
+    ``HTTP_X_FORWARDED_HOST`` and ``HTTP_HOST`` headers (in that order). If
+    they don't provide a value, the method uses a combination of
+    ``SERVER_NAME`` and ``SERVER_PORT`` as detailed in `PEP 333`_.
 
-   Returns the originating host of the request using information from the
-   ``HTTP_X_FORWARDED_HOST`` and ``HTTP_HOST`` headers (in that order). If
-   they don't provide a value, the method uses a combination of
-   ``SERVER_NAME`` and ``SERVER_PORT`` as detailed in `PEP 333`_.
+    .. _PEP 333: http://www.python.org/dev/peps/pep-0333/
 
-   .. _PEP 333: http://www.python.org/dev/peps/pep-0333/
+    Example: ``"127.0.0.1:8000"``
 
-   Example: ``"127.0.0.1:8000"``
+    .. note:: The :meth:`~HttpRequest.get_host()` method fails when the host is
+        behind multiple proxies. One solution is to use middleware to rewrite
+        the proxy headers, as in the following example::
+
+            class MultipleProxyMiddleware(object):
+                FORWARDED_FOR_FIELDS = [
+                    'HTTP_X_FORWARDED_FOR',
+                    'HTTP_X_FORWARDED_HOST',
+                    'HTTP_X_FORWARDED_SERVER',
+                ]
+
+                def process_request(self, request):
+                    """
+                    Rewrites the proxy headers so that only the most
+                    recent proxy is used.
+                    """
+                    for field in self.FORWARDED_FOR_FIELDS:
+                        if field in request.META:
+                            if ',' in request.META[field]:
+                                parts = request.META[field].split(',')
+                                request.META[field] = parts[-1].strip()
+
 
 .. method:: HttpRequest.get_full_path()
 
@@ -207,8 +234,6 @@ Methods
    Example: ``"/music/bands/the_beatles/?print=true"``
 
 .. method:: HttpRequest.build_absolute_uri(location)
-
-   .. versionadded:: 1.0
 
    Returns the absolute URI form of ``location``. If no location is provided,
    the location will be set to ``request.get_full_path()``.
@@ -226,8 +251,6 @@ Methods
 
 .. method:: HttpRequest.is_ajax()
 
-   .. versionadded:: 1.0
-
    Returns ``True`` if the request was made via an ``XMLHttpRequest``, by
    checking the ``HTTP_X_REQUESTED_WITH`` header for the string
    ``'XMLHttpRequest'``. Most modern JavaScript libraries send this header.
@@ -235,8 +258,38 @@ Methods
    have to set this header manually if you want ``is_ajax()`` to work.
 
 
+UploadedFile objects
+====================
+
+.. class:: UploadedFile
+
+
+Attributes
+----------
+
+.. attribute::  UploadedFile.name
+
+    The name of the uploaded file.
+
+.. attribute:: UploadedFile.size
+
+    The size, in bytes, of the uploaded file.
+
+Methods
+----------
+
+.. method:: UploadedFile.chunks(chunk_size=None)
+
+    Returns a generator that yields sequential chunks of data.
+
+.. method:: UploadedFile.read(num_bytes=None)
+
+    Read a number of bytes from the file.
+
+
+
 QueryDict objects
------------------
+=================
 
 .. class:: QueryDict
 
@@ -384,7 +437,7 @@ Django, :class:`HttpResponse` objects are your responsibility. Each view you
 write is responsible for instantiating, populating and returning an
 :class:`HttpResponse`.
 
-The :class:`HttpResponse` class lives in the ``django.http`` module.
+The :class:`HttpResponse` class lives in the :mod:`django.http` module.
 
 Usage
 -----
@@ -405,16 +458,6 @@ file-like object::
     >>> response.write("<p>Here's the text of the Web page.</p>")
     >>> response.write("<p>Here's another paragraph.</p>")
 
-You can add and delete headers using dictionary syntax::
-
-    >>> response = HttpResponse()
-    >>> response['X-DJANGO'] = "It's the best."
-    >>> del response['X-PHP']
-    >>> response['X-DJANGO']
-    "It's the best."
-
-Note that ``del`` doesn't raise ``KeyError`` if the header doesn't exist.
-
 Passing iterators
 ~~~~~~~~~~~~~~~~~
 
@@ -429,10 +472,14 @@ hard-coded strings. If you use this technique, follow these guidelines:
 Setting headers
 ~~~~~~~~~~~~~~~
 
-To set a header in your response, just treat it like a dictionary::
+To set or remove a header in your response, treat it like a dictionary::
 
     >>> response = HttpResponse()
     >>> response['Cache-Control'] = 'no-cache'
+    >>> del response['Cache-Control']
+
+Note that unlike a dictionary, ``del`` doesn't raise ``KeyError`` if the header
+doesn't exist.
 
 .. versionadded:: 1.1
 
@@ -470,7 +517,8 @@ Methods
 .. method:: HttpResponse.__init__(content='', mimetype=None, status=200, content_type=DEFAULT_CONTENT_TYPE)
 
     Instantiates an ``HttpResponse`` object with the given page content (a
-    string) and MIME type. The ``DEFAULT_CONTENT_TYPE`` is ``'text/html'``.
+    string) and MIME type. The :setting:`DEFAULT_CONTENT_TYPE` is
+    ``'text/html'``.
 
     ``content`` can be an iterator or a string. If it's an iterator, it should
     return strings, and those strings will be joined together to form the
@@ -478,15 +526,13 @@ Methods
 
     ``status`` is the `HTTP Status code`_ for the response.
 
-    .. versionadded:: 1.0
-
     ``content_type`` is an alias for ``mimetype``. Historically, this parameter
     was only called ``mimetype``, but since this is actually the value included
     in the HTTP ``Content-Type`` header, it can also include the character set
     encoding, which makes it more than just a MIME type specification.
     If ``mimetype`` is specified (not ``None``), that value is used.
     Otherwise, ``content_type`` is used. If neither is given, the
-    ``DEFAULT_CONTENT_TYPE`` setting is used.
+    :setting:`DEFAULT_CONTENT_TYPE` setting is used.
 
 .. method:: HttpResponse.__setitem__(header, value)
 
@@ -560,9 +606,9 @@ types of HTTP responses. Like ``HttpResponse``, these subclasses live in
 .. class:: HttpResponseRedirect
 
     The constructor takes a single argument -- the path to redirect to. This
-    can be a fully qualified URL (e.g. ``'http://www.yahoo.com/search/'``) or an
-    absolute URL with no domain (e.g. ``'/search/'``). Note that this returns
-    an HTTP status code 302.
+    can be a fully qualified URL (e.g. ``'http://www.yahoo.com/search/'``) or
+    an absolute path with no domain (e.g. ``'/search/'``). Note that this
+    returns an HTTP status code 302.
 
 .. class:: HttpResponsePermanentRedirect
 
@@ -575,8 +621,6 @@ types of HTTP responses. Like ``HttpResponse``, these subclasses live in
     page hasn't been modified since the user's last request (status code 304).
 
 .. class:: HttpResponseBadRequest
-
-    .. versionadded:: 1.0
 
     Acts just like :class:`HttpResponse` but uses a 400 status code.
 

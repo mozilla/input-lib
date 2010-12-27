@@ -103,7 +103,7 @@ Just one thing to do: We need to tell the admin that ``Poll``
 objects have an admin interface. To do this, create a file called
 ``admin.py`` in your ``polls`` directory, and edit it to look like this::
 
-    from mysite.polls.models import Poll
+    from polls.models import Poll
     from django.contrib import admin
 
     admin.site.register(Poll)
@@ -239,7 +239,7 @@ Yet.
 There are two ways to solve this problem. The first is to register ``Choice``
 with the admin just as we did with ``Poll``. That's easy::
 
-    from mysite.polls.models import Choice
+    from polls.models import Choice
 
     admin.site.register(Choice)
 
@@ -284,7 +284,7 @@ registration code to read::
 This tells Django: "Choice objects are edited on the Poll admin page. By
 default, provide enough fields for 3 choices."
 
-Load the "Add poll" page to see how that looks:
+Load the "Add poll" page to see how that looks, you may need to restart your development server:
 
 .. image:: _images/admin11t.png
    :alt: Add poll page now has choices on it
@@ -350,7 +350,7 @@ method (in ``models.py``) a ``short_description`` attribute::
         return self.pub_date.date() == datetime.date.today()
     was_published_today.short_description = 'Published today?'
 
-Let's add another improvement to the Poll change list page: Filters. Add the
+Edit your admin.py file again and add an improvement to the Poll change list page: Filters. Add the
 following line to ``PollAdmin``::
 
     list_filter = ['pub_date']

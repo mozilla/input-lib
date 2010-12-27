@@ -50,21 +50,24 @@ class SmallField(models.Field):
             return []
         raise TypeError('Invalid lookup type: %r' % lookup_type)
 
+class SmallerField(SmallField):
+    pass
+
 
 class JSONField(models.TextField):
     __metaclass__ = models.SubfieldBase
-    
+
     description = ("JSONField automatically serializes and desializes values to "
         "and from JSON.")
-    
+
     def to_python(self, value):
         if not value:
             return None
-        
+
         if isinstance(value, basestring):
             value = json.loads(value)
         return value
-    
+
     def get_db_prep_save(self, value):
         if value is None:
             return None

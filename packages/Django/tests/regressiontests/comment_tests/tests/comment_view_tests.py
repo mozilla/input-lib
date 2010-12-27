@@ -160,13 +160,18 @@ class CommentViewTests(CommentTestCase):
 
         # Connect signals and keep track of handled ones
         received_signals = []
-        excepted_signals = [signals.comment_will_be_posted, signals.comment_was_posted]
-        for signal in excepted_signals:
+        expected_signals = [
+            signals.comment_will_be_posted, signals.comment_was_posted
+        ]
+        for signal in expected_signals:
             signal.connect(receive)
 
         # Post a comment and check the signals
         self.testCreateValidComment()
-        self.assertEqual(received_signals, excepted_signals)
+        self.assertEqual(received_signals, expected_signals)
+
+        for signal in expected_signals:
+            signal.disconnect(receive)
 
     def testWillBePostedSignal(self):
         """
@@ -194,7 +199,7 @@ class CommentViewTests(CommentTestCase):
         signals.comment_will_be_posted.connect(receive)
         self.testCreateValidComment()
         c = Comment.objects.all()[0]
-        self.failIf(c.is_public)
+        self.assertFalse(c.is_public)
 
     def testCommentNext(self):
         """Test the different "next" actions the comment view can take"""
@@ -203,14 +208,14 @@ class CommentViewTests(CommentTestCase):
         response = self.client.post("/post/", data)
         location = response["Location"]
         match = post_redirect_re.match(location)
-        self.failUnless(match != None, "Unexpected redirect location: %s" % location)
+        self.assertTrue(match != None, "Unexpected redirect location: %s" % location)
 
         data["next"] = "/somewhere/else/"
         data["comment"] = "This is another comment"
         response = self.client.post("/post/", data)
         location = response["Location"]
         match = re.search(r"^http://testserver/somewhere/else/\?c=\d+$", location)
-        self.failUnless(match != None, "Unexpected redirect location: %s" % location)
+        self.assertTrue(match != None, "Unexpected redirect location: %s" % location)
 
     def testCommentDoneView(self):
         a = Article.objects.get(pk=1)
@@ -218,7 +223,7 @@ class CommentViewTests(CommentTestCase):
         response = self.client.post("/post/", data)
         location = response["Location"]
         match = post_redirect_re.match(location)
-        self.failUnless(match != None, "Unexpected redirect location: %s" % location)
+        self.assertTrue(match != None, "Unexpected redirect location: %s" % location)
         pk = int(match.group('pk'))
         response = self.client.get(location)
         self.assertTemplateUsed(response, "comments/posted.html")
@@ -235,7 +240,7 @@ class CommentViewTests(CommentTestCase):
         response = self.client.post("/post/", data)
         location = response["Location"]
         match = re.search(r"^http://testserver/somewhere/else/\?foo=bar&c=\d+$", location)
-        self.failUnless(match != None, "Unexpected redirect location: %s" % location)
+        self.assertTrue(match != None, "Unexpected redirect location: %s" % location)
 
     def testCommentPostRedirectWithInvalidIntegerPK(self):
         """
@@ -251,4 +256,3 @@ class CommentViewTests(CommentTestCase):
         broken_location = location + u"\ufffd"
         response = self.client.get(broken_location)
         self.assertEqual(response.status_code, 200)
-

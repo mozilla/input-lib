@@ -63,8 +63,8 @@ class LegacyConnection(type):
     A metaclass to normalize arguments give to the get_db_prep_* and db_type
     methods on fields.
     """
-    def __new__(cls, names, bases, attrs):
-        new_cls = super(LegacyConnection, cls).__new__(cls, names, bases, attrs)
+    def __new__(cls, name, bases, attrs):
+        new_cls = super(LegacyConnection, cls).__new__(cls, name, bases, attrs)
         for attr in ('db_type', 'get_db_prep_save'):
             setattr(new_cls, attr, call_with_connection(getattr(new_cls, attr)))
         for attr in ('get_db_prep_lookup', 'get_db_prep_value'):
@@ -76,10 +76,11 @@ class SubfieldBase(LegacyConnection):
     A metaclass for custom Field subclasses. This ensures the model's attribute
     has the descriptor protocol attached to it.
     """
-    def __new__(cls, base, name, attrs):
-        new_class = super(SubfieldBase, cls).__new__(cls, base, name, attrs)
+    def __new__(cls, name, bases, attrs):
+        new_class = super(SubfieldBase, cls).__new__(cls, name, bases, attrs)
         new_class.contribute_to_class = make_contrib(
-                attrs.get('contribute_to_class'))
+            new_class, attrs.get('contribute_to_class')
+        )
         return new_class
 
 class Creator(object):
@@ -97,7 +98,7 @@ class Creator(object):
     def __set__(self, obj, value):
         obj.__dict__[self.field.name] = self.field.to_python(value)
 
-def make_contrib(func=None):
+def make_contrib(superclass, func=None):
     """
     Returns a suitable contribute_to_class() method for the Field subclass.
 
@@ -110,7 +111,7 @@ def make_contrib(func=None):
         if func:
             func(self, cls, name)
         else:
-            super(self.__class__, self).contribute_to_class(cls, name)
+            super(superclass, self).contribute_to_class(cls, name)
         setattr(cls, self.name, Creator(self))
 
     return contribute_to_class

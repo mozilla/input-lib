@@ -21,10 +21,10 @@ from django.utils.translation import activate, deactivate, ugettext as _
 from django.utils.safestring import mark_safe
 from django.utils.tzinfo import LocalTimezone
 
-from context import context_tests
-from custom import custom_filters
-from parser import token_parsing, filter_parsing, variable_parsing
-from unicode import unicode_tests
+from context import ContextTests
+from custom import CustomTests
+from parser import ParserTests
+from unicode import UnicodeTests
 from nodelist import NodelistTest
 from smartif import *
 
@@ -34,16 +34,6 @@ except ImportError:
     pass # If setuptools isn't installed, that's fine. Just move on.
 
 import filters
-
-# Some other tests we would like to run
-__test__ = {
-    'unicode': unicode_tests,
-    'context': context_tests,
-    'token_parsing': token_parsing,
-    'filter_parsing': filter_parsing,
-    'variable_parsing': variable_parsing,
-    'custom_filters': custom_filters,
-}
 
 #################################
 # Custom template tag for tests #
@@ -1116,6 +1106,12 @@ class Templates(unittest.TestCase):
             'i18n24': ("{% load i18n %}{% trans 'Page not found'|upper %}", {'LANGUAGE_CODE': 'de'}, u'SEITE NICHT GEFUNDEN'),
             'i18n25': ('{% load i18n %}{% trans somevar|upper %}', {'somevar': 'Page not found', 'LANGUAGE_CODE': 'de'}, u'SEITE NICHT GEFUNDEN'),
 
+            # translation of plural form with extra field in singular form (#13568)
+            'i18n26': ('{% load i18n %}{% blocktrans with myextra_field as extra_field count number as counter %}singular {{ extra_field }}{% plural %}plural{% endblocktrans %}', {'number': 1, 'myextra_field': 'test'}, "singular test"),
+
+            # translation of singular form in russian (#14126)
+            'i18n27': ('{% load i18n %}{% blocktrans count number as counter %}1 result{% plural %}{{ counter }} results{% endblocktrans %}', {'number': 1, 'LANGUAGE_CODE': 'ru'}, u'1 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442'),
+
             ### HANDLING OF TEMPLATE_STRING_IF_INVALID ###################################
 
             'invalidstr01': ('{{ var|default:"Foo" }}', {}, ('Foo','INVALID')),
@@ -1350,7 +1346,7 @@ class Templates(unittest.TestCase):
 class TemplateTagLoading(unittest.TestCase):
 
     def setUp(self):
-        self.old_path = sys.path
+        self.old_path = sys.path[:]
         self.old_apps = settings.INSTALLED_APPS
         self.egg_dir = '%s/eggs' % os.path.dirname(__file__)
         self.old_tag_modules = template.templatetags_modules

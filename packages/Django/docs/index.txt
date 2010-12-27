@@ -21,7 +21,7 @@ Having trouble? We'd like to help!
   `post a question`_.
 
 * Ask a question in the `#django IRC channel`_, or search the `IRC logs`_ to see
-  if its been asked before.
+  if it's been asked before.
 
 * Report bugs with Django in our `ticket tracker`_.
 
@@ -161,7 +161,7 @@ The development process
 Other batteries included
 ========================
 
-    * :doc:`Admin site <ref/contrib/admin/index>` | :doc:`Admin actions <ref/contrib/admin/actions>`
+    * :doc:`Admin site <ref/contrib/admin/index>` | :doc:`Admin actions <ref/contrib/admin/actions>` | :doc:`Admin documentation generator<ref/contrib/admin/admindocs>`
     * :doc:`Authentication <topics/auth>`
     * :doc:`Cache system <topics/cache>`
     * :doc:`Conditional content processing <topics/conditional-view-processing>`

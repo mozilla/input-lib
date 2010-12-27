@@ -240,7 +240,7 @@ in different circumstances.
 Running tests
 =============
 
-Once you've written tests, run them using the :djadmin:`test` subcommand of
+Once you've written tests, run them using the :djadmin:`test` command of
 your project's ``manage.py`` utility::
 
     $ ./manage.py test
@@ -308,6 +308,15 @@ If you do not want to wait for the currently running test to finish, you
 can press ``Ctrl-C`` a second time and the test run will halt immediately,
 but not gracefully. No details of the tests run before the interruption will
 be reported, and any test databases created by the run will not be destroyed.
+
+.. admonition:: Test with warnings enabled
+
+    It is a good idea to run your tests with ``python -Wall manage.py
+    test``. This will allow you to catch any deprecation warnings that
+    might be in your code. Django (as well as many other libraries) use
+    warnings to flag when features are deprecated. It can also flag
+    areas in your code that are not strictly wrong, but may benefit
+    from a better implementation.
 
 Running tests outside the test runner
 -------------------------------------
@@ -412,6 +421,53 @@ will be redirected to point at ``default``. As a result, writes to
 ``default`` will appear on ``slave`` -- but because they are actually
 the same database, not because there is data replication between the
 two databases.
+
+.. _topics-testing-creation-dependencies:
+
+Controlling creation order for test databases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.2.4
+
+By default, Django will always create the ``default`` database first.
+However, no guarantees are made on the creation order of any other
+databases in your test setup.
+
+If your database configuration requires a specific creation order, you
+can specify the dependencies that exist using the
+:setting:`TEST_DEPENDENCIES` setting. Consider the following
+(simplified) example database configuration::
+
+    DATABASES = {
+        'default': {
+             # ... db settings
+             'TEST_DEPENDENCIES': ['diamonds']
+        },
+        'diamonds': {
+            # ... db settings
+        },
+        'clubs': {
+            # ... db settings
+            'TEST_DEPENDENCIES': ['diamonds']
+        },
+        'spades': {
+            # ... db settings
+            'TEST_DEPENDENCIES': ['diamonds','hearts']
+        },
+        'hearts': {
+            # ... db settings
+            'TEST_DEPENDENCIES': ['diamonds','clubs']
+        }
+    }
+
+Under this configuration, the ``diamonds`` database will be created first,
+as it is the only database alias without dependencies. The ``default``` and
+``clubs`` alias will be created next (although the order of creation of this
+pair is not guaranteed); then ``hearts``; and finally ``spades``.
+
+If there are any circular dependencies in the
+:setting:`TEST_DEPENDENCIES` definition, an ``ImproperlyConfigured``
+exception will be raised.
 
 Other test conditions
 ---------------------
@@ -575,6 +631,8 @@ Note a few important things about how the test client works:
     * By default, the test client will disable any CSRF checks
       performed by your site.
 
+      .. versionadded:: 1.2.2
+
       If, for some reason, you *want* the test client to perform CSRF
       checks, you can create an instance of the test client that
       enforces CSRF checks. To do this, pass in the
@@ -716,7 +774,7 @@ arguments at time of construction:
         parameters will be made available in the request.GET data. For example,
         if you were to make the request::
 
-        >>> c.post('/login/?vistor=true', {'name': 'fred', 'passwd': 'secret'})
+        >>> c.post('/login/?visitor=true', {'name': 'fred', 'passwd': 'secret'})
 
         ... the view handling this request could interrogate request.POST
         to retrieve the username and password, and could interrogate request.GET

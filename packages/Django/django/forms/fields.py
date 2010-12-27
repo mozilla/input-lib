@@ -399,6 +399,8 @@ class DateTimeField(Field):
             # components: date and time.
             if len(value) != 2:
                 raise ValidationError(self.error_messages['invalid'])
+            if value[0] in validators.EMPTY_VALUES and value[1] in validators.EMPTY_VALUES:
+                return None
             value = '%s %s' % tuple(value)
         for format in self.input_formats or formats.get_format('DATETIME_INPUT_FORMATS'):
             try:
@@ -430,6 +432,10 @@ class EmailField(CharField):
         'invalid': _(u'Enter a valid e-mail address.'),
     }
     default_validators = [validators.validate_email]
+
+    def clean(self, value):
+        value = self.to_python(value).strip()
+        return super(EmailField, self).clean(value)
 
 class FileField(Field):
     widget = FileInput
@@ -540,14 +546,23 @@ class URLField(CharField):
 
     def to_python(self, value):
         if value:
-            if '://' not in value:
-                # If no URL scheme given, assume http://
-                value = u'http://%s' % value
             url_fields = list(urlparse.urlsplit(value))
+            if not url_fields[0]:
+                # If no URL scheme given, assume http://
+                url_fields[0] = 'http'
+            if not url_fields[1]:
+                # Assume that if no domain is provided, that the path segment
+                # contains the domain. 
+                url_fields[1] = url_fields[2]
+                url_fields[2] = ''
+                # Rebuild the url_fields list, since the domain segment may now
+                # contain the path too.
+                value = urlparse.urlunsplit(url_fields)
+                url_fields = list(urlparse.urlsplit(value))
             if not url_fields[2]:
                 # the path portion may need to be added before query params
                 url_fields[2] = '/'
-                value = urlparse.urlunsplit(url_fields)
+            value = urlparse.urlunsplit(url_fields)
         return super(URLField, self).to_python(value)
 
 class BooleanField(Field):
@@ -817,14 +832,14 @@ class FilePathField(ChoiceField):
             self.match_re = re.compile(self.match)
 
         if recursive:
-            for root, dirs, files in os.walk(self.path):
+            for root, dirs, files in sorted(os.walk(self.path)):
                 for f in files:
                     if self.match is None or self.match_re.search(f):
                         f = os.path.join(root, f)
                         self.choices.append((f, f.replace(path, "", 1)))
         else:
             try:
-                for f in os.listdir(self.path):
+                for f in sorted(os.listdir(self.path)):
                     full_file = os.path.join(self.path, f)
                     if os.path.isfile(full_file) and (self.match is None or self.match_re.search(f)):
                         self.choices.append((full_file, f))

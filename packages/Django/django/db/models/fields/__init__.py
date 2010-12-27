@@ -514,7 +514,7 @@ class BooleanField(Field):
         raise exceptions.ValidationError(self.error_messages['invalid'])
 
     def get_prep_lookup(self, lookup_type, value):
-        # Special-case handling for filters coming from a web request (e.g. the
+        # Special-case handling for filters coming from a Web request (e.g. the
         # admin interface). Only works for scalar values (not lists). If you're
         # passing in a list, you might as well make things the right type when
         # constructing the list.
@@ -622,7 +622,7 @@ class DateField(Field):
 
     def pre_save(self, model_instance, add):
         if self.auto_now or (self.auto_now_add and add):
-            value = datetime.datetime.now()
+            value = datetime.date.today()
             setattr(model_instance, self.attname, value)
             return value
         else:
@@ -708,6 +708,14 @@ class DateTimeField(DateField):
                                              **kwargs)
                 except ValueError:
                     raise exceptions.ValidationError(self.error_messages['invalid'])
+
+    def pre_save(self, model_instance, add):
+        if self.auto_now or (self.auto_now_add and add):
+            value = datetime.datetime.now()
+            setattr(model_instance, self.attname, value)
+            return value
+        else:
+            return super(DateTimeField, self).pre_save(model_instance, add)
 
     def get_prep_value(self, value):
         return self.to_python(value)
@@ -946,7 +954,7 @@ class NullBooleanField(Field):
         raise exceptions.ValidationError(self.error_messages['invalid'])
 
     def get_prep_lookup(self, lookup_type, value):
-        # Special-case handling for filters coming from a web request (e.g. the
+        # Special-case handling for filters coming from a Web request (e.g. the
         # admin interface). Only works for scalar values (not lists). If you're
         # passing in a list, you might as well make things the right type when
         # constructing the list.

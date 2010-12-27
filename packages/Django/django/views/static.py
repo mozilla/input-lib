@@ -56,7 +56,8 @@ def serve(request, path, document_root=None, show_indexes=False):
         raise Http404('"%s" does not exist' % fullpath)
     # Respect the If-Modified-Since header.
     statobj = os.stat(fullpath)
-    mimetype = mimetypes.guess_type(fullpath)[0] or 'application/octet-stream'
+    mimetype, encoding = mimetypes.guess_type(fullpath)
+    mimetype = mimetype or 'application/octet-stream'
     if not was_modified_since(request.META.get('HTTP_IF_MODIFIED_SINCE'),
                               statobj[stat.ST_MTIME], statobj[stat.ST_SIZE]):
         return HttpResponseNotModified(mimetype=mimetype)
@@ -64,6 +65,8 @@ def serve(request, path, document_root=None, show_indexes=False):
     response = HttpResponse(contents, mimetype=mimetype)
     response["Last-Modified"] = http_date(statobj[stat.ST_MTIME])
     response["Content-Length"] = len(contents)
+    if encoding:
+        response["Content-Encoding"] = encoding
     return response
 
 DEFAULT_DIRECTORY_INDEX_TEMPLATE = """
@@ -126,12 +129,15 @@ def was_modified_since(header=None, mtime=0, size=0):
             raise ValueError
         matches = re.match(r"^([^;]+)(; length=([0-9]+))?$", header,
                            re.IGNORECASE)
-        header_mtime = mktime_tz(parsedate_tz(matches.group(1)))
+        header_date = parsedate_tz(matches.group(1))
+        if header_date is None:
+            raise ValueError
+        header_mtime = mktime_tz(header_date)
         header_len = matches.group(3)
         if header_len and int(header_len) != size:
             raise ValueError
         if mtime > header_mtime:
             raise ValueError
-    except (AttributeError, ValueError):
+    except (AttributeError, ValueError, OverflowError):
         return True
     return False

@@ -4,6 +4,7 @@
 This example exists purely to point out errors in models.
 """
 
+from django.contrib.contenttypes import generic
 from django.db import models
 
 class FieldErrors(models.Model):
@@ -206,6 +207,24 @@ class UniqueFKTarget2(models.Model):
     """ Model to test for unique FK target in previously seen model: expect no error """
     tgt = models.ForeignKey(FKTarget, to_field='good')
 
+class NonExistingOrderingWithSingleUnderscore(models.Model):
+    class Meta:
+        ordering = ("does_not_exist",)
+
+class Tag(models.Model):
+   name = models.CharField("name", max_length=20)
+
+class TaggedObject(models.Model):
+   object_id = models.PositiveIntegerField("Object ID")
+   tag = models.ForeignKey(Tag)
+   content_object = generic.GenericForeignKey()
+
+class UserTaggedObject(models.Model):
+   object_tag = models.ForeignKey(TaggedObject)
+
+class ArticleAttachment(models.Model):
+   tags = generic.GenericRelation(TaggedObject)
+   user_tags = generic.GenericRelation(UserTaggedObject)
 
 model_errors = """invalid_models.fielderrors: "charfield": CharFields require a "max_length" attribute that is a positive integer.
 invalid_models.fielderrors: "charfield2": CharFields require a "max_length" attribute that is a positive integer.
@@ -311,4 +330,6 @@ invalid_models.abstractrelationmodel: 'fk2' has an m2m relation with model Abstr
 invalid_models.uniquem2m: ManyToManyFields cannot be unique.  Remove the unique argument on 'unique_people'.
 invalid_models.nonuniquefktarget1: Field 'bad' under model 'FKTarget' must have a unique=True constraint.
 invalid_models.nonuniquefktarget2: Field 'bad' under model 'FKTarget' must have a unique=True constraint.
+invalid_models.nonexistingorderingwithsingleunderscore: "ordering" refers to "does_not_exist", a field that doesn't exist.
+invalid_models.articleattachment: Model 'UserTaggedObject' must have a GenericForeignKey in order to create a GenericRelation that points to it.
 """

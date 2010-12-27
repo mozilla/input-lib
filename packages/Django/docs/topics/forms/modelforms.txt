@@ -2,8 +2,14 @@
 Creating forms from models
 ==========================
 
+.. module:: django.forms.models
+   :synopsis: ModelForm and ModelFormset.
+
+.. currentmodule:: django.forms
+
 ``ModelForm``
 =============
+.. class:: ModelForm
 
 If you're building a database-driven app, chances are you'll have forms that
 map closely to Django models. For instance, you might have a ``BlogComment``
@@ -235,7 +241,7 @@ supplied, ``save()`` will update that instance. If it's not supplied,
     >>> f.save()
 
 Note that ``save()`` will raise a ``ValueError`` if the data in the form
-doesn't validate -- i.e., ``if form.errors``.
+doesn't validate -- i.e., if form.errors evaluates to True.
 
 This ``save()`` method accepts an optional ``commit`` keyword argument, which
 accepts either ``True`` or ``False``. If you call ``save()`` with
@@ -387,7 +393,7 @@ widget::
     class AuthorForm(ModelForm):
         class Meta:
             model = Author
-            fields = ['name', 'title', 'birth_date']
+            fields = ('name', 'title', 'birth_date')
             widgets = {
                 'name': Textarea(attrs={'cols': 80, 'rows': 20}),
             }
@@ -471,7 +477,7 @@ to be rendered first, we could specify the following ``ModelForm``::
     >>> class BookForm(ModelForm):
     ...     class Meta:
     ...         model = Book
-    ...         fields = ['title', 'author']
+    ...         fields = ('title', 'author')
 
 .. _overriding-modelform-clean-method:
 
@@ -514,7 +520,7 @@ the ``Meta.fields`` or ``Meta.excludes`` lists::
 
     >>> class RestrictedArticleForm(EnhancedArticleForm):
     ...     class Meta(ArticleForm.Meta):
-    ...         exclude = ['body']
+    ...         exclude = ('body',)
 
 This adds the extra method from the ``EnhancedArticleForm`` and modifies
 the original ``ArticleForm.Meta`` to remove one field.

@@ -69,6 +69,8 @@ purely database-related, whereas :attr:`~Field.blank` is validation-related. If
 a field has ``blank=True``, validation on Django's admin site will allow entry
 of an empty value. If a field has ``blank=False``, the field will be required.
 
+.. _field-choices:
+
 ``choices``
 -----------
 
@@ -411,6 +413,11 @@ The admin represents this as an ``<input type="text">`` with a JavaScript
 calendar, and a shortcut for "Today".  The JavaScript calendar will always
 start the week on a Sunday.
 
+.. note::
+    As currently implemented, setting ``auto_now`` or ``auto_add_now`` to
+    ``True`` will cause the field to have ``editable=False`` and ``blank=True``
+    set.
+
 ``DateTimeField``
 -----------------
 
@@ -537,7 +544,7 @@ takes a few steps:
        (relative to :setting:`MEDIA_ROOT`). You'll most likely want to use the
        convenience :attr:`~django.core.files.File.url` function provided by
        Django. For example, if your :class:`ImageField` is called ``mug_shot``,
-       you can get the absolute URL to your image in a template with
+       you can get the absolute path to your image in a template with
        ``{{ object.mug_shot.url }}``.
 
 For example, say your :setting:`MEDIA_ROOT` is set to ``'/home/media'``, and
@@ -924,6 +931,15 @@ define the details of how the relation works.
     when defining relations on :ref:`abstract models
     <abstract-base-classes>`; and when you do so
     :ref:`some special syntax <abstract-related-name>` is available.
+
+    If you wish to suppress the provision of a backwards relation, you may
+    simply provide a ``related_name`` which ends with a ``'+'`` character.
+    For example::
+   
+        user = models.ForeignKey(User, related_name='+')
+
+    will ensure that no backwards relation to this model is provided on the 
+    ``User`` model.
 
 .. attribute:: ForeignKey.to_field
 
