@@ -21,6 +21,8 @@ packages/importlib/
 packages/pyparsing/
 packages/python-dateutil/
 packages/sqlalchemy/
+packages/dumbo/
+packages/typedbytes/
 src/commonware
 src/django-cache-machine
 src/django-cronjobs

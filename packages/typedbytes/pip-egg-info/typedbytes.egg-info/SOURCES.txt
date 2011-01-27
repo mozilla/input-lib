@@ -1,0 +1,6 @@
+README
+typedbytes.py
+pip-egg-info/typedbytes.egg-info/PKG-INFO
+pip-egg-info/typedbytes.egg-info/SOURCES.txt
+pip-egg-info/typedbytes.egg-info/dependency_links.txt
+pip-egg-info/typedbytes.egg-info/top_level.txt

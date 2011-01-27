@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: typedbytes
+Version: 0.3.6
+Summary: A Python module for dealing with so called "typed bytes"
+Home-page: http://github.com/klbostee/typedbytes
+Author: Klaas Bosteels
+Author-email: klaas@last.fm
+License: Apache Software License (ASF)
+Description: UNKNOWN
+Platform: UNKNOWN
