@@ -32,5 +32,6 @@ src/jingo
 src/jingo-minify
 src/nuggets
 src/schematic
+src/sphinxapi
 src/textcluster
 src/tower

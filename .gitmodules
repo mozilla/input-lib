@@ -31,3 +31,6 @@
 [submodule "src/jingo-minify"]
 	path = src/jingo-minify
 	url = git://github.com/jsocol/jingo-minify.git
+[submodule "src/sphinxapi"]
+	path = src/sphinxapi
+	url = git://github.com/jsocol/sphinxapi.git
