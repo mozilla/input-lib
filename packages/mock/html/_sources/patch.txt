@@ -1,0 +1,157 @@
+==================
+ Patch Decorators
+==================
+
+
+.. currentmodule:: mock
+
+
+The patch decorators are used for patching objects only within the scope of
+the function they decorate. They automatically handle the unpatching for you,
+even if exceptions are raise. All of these functions can also be used in with
+statements.
+
+
+patch
+=====
+
+.. autofunction:: patch
+
+.. note::
+
+    Patching a class replaces the class with a Mock *instance*. If the class
+    is instantiated in the code under test then it will be the `return_value`
+    of the mock that will be used.
+
+    If the class is instantiated multiple times you could use
+    :attr:`Mock.side_effect` to return a new mock each time. Alternatively you
+    can set the `return_value` to be anything you want.
+
+    To configure return values on methods of *instances* on the patched class
+    you must do this on the `return_value`. For example::
+
+        @patch('module.Class')
+        def test(MockClass):
+            instance = MockClass.return_value
+            instance.method.return_value = 'foo'
+
+
+patch.object
+============
+
+.. function:: patch.object(target, attribute, new=DEFAULT, spec=None, create=False, mocksignature=False, spec_set=None)
+
+    patch the named member (`attribute`) on an object (`target`) with a mock
+    object.
+
+    Arguments new, spec, create, mocksignature and spec_set have the same
+    meaning as for patch.
+
+You can either call `patch.object` with three arguments or two arguments. The three
+argument form takes the object to be patched, the attribute name and the
+object to replace the attribute with.
+
+When calling with the two argument form you omit the replacement object, and a
+mock is created for you and passed in as an extra argument to the decorated
+function::
+
+    @patch.object(SomeClass, 'classmethod')
+    def test_something(self, mockMethod):
+        SomeClass.classmethod(3)
+
+        mockMethod.assert_called_with(3)
+
+``spec`` and ``create`` have the same meaning as for the patch decorator.
+
+``patch.object`` is also a context manager and can be used with ``with``
+statements in the same way as ``patch``. It can also be used as a class
+decorator with same semantics as ``patch``.
+
+patch_object
+============
+
+.. deprecated:: 0.7
+   This is the same as ``patch.object``. Use the renamed version.
+
+
+patch.dict
+==========
+
+.. function:: patch.dict(in_dict, values=(), clear=False)
+
+    Patch a dictionary and restore the dictionary to its original state after
+    the test.
+
+    `in_dict` can be a dictionary or a mapping like container. If it is a
+    mapping then it must at least support getting, setting and deleting items
+    plus iterating over keys.
+
+    `in_dict` can also be a string specifying the name of the dictionary, which
+    will then be fetched by importing it.
+
+    `values` can be a dictionary of values to set in the dictionary. `values`
+    can also be an iterable of ``(key, value)`` pairs.
+
+    If `clear` is True then the dictionary will be cleared before the new
+    values are set.
+
+Like :func:`patch` and :func:`patch.object` ``patch.dict`` can be used as a
+decorator or a context manager. It can be used to add members to a dictionary,
+or simply let a test change a dictionary, and ensure the dictionary is restored
+when the test ends.
+
+.. doctest::
+
+    >>> from mock import patch
+    >>> foo = {}
+    >>> with patch.dict(foo, {'newkey': 'newvalue'}):
+    ...     assert foo == {'newkey': 'newvalue'}
+    ...
+    >>> assert foo == {}
+
+    >>> import os
+    >>> with patch.dict('os.environ', {'newkey': 'newvalue'}):
+    ...     print os.environ['newkey']
+    ...
+    newvalue
+    >>> assert 'newkey' not in os.environ
+
+
+Nesting Patch Decorators
+========================
+
+If you want to perform multiple patches then you can simply stack up the
+decorators.
+
+You can stack up multiple patch decorators using this pattern::
+
+    @patch('module.ClassName1')
+    @patch('module.ClassName2')
+    def testMethod(self, MockClass2, MockClass1):
+        ClassName1()
+        ClassName2()
+        self.assertEqual(MockClass1.called, "ClassName1 not patched")
+        self.assertEqual(MockClass2.called, "ClassName2 not patched")
+
+
+Like all context-managers patches can be nested using contextlib's nested
+function; *every* patching will appear in the tuple after "as"::
+
+     from contextlib import nested
+     with nested(patch('Package.ModuleName.ClassName'),
+                 patch('Package.ModuleName.ClassName2', TestUtils.MockClass2)) as (MockClass1, MockClass2):
+          instance = ClassName(ClassName2())
+          self.assertEqual(instance.f(), "expected")
+
+
+Patching Descriptors
+====================
+
+Since version 0.6.0 both patch_ and patch.object_ have been able to correctly
+patch and restore descriptors; class methods, static methods and properties.
+You should patch these on the *class* rather than an instance::
+
+    @patch('module.ClassName.static')
+    def testMethod(self, mockStatic):
+        ClassName.static('foo')
+        mockStatic.assert_called_with('foo')

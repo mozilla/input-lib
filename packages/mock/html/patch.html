@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Patch Decorators &mdash; Mock v0.7.0b4 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0b4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Mock v0.7.0b4 documentation" href="index.html" />
+    <link rel="next" title="Sentinel" href="sentinel.html" />
+    <link rel="prev" title="The Mock Class" href="mock.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="sentinel.html" title="Sentinel"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mock.html" title="The Mock Class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Mock v0.7.0b4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="patch-decorators">
+<h1>Patch Decorators<a class="headerlink" href="#patch-decorators" title="Permalink to this headline">¶</a></h1>
+<p>The patch decorators are used for patching objects only within the scope of
+the function they decorate. They automatically handle the unpatching for you,
+even if exceptions are raise. All of these functions can also be used in with
+statements.</p>
+<div class="section" id="patch">
+<h2>patch<a class="headerlink" href="#patch" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="mock.patch">
+<tt class="descname">patch</tt><big>(</big><em>target</em>, <em>new=&lt;SentinelObject &quot;DEFAULT&quot;&gt;</em>, <em>spec=None</em>, <em>create=False</em>, <em>mocksignature=False</em>, <em>spec_set=None</em><big>)</big><a class="headerlink" href="#mock.patch" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">patch</span></tt> acts as a function decorator, class decorator or a context
+manager. Inside the body of the function or with statement, the <tt class="docutils literal"><span class="pre">target</span></tt>
+(specified in the form <cite>&#8216;PackageName.ModuleName.ClassName&#8217;</cite>) is patched
+with a <tt class="docutils literal"><span class="pre">new</span></tt> object. When the function/with statement exits the patch is
+undone.</p>
+<p>The target is imported and the specified attribute patched with the new
+object, so it must be importable from the environment you are calling the
+decorator from.</p>
+<p>If <tt class="docutils literal"><span class="pre">new</span></tt> is omitted, then a new <tt class="docutils literal"><span class="pre">Mock</span></tt> is created and passed in as an
+extra argument to the decorated function.</p>
+<p>The <tt class="docutils literal"><span class="pre">spec</span></tt> and <tt class="docutils literal"><span class="pre">spec_set</span></tt> keyword arguments are passed to the <tt class="docutils literal"><span class="pre">Mock</span></tt>
+if patch is creating one for you.</p>
+<p>In addition you can pass <tt class="docutils literal"><span class="pre">spec=True</span></tt> or <tt class="docutils literal"><span class="pre">spec_set=True</span></tt>, which causes
+patch to pass in the object being mocked as the spec/spec_set object.</p>
+<p>If <tt class="docutils literal"><span class="pre">mocksignature</span></tt> is True then the patch will be done with a function
+created by mocking the one being replaced. If the object being replaced is
+a class then the signature of <cite>__init__</cite> will be copied. If the object
+being replaced is a callable object then the signature of <cite>__call__</cite> will
+be copied.</p>
+<p>By default <tt class="docutils literal"><span class="pre">patch</span></tt> will fail to replace attributes that don&#8217;t exist. If
+you pass in &#8216;create=True&#8217; and the attribute doesn&#8217;t exist, patch will
+create the attribute for you when the patched function is called, and
+delete it again afterwards. This is useful for writing tests against
+attributes that your production code creates at runtime. It is off by by
+default because it can be dangerous. With it switched on you can write
+passing tests against APIs that don&#8217;t actually exist!</p>
+<p>Patch can be used as a TestCase class decorator. It works by
+decorating each test method in the class. This reduces the boilerplate
+code when your test methods share a common patchings set.</p>
+<p>Patch can be used with the with statement, if this is available in your
+version of Python. Here the patching applies to the indented block after
+the with statement. If you use &#8220;as&#8221; then the patched object will be bound
+to the name after the &#8220;as&#8221;; very useful if <cite>patch</cite> is creating a mock
+object for you.</p>
+<p><cite>patch.dict(...)</cite> and <cite>patch.object(...)</cite> are available for alternate
+use-cases.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Patching a class replaces the class with a Mock <em>instance</em>. If the class
+is instantiated in the code under test then it will be the <cite>return_value</cite>
+of the mock that will be used.</p>
+<p>If the class is instantiated multiple times you could use
+<a class="reference internal" href="mock.html#mock.Mock.side_effect" title="mock.Mock.side_effect"><tt class="xref py py-attr docutils literal"><span class="pre">Mock.side_effect</span></tt></a> to return a new mock each time. Alternatively you
+can set the <cite>return_value</cite> to be anything you want.</p>
+<p>To configure return values on methods of <em>instances</em> on the patched class
+you must do this on the <cite>return_value</cite>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="nd">@patch</span><span class="p">(</span><span class="s">&#39;module.Class&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">MockClass</span><span class="p">):</span>
+    <span class="n">instance</span> <span class="o">=</span> <span class="n">MockClass</span><span class="o">.</span><span class="n">return_value</span>
+    <span class="n">instance</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="s">&#39;foo&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="patch-object">
+<h2>patch.object<a class="headerlink" href="#patch-object" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="mock.patch.object">
+<tt class="descclassname">patch.</tt><tt class="descname">object</tt><big>(</big><em>target</em>, <em>attribute</em>, <em>new=DEFAULT</em>, <em>spec=None</em>, <em>create=False</em>, <em>mocksignature=False</em>, <em>spec_set=None</em><big>)</big><a class="headerlink" href="#mock.patch.object" title="Permalink to this definition">¶</a></dt>
+<dd><p>patch the named member (<cite>attribute</cite>) on an object (<cite>target</cite>) with a mock
+object.</p>
+<p>Arguments new, spec, create, mocksignature and spec_set have the same
+meaning as for patch.</p>
+</dd></dl>
+
+<p>You can either call <cite>patch.object</cite> with three arguments or two arguments. The three
+argument form takes the object to be patched, the attribute name and the
+object to replace the attribute with.</p>
+<p>When calling with the two argument form you omit the replacement object, and a
+mock is created for you and passed in as an extra argument to the decorated
+function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@patch.object</span><span class="p">(</span><span class="n">SomeClass</span><span class="p">,</span> <span class="s">&#39;classmethod&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_something</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mockMethod</span><span class="p">):</span>
+    <span class="n">SomeClass</span><span class="o">.</span><span class="n">classmethod</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">mockMethod</span><span class="o">.</span><span class="n">assert_called_with</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">spec</span></tt> and <tt class="docutils literal"><span class="pre">create</span></tt> have the same meaning as for the patch decorator.</p>
+<p><tt class="docutils literal"><span class="pre">patch.object</span></tt> is also a context manager and can be used with <tt class="docutils literal"><span class="pre">with</span></tt>
+statements in the same way as <tt class="docutils literal"><span class="pre">patch</span></tt>. It can also be used as a class
+decorator with same semantics as <tt class="docutils literal"><span class="pre">patch</span></tt>.</p>
+</div>
+<div class="section" id="id1">
+<h2>patch_object<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p class="deprecated">
+<span class="versionmodified">Deprecated since version 0.7: </span>This is the same as <tt class="docutils literal"><span class="pre">patch.object</span></tt>. Use the renamed version.</p>
+</div>
+<div class="section" id="patch-dict">
+<h2>patch.dict<a class="headerlink" href="#patch-dict" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="mock.patch.dict">
+<tt class="descclassname">patch.</tt><tt class="descname">dict</tt><big>(</big><em>in_dict</em>, <em>values=()</em>, <em>clear=False</em><big>)</big><a class="headerlink" href="#mock.patch.dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Patch a dictionary and restore the dictionary to its original state after
+the test.</p>
+<p><cite>in_dict</cite> can be a dictionary or a mapping like container. If it is a
+mapping then it must at least support getting, setting and deleting items
+plus iterating over keys.</p>
+<p><cite>in_dict</cite> can also be a string specifying the name of the dictionary, which
+will then be fetched by importing it.</p>
+<p><cite>values</cite> can be a dictionary of values to set in the dictionary. <cite>values</cite>
+can also be an iterable of <tt class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></tt> pairs.</p>
+<p>If <cite>clear</cite> is True then the dictionary will be cleared before the new
+values are set.</p>
+</dd></dl>
+
+<p>Like <a class="reference internal" href="#mock.patch" title="mock.patch"><tt class="xref py py-func docutils literal"><span class="pre">patch()</span></tt></a> and <a class="reference internal" href="#mock.patch.object" title="mock.patch.object"><tt class="xref py py-func docutils literal"><span class="pre">patch.object()</span></tt></a> <tt class="docutils literal"><span class="pre">patch.dict</span></tt> can be used as a
+decorator or a context manager. It can be used to add members to a dictionary,
+or simply let a test change a dictionary, and ensure the dictionary is restored
+when the test ends.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mock</span> <span class="kn">import</span> <span class="n">patch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">foo</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">foo</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;newkey&#39;</span><span class="p">:</span> <span class="s">&#39;newvalue&#39;</span><span class="p">}):</span>
+<span class="gp">... </span>    <span class="k">assert</span> <span class="n">foo</span> <span class="o">==</span> <span class="p">{</span><span class="s">&#39;newkey&#39;</span><span class="p">:</span> <span class="s">&#39;newvalue&#39;</span><span class="p">}</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">foo</span> <span class="o">==</span> <span class="p">{}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="s">&#39;os.environ&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;newkey&#39;</span><span class="p">:</span> <span class="s">&#39;newvalue&#39;</span><span class="p">}):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;newkey&#39;</span><span class="p">]</span>
+<span class="gp">...</span>
+<span class="go">newvalue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="s">&#39;newkey&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="nesting-patch-decorators">
+<h2>Nesting Patch Decorators<a class="headerlink" href="#nesting-patch-decorators" title="Permalink to this headline">¶</a></h2>
+<p>If you want to perform multiple patches then you can simply stack up the
+decorators.</p>
+<p>You can stack up multiple patch decorators using this pattern:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@patch</span><span class="p">(</span><span class="s">&#39;module.ClassName1&#39;</span><span class="p">)</span>
+<span class="nd">@patch</span><span class="p">(</span><span class="s">&#39;module.ClassName2&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">testMethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">MockClass2</span><span class="p">,</span> <span class="n">MockClass1</span><span class="p">):</span>
+    <span class="n">ClassName1</span><span class="p">()</span>
+    <span class="n">ClassName2</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">MockClass1</span><span class="o">.</span><span class="n">called</span><span class="p">,</span> <span class="s">&quot;ClassName1 not patched&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">MockClass2</span><span class="o">.</span><span class="n">called</span><span class="p">,</span> <span class="s">&quot;ClassName2 not patched&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Like all context-managers patches can be nested using contextlib&#8217;s nested
+function; <em>every</em> patching will appear in the tuple after &#8220;as&#8221;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">nested</span>
+<span class="k">with</span> <span class="n">nested</span><span class="p">(</span><span class="n">patch</span><span class="p">(</span><span class="s">&#39;Package.ModuleName.ClassName&#39;</span><span class="p">),</span>
+            <span class="n">patch</span><span class="p">(</span><span class="s">&#39;Package.ModuleName.ClassName2&#39;</span><span class="p">,</span> <span class="n">TestUtils</span><span class="o">.</span><span class="n">MockClass2</span><span class="p">))</span> <span class="k">as</span> <span class="p">(</span><span class="n">MockClass1</span><span class="p">,</span> <span class="n">MockClass2</span><span class="p">):</span>
+     <span class="n">instance</span> <span class="o">=</span> <span class="n">ClassName</span><span class="p">(</span><span class="n">ClassName2</span><span class="p">())</span>
+     <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">f</span><span class="p">(),</span> <span class="s">&quot;expected&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="patching-descriptors">
+<h2>Patching Descriptors<a class="headerlink" href="#patching-descriptors" title="Permalink to this headline">¶</a></h2>
+<p>Since version 0.6.0 both <a class="reference internal" href="#patch">patch</a> and <a class="reference internal" href="#patch-object">patch.object</a> have been able to correctly
+patch and restore descriptors; class methods, static methods and properties.
+You should patch these on the <em>class</em> rather than an instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@patch</span><span class="p">(</span><span class="s">&#39;module.ClassName.static&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">testMethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mockStatic</span><span class="p">):</span>
+    <span class="n">ClassName</span><span class="o">.</span><span class="n">static</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+    <span class="n">mockStatic</span><span class="o">.</span><span class="n">assert_called_with</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Patch Decorators</a><ul>
+<li><a class="reference internal" href="#patch">patch</a></li>
+<li><a class="reference internal" href="#patch-object">patch.object</a></li>
+<li><a class="reference internal" href="#id1">patch_object</a></li>
+<li><a class="reference internal" href="#patch-dict">patch.dict</a></li>
+<li><a class="reference internal" href="#nesting-patch-decorators">Nesting Patch Decorators</a></li>
+<li><a class="reference internal" href="#patching-descriptors">Patching Descriptors</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mock.html"
+                        title="previous chapter">The Mock Class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sentinel.html"
+                        title="next chapter">Sentinel</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/patch.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="sentinel.html" title="Sentinel"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mock.html" title="The Mock Class"
+             >previous</a> |</li>
+        <li><a href="index.html">Mock v0.7.0b4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2007-2010, Michael Foord &amp; the mock team.
+      Last updated on Nov 12, 2010.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

@@ -2,6 +2,7 @@ COPYING
 LICENSE
 MANIFEST.in
 README
+pip-delete-this-directory.txt
 pip-egg-info/translate_toolkit.egg-info/PKG-INFO
 pip-egg-info/translate_toolkit.egg-info/SOURCES.txt
 pip-egg-info/translate_toolkit.egg-info/dependency_links.txt

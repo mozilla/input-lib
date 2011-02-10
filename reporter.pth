@@ -23,6 +23,15 @@ packages/python-dateutil/
 packages/sqlalchemy/
 packages/dumbo/
 packages/typedbytes/
+packages/coverage/
+packages/logilab-astng/
+packages/logilab-common/
+packages/lxml/
+packages/mock/
+packages/nose/
+packages/pylint/
+packages/pyquery/
+packages/unittest2/
 src/commonware
 src/django-cache-machine
 src/django-cronjobs
@@ -35,3 +44,5 @@ src/schematic
 src/sphinxapi
 src/textcluster
 src/tower
+src/django-nose/
+src/test-utils/

@@ -1,0 +1,320 @@
+==========
+ Examples
+==========
+
+.. testsetup::
+
+    import os, sys, unittest
+    if not os.getcwd() in sys.path:
+        sys.path.append(os.getcwd())
+        
+    from mock import Mock, sentinel, patch
+
+    class SomeClass(object):
+        static_method = None
+        class_method = None
+
+    class Test(unittest.TestCase):
+        def testSomething(self):
+            pass
+    self = Test('testSomething')
+
+
+For comprehensive examples, see the unit tests included in the full source
+distribution.
+
+
+Mock Examples
+=============
+
+Mock Patching Methods
+---------------------
+
+``Mock`` is callable. If it is called then it sets a ``called`` attribute to
+``True``.
+
+This example tests that calling ``method`` results in a call to ``something``:
+
+::
+
+    def test_method_calls_something(self):
+        real = ProductionClass()
+        real.something = Mock()
+        
+        real.method()
+        
+        self.assertTrue(real.something.called, "method didn't call something")
+    
+If you want to catch the arguments then there is other information exposed:
+
+::
+
+    def test_method_calls_something(self):
+        real = ProductionClass()
+        real.something = Mock()
+        
+        real.method()
+        
+        self.assertEqual(real.something.call_count, 1, "something called incorrect number of times")
+        
+        args = ()
+        keywargs = {}
+        self.assertEqual(real.something.call_args, (args, keywargs), "something called with incorrect arguments")
+        self.assertEqual(real.something.call_args_list, [(args, keywargs)], 
+                          "something called with incorrect arguments")
+
+Checking ``call_args_list`` tests how many times the mock was called, and the
+arguments for each call, in a single assertion.
+
+
+Mock for Method Calls on an Object
+----------------------------------
+
+::
+
+    def test_closer_closes_something(self):
+        real = ProductionClass()
+        mock = Mock()
+        
+        real.closer(mock)
+        
+        self.assertTrue(mock.close.called, "closer didn't close something")
+
+We don't have to do any work to provide the 'close' method on our mock.
+Accessing close creates it. So, if 'close' hasn't already been called then
+accessing it in the test will create it - but ``called`` will be ``False``.
+
+As ``close`` is a mock object is has all the attributes from the previous
+example.
+
+
+Limiting Available Methods
+--------------------------
+
+The disadvantage of the approach above is that *all* method access creates a
+new mock. This means that you can't tell if any methods were called that
+shouldn't have been. There are two ways round this. The first is by
+restricting the methods available on your mock.
+
+::
+
+    def test_closer_closes_something(self):
+        real = ProductionClass()
+        mock = Mock(spec=['close'])
+        
+        real.closer(mock)
+        
+        self.assertTrue(mock.close.called, "closer didn't close something")
+        
+
+If ``closer`` calls any methods on ``mock`` *other* than close, then an
+``AttributeError`` will be raised.
+
+
+Tracking all Method Calls
+-------------------------
+
+An alternative way to verify that only the expected methods have been accessed
+is to use the ``method_calls`` attribute of the mock. This records all calls
+to child attributes of the mock - and also to their children.
+
+This is useful if you have a mock where you expect an attribute method to be
+called. You could access the attribute directly, but ``method_calls`` provides
+a convenient way of looking at all method calls:
+
+.. doctest::
+
+    >>> mock = Mock()
+    >>> mock.method()
+    <mock.Mock object at 0x...>
+    >>> mock.Property.method(10, x=53)
+    <mock.Mock object at 0x...>
+    >>> mock.method_calls
+    [('method', (), {}), ('Property.method', (10,), {'x': 53})]
+    >>> 
+
+If you make an assertion about ``method_calls`` and any unexpected methods
+have been called, then the assertion will fail.
+
+
+Setting Return Values and Attributes
+------------------------------------
+
+Setting the return values on a mock object is trivially easy:
+
+.. doctest::
+
+    >>> mock = Mock()
+    >>> mock.return_value = 3
+    >>> mock()
+    3
+
+Of course you can do the same for methods on the mock:
+
+.. doctest::
+
+    >>> mock = Mock()
+    >>> mock.method.return_value = 3
+    >>> mock.method()
+    3
+
+If you need an attribute setting on your mock, just do it:
+
+.. doctest::
+
+    >>> mock = Mock()
+    >>> mock.x = 3
+    >>> mock.x
+    3
+
+Sometimes you want to mock up a more complex situation, like for example
+``mock.connection.cursor().execute("SELECT 1")``:
+
+
+.. doctest::
+
+    >>> mock = Mock()
+    >>> cursor = mock.connection.cursor.return_value
+    >>> cursor.execute.return_value = None
+    >>>
+    >>> mock.connection.cursor().execute("SELECT 1")
+    >>> mock.method_calls
+    [('connection.cursor', (), {})]
+    >>> cursor.method_calls
+    [('execute', ('SELECT 1',), {})]
+
+
+Creating a Mock from an Existing Object
+---------------------------------------
+
+One problem with over use of mocking is that it couples your tests to the
+implementation of your mocks rather than your real code. Suppose you have a
+class that implements ``some_method``. In a test for another class, you
+provide a mock of this object that *also* provides ``some_method``. If later
+you refactor the first class, so that it no longer has ``some_method`` - then
+your tests will continue to pass even though your code is now broken!
+
+``Mock`` allows you to provide an object as a specification for the mock,
+using the ``spec`` keyword argument. Accessing methods / attributes on the
+mock that don't exist on your specification object will immediately raise an
+attribute error. If you change the implementation of your specification, then
+tests that use that class will start failing immediately without you having to
+instantiate the class in those tests.
+
+.. doctest::
+
+    >>> mock = Mock(spec=SomeClass)
+    >>>
+    >>> mock.old_method()
+    Traceback (most recent call last):
+       ...
+    AttributeError: object has no attribute 'old_method'
+
+
+Patch Decorator Examples
+========================
+
+A common need in tests is to patch a class attribute or a module attribute,
+for example patching a builtin or patching a class in a module to test that it
+is instantiated. Modules and classes are effectively global, so patching on
+them has to be undone after the test or the patch will persist into other
+tests and cause hard to diagnose problems.
+
+The ``patch`` and ``patch.object`` decorators provide a convenient way of
+doing this.
+
+``patch.object`` patches attributes on objects within the scope of a function
+they decorate:
+
+.. doctest::
+
+    >>> mock = Mock()
+    
+    >>> @patch.object(SomeClass, 'class_method', mock) 
+    ... def test():
+    ...     SomeClass.class_method()
+    ... 
+    >>> test()
+    
+    >>> self.assertTrue(mock.called, "class_method not called")
+
+The decorator is applied to a function (called ``test`` above). The patching
+only applies inside the body of the function. You have to call the function
+explicitly, this can be useful as the test function can take arguments and be
+used to implement several tests, it can also return values.
+
+They can be stacked to perform multiple simultaneous patches:
+
+.. doctest::
+
+    >>> mock1 = Mock()
+    >>> mock2 = Mock()
+    
+    >>> @patch.object(SomeClass, 'class_method', mock1) 
+    ... @patch.object(SomeClass, 'static_method', mock2) 
+    ... def test():
+    ...     SomeClass.class_method()
+    ...     SomeClass.static_method()
+    ... 
+    >>> test()
+    
+    >>> self.assertTrue(mock1.called, "class_method not called")
+    >>> self.assertTrue(mock2.called, "static_method not called")
+
+If you are patching a module (including ``__builtin__``) then use ``patch``
+instead of ``patch.object``:
+
+.. doctest::
+
+    >>> mock = Mock()
+    >>> mock.return_value = sentinel.Handle
+    >>> @patch('__builtin__.open', mock) 
+    ... def test():
+    ...     return open('filename', 'r')
+    ...
+    >>> handle = test()
+    >>> mock.assert_called_with('filename', 'r')
+    >>> assert handle == sentinel.Handle, "incorrect file handle returned"
+    
+The module name can be 'dotted', in the form ``package.module`` if needed.
+
+If you don't want to call the decorated test function yourself, you can add
+``apply`` as a decorator on top:
+
+::
+
+    @apply
+    @patch('Package.Module.attribute', sentinel.Attribute)
+    def test():
+        "do something"
+
+A nice pattern is to actually decorate test methods themselves:
+
+::
+
+    @patch.object(SomeClass, 'attribute', sentinel.Attribute)
+    def testMethod(self):
+        self.assertEqual(SomeClass.attribute, sentinel.Attribute, "SomeClass not patched")    
+    
+If you omit the second argument to ``patch`` (or the third argument to ``patch.object``) then the attribute will be patched with a mock for you. The mock will be passed in as extra argument(s) to the function / method under test:
+
+::
+    
+    @patch.object(SomeClass, 'staticmethod')
+    def testMethod(self, mockMethod):
+        SomeClass.staticmethod()
+        self.assertTrue(mockMethod.called, "SomeClass not patched with a mock")
+
+
+You can stack up multiple patch decorators using this pattern:
+
+::
+
+    @patch('module.ClassName1')
+    @patch('module.ClassName2')
+    def test_method(self, MockClass1, MockClass2):
+        module.ClassName1()
+        module.ClassName2()
+        self.assertTrue(MockClass1.called, "ClassName1 not patched")
+        self.assertTrue(MockClass2.called, "ClassName2 not patched")
+

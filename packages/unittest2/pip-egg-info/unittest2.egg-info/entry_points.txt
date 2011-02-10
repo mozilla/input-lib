@@ -1,0 +1,4 @@
+[console_scripts]
+unit2-2.6 = unittest2:main_
+unit2 = unittest2:main_
+
