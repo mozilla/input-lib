@@ -1,6 +1,57 @@
 Jinja2 Changelog
 ================
 
+Version 2.5.5
+-------------
+(re-release of 2.5.4 with built documentation removed for filesize.
+ Released on October 18th 2010)
+
+- built documentation is no longer part of release.
+
+Version 2.5.4
+-------------
+(bugfix release, released on October 17th 2010)
+
+- Fixed extensions not loading properly with overlays.
+- Work around a bug in cpython for the debugger that causes segfaults
+  on 64bit big-endian architectures.
+
+Version 2.5.3
+-------------
+(bugfix release, released on October 17th 2010)
+
+- fixed an operator precedence error introduced in 2.5.2.  Statements
+  like "-foo.bar" had their implicit parentheses applied around the
+  first part of the expression ("(-foo).bar") instead of the more
+  correct "-(foo.bar)".
+
+Version 2.5.2
+-------------
+(bugfix release, released on August 18th 2010)
+
+- improved setup.py script to better work with assumptions people
+  might still have from it (``--with-speedups``).
+- fixed a packaging error that excluded the new debug support.
+
+Version 2.5.1
+-------------
+(bugfix release, released on August 17th 2010)
+
+- StopIteration exceptions raised by functions called from templates
+  are now intercepted and converted to undefineds.  This solves a
+  lot of debugging grief.  (StopIteration is used internally to
+  abort template execution)
+- improved performance of macro calls slightly.
+- babel extraction can now properly extract newstyle gettext calls.
+- using the variable `num` in newstyle gettext for something else
+  than the pluralize count will no longer raise a :exc:`KeyError`.
+- removed builtin markup class and switched to markupsafe.  For backwards
+  compatibility the pure Python implementation still exists but is
+  pulled from markupsafe by the Jinja2 developers.  The debug support
+  went into a separate feature called "debugsupport" and is disabled
+  by default because it is only relevant for Python 2.4
+- fixed an issue with unary operators having the wrong precendence.
+
 Version 2.5
 -----------
 (codename Incoherence, relased on May 29th 2010)

@@ -33,19 +33,11 @@ Prerequisites
 -------------
 
 Jinja2 needs at least **Python 2.4** to run.  Additionally a working C-compiler
-that can create python extensions should be installed for the debugger.  If no
-C-compiler is available and you are using Python 2.4 the `ctypes`_ module
-should be installed.
+that can create python extensions should be installed for the debugger if you
+are using Python 2.4.
 
 If you don't have a working C-compiler and you are trying to install the source
-release with the speedups you will get a compiler error.  This however can be
-circumvented by passing the ``--without-speedups`` command line argument to the
-setup script::
-
-    $ python setup.py --with-speedups install
-
-(As of Jinja 2.2, the speedups are disabled by default and can be enabled
-with ``--with-speedups``.  See :ref:`enable-speedups`)
+release with the debugsupport you will get a compiler error.
 
 .. _ctypes: http://python.net/crew/theller/ctypes/
 
@@ -87,8 +79,8 @@ This will install Jinja2 into your Python installation's site-packages directory
 Installing the development version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1.  Install `mercurial`_
-2.  ``hg clone http://dev.pocoo.org/hg/jinja2-main jinja2``
+1.  Install `git`_
+2.  ``git clone git://github.com/mitsuhiko/jinja2.git``
 3.  ``cd jinja2``
 4.  ``ln -s jinja2 /usr/lib/python2.X/site-packages``
 
@@ -96,35 +88,41 @@ As an alternative to steps 4 you can also do ``python setup.py develop``
 which will install the package via distribute in development mode.  This also
 has the advantage that the C extensions are compiled.
 
-Alternative you can use `pip`_ to install the current development
-snapshot::
-
-    sudo pip install Jinja2==dev
-
-Or the `easy_install`_ command::
-
-    sudo easy_install Jinja2==dev
-
 .. _download page: http://pypi.python.org/pypi/Jinja2
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _pip: http://pypi.python.org/pypi/pip
-.. _mercurial: http://www.selenic.com/mercurial/
+.. _git: http://git-scm.org/
 
-.. _enable-speedups:
 
-Enable the speedups Module
+More Speed with MarkupSafe
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default Jinja2 will not compile the speedups module.  Enabling this
+As of version 2.5.1 Jinja2 will check for an installed `MarkupSafe`_
+module.  If it can find it, it will use the Markup class of that module
+instead of the one that comes with Jinja2.  `MarkupSafe` replaces the
+older speedups module that came with Jinja2 and has the advantage that is
+has a better setup script and will automatically attempt to install the C
+version and nicely fall back to a pure Python implementation if that is
+not possible.
+
+The C implementation of MarkupSafe is much faster and recommended when
+using Jinja2 with autoescaping.
+
+.. _MarkupSafe: http://pypi.python.org/pypi/MarkupSafe
+
+
+Enable the debug support Module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default Jinja2 will not compile the debug support module.  Enabling this
 will fail if you don't have the Python headers or a working compiler.  This
 is often the case if you are installing Jinja2 from a windows machine.
 
-You can enable the speedups extension when installing using the
-``--with-speedups`` flag::
+Because the debug support is only necessary for Python 2.4 you will not
+have to do this unless you run 2.4::
 
-    sudo python setup.py --with-speedups install
-
+    sudo python setup.py --with-debugsupport install
 
 
 Basic API Usage
@@ -167,4 +165,4 @@ in mind, you will have to adapt the shown code examples to Python 3 syntax
 for yourself.
 
 
-.. _Jinja bug tracker: http://dev.pocoo.org/projects/jinja/
+.. _Jinja bug tracker: http://github.com/mitsuhiko/jinja2/issues

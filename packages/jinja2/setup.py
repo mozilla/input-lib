@@ -30,19 +30,23 @@ for the template designer too hard by giving him too few functionality.
 
 For more informations visit the new `Jinja2 webpage`_ and `documentation`_.
 
-The `Jinja2 tip`_ is installable via `easy_install` with ``easy_install
-Jinja2==dev``.
-
 .. _sandboxed: http://en.wikipedia.org/wiki/Sandbox_(computer_security)
 .. _Django: http://www.djangoproject.com/
 .. _Jinja2 webpage: http://jinja.pocoo.org/
 .. _documentation: http://jinja.pocoo.org/2/documentation/
-.. _Jinja2 tip: http://dev.pocoo.org/hg/jinja2-main/archive/tip.tar.gz#egg=Jinja2-dev
 """
-import os
 import sys
 
 from setuptools import setup, Extension, Feature
+
+debugsupport = Feature(
+    'optional C debug support',
+    standard=False,
+    ext_modules = [
+        Extension('jinja2._debugsupport', ['jinja2/_debugsupport.c']),
+    ],
+)
+
 
 # tell distribute to use 2to3 with our own fixers.
 extra = {}
@@ -52,10 +56,25 @@ if sys.version_info >= (3, 0):
         use_2to3_fixers=['custom_fixers']
     )
 
+# ignore the old '--with-speedups' flag
+try:
+    speedups_pos = sys.argv.index('--with-speedups')
+except ValueError:
+    pass
+else:
+    sys.argv[speedups_pos] = '--with-debugsupport'
+    sys.stderr.write('*' * 74 + '\n')
+    sys.stderr.write('WARNING:\n')
+    sys.stderr.write('  the --with-speedups flag is deprecated, assuming '
+                     '--with-debugsupport\n')
+    sys.stderr.write('  For the actual speedups install the MarkupSafe '
+                     'package.\n')
+    sys.stderr.write('*' * 74 + '\n')
+
 
 setup(
     name='Jinja2',
-    version='2.5',
+    version='2.5.5',
     url='http://jinja.pocoo.org/',
     license='BSD',
     author='Armin Ronacher',
@@ -77,15 +96,8 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Text Processing :: Markup :: HTML'
     ],
-    packages=['jinja2', 'jinja2.testsuite', 'jinja2.testsuite.res'],
-    features={
-        'speedups': Feature("optional C speed-enhancements",
-            standard=False,
-            ext_modules=[
-                Extension('jinja2._speedups', ['jinja2/_speedups.c'])
-            ]
-        )
-    },
+    packages=['jinja2', 'jinja2.testsuite', 'jinja2.testsuite.res',
+              'jinja2._markupsafe'],
     extras_require={'i18n': ['Babel>=0.8']},
     test_suite='jinja2.testsuite.suite',
     include_package_data=True,
@@ -93,5 +105,6 @@ setup(
     [babel.extractors]
     jinja2 = jinja2.ext:babel_extract[i18n]
     """,
+    features={'debugsupport': debugsupport},
     **extra
 )
