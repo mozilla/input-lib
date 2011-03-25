@@ -44,5 +44,6 @@ src/schematic
 src/sphinxapi
 src/textcluster
 src/tower
+src/slugify
 src/django-nose/
 src/test-utils/

@@ -40,3 +40,6 @@
 [submodule "src/test-utils"]
 	path = src/test-utils
 	url = git://github.com/jbalogh/test-utils.git
+[submodule "src/slugify"]
+	path = src/slugify
+	url = git://github.com/mozilla/unicode-slugify.git
