@@ -4,7 +4,7 @@ from django.db.backends import BaseDatabaseIntrospection
 # This light wrapper "fakes" a dictionary interface, because some SQLite data
 # types include variables in them -- e.g. "varchar(30)" -- and can't be matched
 # as a simple dictionary lookup.
-class FlexibleFieldLookupDict:
+class FlexibleFieldLookupDict(object):
     # Maps SQL types to Django Field types. Some of the SQL types have multiple
     # entries here because SQLite allows for anything and doesn't normalize the
     # field type; it uses whatever was given.
@@ -85,9 +85,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             table, column = [s.strip('"') for s in m.groups()]
 
             cursor.execute("SELECT sql FROM sqlite_master WHERE tbl_name = %s", [table])
-            result = cursor.fetchone()
-            if not result:
-                continue
+            result = cursor.fetchall()[0]
             other_table_results = result[0].strip()
             li, ri = other_table_results.index('('), other_table_results.rindex(')')
             other_table_results = other_table_results[li+1:ri]
@@ -138,4 +136,3 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                  'null_ok': not field[3],
                  'pk': field[5]     # undocumented
                  } for field in cursor.fetchall()]
-

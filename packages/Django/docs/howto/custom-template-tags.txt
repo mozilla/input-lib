@@ -155,8 +155,6 @@ will use the function's name as the filter name.
 Filters and auto-escaping
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
-
 When writing a custom filter, give some thought to how the filter will interact
 with Django's auto-escaping behavior. Note that three types of strings can be
 passed around inside the template code:
@@ -353,9 +351,9 @@ object::
             # split_contents() knows not to split quoted strings.
             tag_name, format_string = token.split_contents()
         except ValueError:
-            raise template.TemplateSyntaxError, "%r tag requires a single argument" % token.contents.split()[0]
+            raise template.TemplateSyntaxError("%r tag requires a single argument" % token.contents.split()[0])
         if not (format_string[0] == format_string[-1] and format_string[0] in ('"', "'")):
-            raise template.TemplateSyntaxError, "%r tag's argument should be in quotes" % tag_name
+            raise template.TemplateSyntaxError("%r tag's argument should be in quotes" % tag_name)
         return CurrentTimeNode(format_string[1:-1])
 
 Notes:
@@ -425,8 +423,6 @@ without having to be parsed multiple times.
 
 Auto-escaping considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.0
 
 The output from template tags is **not** automatically run through the
 auto-escaping filters. However, there are still a couple of things you should
@@ -600,14 +596,10 @@ Now your tag should begin to look like this::
             # split_contents() knows not to split quoted strings.
             tag_name, date_to_be_formatted, format_string = token.split_contents()
         except ValueError:
-            raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
+            raise template.TemplateSyntaxError("%r tag requires exactly two arguments" % token.contents.split()[0])
         if not (format_string[0] == format_string[-1] and format_string[0] in ('"', "'")):
-            raise template.TemplateSyntaxError, "%r tag's argument should be in quotes" % tag_name
+            raise template.TemplateSyntaxError("%r tag's argument should be in quotes" % tag_name)
         return FormatTimeNode(date_to_be_formatted, format_string[1:-1])
-
-.. versionchanged:: 1.0
-    Variable resolution has changed in the 1.0 release of Django. ``template.resolve_variable()``
-    has been deprecated in favor of a new ``template.Variable`` class.
 
 You also have to change the renderer to retrieve the actual contents of the
 ``date_updated`` property of the ``blog_entry`` object.  This can be
@@ -669,9 +661,27 @@ A couple of things to note about the ``simple_tag`` helper function:
     * If the argument was a template variable, our function is passed the
       current value of the variable, not the variable itself.
 
-When your template tag does not need access to the current context, writing a
-function to work with the input values and using the ``simple_tag`` helper is
-the easiest way to create a new tag.
+.. versionadded:: 1.3
+
+If your template tag needs to access the current context, you can use the
+``takes_context`` argument when registering your tag::
+
+    # The first argument *must* be called "context" here.
+    def current_time(context, format_string):
+        timezone = context['timezone']
+        return your_get_current_time_method(timezone, format_string)
+
+    register.simple_tag(takes_context=True)(current_time)
+
+Or, using decorator syntax::
+
+    @register.simple_tag(takes_context=True)
+    def current_time(context, format_string):
+        timezone = context['timezone']
+        return your_get_current_time_method(timezone, format_string)
+
+For more information on how the ``takes_context`` option works, see the section
+on `inclusion tags`_.
 
 .. _howto-custom-template-tags-inclusion-tags:
 
@@ -790,7 +800,7 @@ difference between this case and the previous ``inclusion_tag`` example.
 Setting a variable in the context
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The above example simply output a value. Generally, it's more flexible if your
+The above examples simply output a value. Generally, it's more flexible if your
 template tags set template variables instead of outputting values. That way,
 template authors can reuse the values that your template tags create.
 
@@ -815,6 +825,13 @@ Here's how you'd use this new version of the tag:
 .. code-block:: html+django
 
     {% current_time "%Y-%M-%d %I:%M %p" %}<p>The time is {{ current_time }}.</p>
+
+.. admonition:: Variable scope in context
+
+    Any variable set in the context will only be available in the same ``block``
+    of the template in which it was assigned. This behaviour is intentional;
+    it provides a scope for variables so that they don't conflict with
+    context in other blocks.
 
 But, there's a problem with ``CurrentTimeNode2``: The variable name
 ``current_time`` is hard-coded. This means you'll need to make sure your
@@ -846,13 +863,13 @@ class, like so::
             # Splitting by None == splitting by spaces.
             tag_name, arg = token.contents.split(None, 1)
         except ValueError:
-            raise template.TemplateSyntaxError, "%r tag requires arguments" % token.contents.split()[0]
+            raise template.TemplateSyntaxError("%r tag requires arguments" % token.contents.split()[0])
         m = re.search(r'(.*?) as (\w+)', arg)
         if not m:
-            raise template.TemplateSyntaxError, "%r tag had invalid arguments" % tag_name
+            raise template.TemplateSyntaxError("%r tag had invalid arguments" % tag_name)
         format_string, var_name = m.groups()
         if not (format_string[0] == format_string[-1] and format_string[0] in ('"', "'")):
-            raise template.TemplateSyntaxError, "%r tag's argument should be in quotes" % tag_name
+            raise template.TemplateSyntaxError("%r tag's argument should be in quotes" % tag_name)
         return CurrentTimeNode3(format_string[1:-1], var_name)
 
 The difference here is that ``do_current_time()`` grabs the format string and

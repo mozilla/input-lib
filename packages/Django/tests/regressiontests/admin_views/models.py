@@ -90,9 +90,17 @@ class ArticleInline(admin.TabularInline):
 class ChapterInline(admin.TabularInline):
     model = Chapter
 
+class ChapterXtra1Admin(admin.ModelAdmin):
+    list_filter = ('chap',
+                   'chap__title',
+                   'chap__book',
+                   'chap__book__name',
+                   'chap__book__promo',
+                   'chap__book__promo__name',)
+
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ('content', 'date', callable_year, 'model_year', 'modeladmin_year')
-    list_filter = ('date',)
+    list_filter = ('date', 'section')
 
     def changelist_view(self, request):
         "Test that extra_context works"
@@ -106,6 +114,32 @@ class ArticleAdmin(admin.ModelAdmin):
         return obj.date.year
     modeladmin_year.admin_order_field = 'date'
     modeladmin_year.short_description = None
+
+    def delete_model(self, request, obj):
+        EmailMessage(
+            'Greetings from a deleted object',
+            'I hereby inform you that some user deleted me',
+            'from@example.com',
+            ['to@example.com']
+        ).send()
+        return super(ArticleAdmin, self).delete_model(request, obj)
+
+    def save_model(self, request, obj, form, change=True):
+        EmailMessage(
+            'Greetings from a created object',
+            'I hereby inform you that some user created me',
+            'from@example.com',
+            ['to@example.com']
+        ).send()
+        return super(ArticleAdmin, self).save_model(request, obj, form, change)
+
+class RowLevelChangePermissionModel(models.Model):
+    name = models.CharField(max_length=100, blank=True)
+
+class RowLevelChangePermissionModelAdmin(admin.ModelAdmin):
+    def has_change_permission(self, request, obj=None):
+        """ Only allow changing objects with even id number """
+        return request.user.is_staff and (obj is not None) and (obj.id % 2 == 0)
 
 class CustomArticle(models.Model):
     content = models.TextField()
@@ -149,7 +183,37 @@ class Thing(models.Model):
         return self.title
 
 class ThingAdmin(admin.ModelAdmin):
-    list_filter = ('color',)
+    list_filter = ('color__warm', 'color__value')
+
+class Actor(models.Model):
+    name = models.CharField(max_length=50)
+    age = models.IntegerField()
+    def __unicode__(self):
+        return self.name
+
+class Inquisition(models.Model):
+    expected = models.BooleanField()
+    leader = models.ForeignKey(Actor)
+    country = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return u"by %s from %s" % (self.leader, self.country)
+
+class InquisitionAdmin(admin.ModelAdmin):
+    list_display = ('leader', 'country', 'expected')
+
+class Sketch(models.Model):
+    title = models.CharField(max_length=100)
+    inquisition = models.ForeignKey(Inquisition, limit_choices_to={'leader__name': 'Palin',
+                                                                   'leader__age': 27,
+                                                                   'expected': False,
+                                                                   })
+
+    def __unicode__(self):
+        return self.title
+
+class SketchAdmin(admin.ModelAdmin):
+    raw_id_fields = ('inquisition',)
 
 class Fabric(models.Model):
     NG_CHOICES = (
@@ -173,6 +237,7 @@ class Person(models.Model):
     )
     name = models.CharField(max_length=100)
     gender = models.IntegerField(choices=GENDER_CHOICES)
+    age = models.IntegerField(default=21)
     alive = models.BooleanField()
 
     def __unicode__(self):
@@ -187,13 +252,13 @@ class BasePersonModelFormSet(BaseModelFormSet):
             person = person_dict.get('id')
             alive = person_dict.get('alive')
             if person and alive and person.name == "Grace Hopper":
-                raise forms.ValidationError, "Grace is not a Zombie"
+                raise forms.ValidationError("Grace is not a Zombie")
 
 class PersonAdmin(admin.ModelAdmin):
     list_display = ('name', 'gender', 'alive')
     list_editable = ('gender', 'alive')
     list_filter = ('gender',)
-    search_fields = (u'name',)
+    search_fields = ('^name',)
     ordering = ["id"]
     save_as = True
 
@@ -293,7 +358,7 @@ class Podcast(Media):
 class PodcastAdmin(admin.ModelAdmin):
     list_display = ('name', 'release_date')
     list_editable = ('release_date',)
-
+    date_hierarchy = 'release_date'
     ordering = ('name',)
 
 class Vodcast(Media):
@@ -380,7 +445,7 @@ class Recommendation(Title):
     recommender = models.ForeignKey(Recommender)
 
 class RecommendationAdmin(admin.ModelAdmin):
-    search_fields = ('titletranslation__text', 'recommender__titletranslation__text',)
+    search_fields = ('=titletranslation__text', '=recommender__titletranslation__text',)
 
 class Collector(models.Model):
     name = models.CharField(max_length=100)
@@ -465,9 +530,12 @@ class LinkInline(admin.TabularInline):
 
 
 class Post(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    posted = models.DateField(default=datetime.date.today)
+    title = models.CharField(max_length=100, help_text="Some help text for the title (with unicode ŠĐĆŽćžšđ)")
+    content = models.TextField(help_text="Some help text for the content (with unicode ŠĐĆŽćžšđ)")
+    posted = models.DateField(
+            default=datetime.date.today,
+            help_text="Some help text for the date (with unicode ŠĐĆŽćžšđ)"
+    )
     public = models.NullBooleanField()
 
     def awesomeness_level(self):
@@ -584,12 +652,121 @@ class Album(models.Model):
     owner = models.ForeignKey(User)
     title = models.CharField(max_length=30)
 
+class AlbumAdmin(admin.ModelAdmin):
+    list_filter = ['title']
+
+class Employee(Person):
+    code = models.CharField(max_length=20)
+
+class WorkHour(models.Model):
+    datum = models.DateField()
+    employee = models.ForeignKey(Employee)
+
+class WorkHourAdmin(admin.ModelAdmin):
+    list_display = ('datum', 'employee')
+    list_filter = ('employee',)
+
+class Question(models.Model):
+    question = models.CharField(max_length=20)
+
+class Answer(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.PROTECT)
+    answer = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return self.answer
+
+class Reservation(models.Model):
+    start_date = models.DateTimeField()
+    price = models.IntegerField()
+
+
+DRIVER_CHOICES = (
+    (u'bill', 'Bill G'),
+    (u'steve', 'Steve J'),
+)
+
+RESTAURANT_CHOICES = (
+    (u'indian', u'A Taste of India'),
+    (u'thai', u'Thai Pography'),
+    (u'pizza', u'Pizza Mama'),
+)
+
+class FoodDelivery(models.Model):
+    reference = models.CharField(max_length=100)
+    driver = models.CharField(max_length=100, choices=DRIVER_CHOICES, blank=True)
+    restaurant = models.CharField(max_length=100, choices=RESTAURANT_CHOICES, blank=True)
+
+    class Meta:
+        unique_together = (("driver", "restaurant"),)
+
+class FoodDeliveryAdmin(admin.ModelAdmin):
+    list_display=('reference', 'driver', 'restaurant')
+    list_editable = ('driver', 'restaurant')
+
+class Paper(models.Model):
+    title = models.CharField(max_length=30)
+    author = models.CharField(max_length=30, blank=True, null=True)
+
+class CoverLetter(models.Model):
+    author = models.CharField(max_length=30)
+    date_written = models.DateField(null=True, blank=True)
+
+    def __unicode__(self):
+        return self.author
+
+class PaperAdmin(admin.ModelAdmin):
+    """
+    A ModelAdin with a custom queryset() method that uses only(), to test
+    verbose_name display in messages shown after adding Paper instances.
+    """
+
+    def queryset(self, request):
+        return super(PaperAdmin, self).queryset(request).only('title')
+
+class CoverLetterAdmin(admin.ModelAdmin):
+    """
+    A ModelAdin with a custom queryset() method that uses only(), to test
+    verbose_name display in messages shown after adding CoverLetter instances.
+    Note that the CoverLetter model defines a __unicode__ method.
+    """
+
+    def queryset(self, request):
+        #return super(CoverLetterAdmin, self).queryset(request).only('author')
+        return super(CoverLetterAdmin, self).queryset(request).defer('date_written')
+
+class Story(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+
+class StoryForm(forms.ModelForm):
+    class Meta:
+        widgets = {'title': forms.HiddenInput}
+
+class StoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'content')
+    list_display_links = ('title',) # 'id' not in list_display_links
+    list_editable = ('content', )
+    form = StoryForm
+
+class OtherStory(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+
+class OtherStoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'content')
+    list_display_links = ('title', 'id') # 'id' in list_display_links
+    list_editable = ('content', )
+
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(CustomArticle, CustomArticleAdmin)
 admin.site.register(Section, save_as=True, inlines=[ArticleInline])
 admin.site.register(ModelWithStringPrimaryKey)
 admin.site.register(Color)
 admin.site.register(Thing, ThingAdmin)
+admin.site.register(Actor)
+admin.site.register(Inquisition, InquisitionAdmin)
+admin.site.register(Sketch, SketchAdmin)
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Persona, PersonaAdmin)
 admin.site.register(Subscriber, SubscriberAdmin)
@@ -615,6 +792,14 @@ admin.site.register(Plot)
 admin.site.register(PlotDetails)
 admin.site.register(CyclicOne)
 admin.site.register(CyclicTwo)
+admin.site.register(WorkHour, WorkHourAdmin)
+admin.site.register(Reservation)
+admin.site.register(FoodDelivery, FoodDeliveryAdmin)
+admin.site.register(RowLevelChangePermissionModel, RowLevelChangePermissionModelAdmin)
+admin.site.register(Paper, PaperAdmin)
+admin.site.register(CoverLetter, CoverLetterAdmin)
+admin.site.register(Story, StoryAdmin)
+admin.site.register(OtherStory, OtherStoryAdmin)
 
 # We intentionally register Promo and ChapterXtra1 but not Chapter nor ChapterXtra2.
 # That way we cover all four cases:
@@ -627,7 +812,9 @@ admin.site.register(CyclicTwo)
 # contrib.admin.util's get_deleted_objects function.
 admin.site.register(Book, inlines=[ChapterInline])
 admin.site.register(Promo)
-admin.site.register(ChapterXtra1)
+admin.site.register(ChapterXtra1, ChapterXtra1Admin)
 admin.site.register(Pizza, PizzaAdmin)
 admin.site.register(Topping)
-admin.site.register(Album)
+admin.site.register(Album, AlbumAdmin)
+admin.site.register(Question)
+admin.site.register(Answer)

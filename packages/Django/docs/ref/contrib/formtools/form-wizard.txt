@@ -5,12 +5,10 @@ Form wizard
 .. module:: django.contrib.formtools.wizard
     :synopsis: Splits forms across multiple Web pages.
 
-.. versionadded:: 1.0
-
 Django comes with an optional "form wizard" application that splits
 :doc:`forms </topics/forms/index>` across multiple Web pages. It maintains
-state in hashed HTML :samp:`<input type="hidden">` fields, and the data isn't
-processed server-side until the final form is submitted.
+state in hashed HTML :samp:`<input type="hidden">` fields so that the full
+server-side processing can be delayed until the submission of the final form.
 
 You might want to use this if you have a lengthy form that would be too
 unwieldy for display on a single page. The first page might ask the user for
@@ -193,7 +191,7 @@ wizard takes a list of your :class:`~django.forms.Form` objects as
 arguments when you instantiate the Wizard::
 
     from django.conf.urls.defaults import *
-    from mysite.testapp.forms import ContactForm1, ContactForm2, ContactWizard
+    from testapp.forms import ContactForm1, ContactForm2, ContactWizard
 
     urlpatterns = patterns('',
         (r'^contact/$', ContactWizard([ContactForm1, ContactForm2])),
@@ -240,7 +238,7 @@ Advanced ``FormWizard`` methods
     Calculates the security hash for the given request object and
     :class:`~django.forms.Form` instance.
 
-    By default, this uses an MD5 hash of the form data and your
+    By default, this generates a SHA1 HMAC using your form data and your
     :setting:`SECRET_KEY` setting. It's rare that somebody would need to
     override this.
 

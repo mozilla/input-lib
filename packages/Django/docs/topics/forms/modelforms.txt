@@ -2,8 +2,14 @@
 Creating forms from models
 ==========================
 
+.. module:: django.forms.models
+   :synopsis: ModelForm and ModelFormset.
+
+.. currentmodule:: django.forms
+
 ``ModelForm``
 =============
+.. class:: ModelForm
 
 If you're building a database-driven app, chances are you'll have forms that
 map closely to Django models. For instance, you might have a ``BlogComment``
@@ -100,15 +106,7 @@ the full list of conversions:
 
     ``URLField``                     ``URLField`` with ``verify_exists`` set
                                      to the model field's ``verify_exists``
-
-    ``XMLField``                     ``CharField`` with
-                                     ``widget=forms.Textarea``
     ===============================  ========================================
-
-
-.. versionadded:: 1.0
-    The ``FloatField`` form field and ``DecimalField`` model and form fields
-    are new in Django 1.0.
 
 .. versionadded:: 1.2
     The ``BigIntegerField`` is new in Django 1.2.
@@ -235,7 +233,7 @@ supplied, ``save()`` will update that instance. If it's not supplied,
     >>> f.save()
 
 Note that ``save()`` will raise a ``ValueError`` if the data in the form
-doesn't validate -- i.e., ``if form.errors``.
+doesn't validate -- i.e., if form.errors evaluates to True.
 
 This ``save()`` method accepts an optional ``commit`` keyword argument, which
 accepts either ``True`` or ``False``. If you call ``save()`` with
@@ -305,12 +303,8 @@ model fields:
 
 2. Use the ``fields`` attribute of the ``ModelForm``'s inner ``Meta``
    class.  This attribute, if given, should be a list of field names
-   to include in the form.
-
-   .. versionchanged:: 1.1
-
-   The form will render the fields in the same order they are specified in the
-   ``fields`` attribute.
+   to include in the form. The order in which the fields names are specified
+   in that list is respected when the form renders them.
 
 3. Use the ``exclude`` attribute of the ``ModelForm``'s inner ``Meta``
    class.  This attribute, if given, should be a list of field names
@@ -387,7 +381,7 @@ widget::
     class AuthorForm(ModelForm):
         class Meta:
             model = Author
-            fields = ['name', 'title', 'birth_date']
+            fields = ('name', 'title', 'birth_date')
             widgets = {
                 'name': Textarea(attrs={'cols': 80, 'rows': 20}),
             }
@@ -450,8 +444,6 @@ parameter when declaring the form field::
 Changing the order of fields
 ----------------------------
 
-.. versionadded:: 1.1
-
 By default, a ``ModelForm`` will render fields in the same order that they are
 defined on the model, with ``ManyToManyField`` instances appearing last. If
 you want to change the order in which fields are rendered, you can use the
@@ -471,7 +463,7 @@ to be rendered first, we could specify the following ``ModelForm``::
     >>> class BookForm(ModelForm):
     ...     class Meta:
     ...         model = Book
-    ...         fields = ['title', 'author']
+    ...         fields = ('title', 'author')
 
 .. _overriding-modelform-clean-method:
 
@@ -514,7 +506,7 @@ the ``Meta.fields`` or ``Meta.excludes`` lists::
 
     >>> class RestrictedArticleForm(EnhancedArticleForm):
     ...     class Meta(ArticleForm.Meta):
-    ...         exclude = ['body']
+    ...         exclude = ('body',)
 
 This adds the extra method from the ``EnhancedArticleForm`` and modifies
 the original ``ArticleForm.Meta`` to remove one field.
@@ -678,7 +670,7 @@ so long as the total number of forms does not exceed ``max_num``::
 
     >>> AuthorFormSet = modelformset_factory(Author, max_num=4, extra=2)
     >>> formset = AuthorFormSet(queryset=Author.objects.order_by('name'))
-    >>> for form in formset.forms:
+    >>> for form in formset:
     ...     print form.as_table()
     <tr><th><label for="id_form-0-name">Name:</label></th><td><input id="id_form-0-name" type="text" name="form-0-name" value="Charles Baudelaire" maxlength="100" /><input type="hidden" name="form-0-id" value="1" id="id_form-0-id" /></td></tr>
     <tr><th><label for="id_form-1-name">Name:</label></th><td><input id="id_form-1-name" type="text" name="form-1-name" value="Paul Verlaine" maxlength="100" /><input type="hidden" name="form-1-id" value="3" id="id_form-1-id" /></td></tr>
@@ -772,7 +764,7 @@ itself::
 
     <form method="post" action="">
         {{ formset.management_form }}
-        {% for form in formset.forms %}
+        {% for form in formset %}
             {{ form }}
         {% endfor %}
     </form>
@@ -785,7 +777,7 @@ Third, you can manually render each field::
 
     <form method="post" action="">
         {{ formset.management_form }}
-        {% for form in formset.forms %}
+        {% for form in formset %}
             {% for field in form %}
                 {{ field.label_tag }}: {{ field }}
             {% endfor %}
@@ -798,7 +790,7 @@ if you were rendering the ``name`` and ``age`` fields of a model::
 
     <form method="post" action="">
         {{ formset.management_form }}
-        {% for form in formset.forms %}
+        {% for form in formset %}
             {{ form.id }}
             <ul>
                 <li>{{ form.name }}</li>

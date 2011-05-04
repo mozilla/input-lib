@@ -1,19 +1,20 @@
 #! -*- coding: utf-8 -*-
-import os
 import errno
+import os
 import shutil
-import unittest
 from StringIO import StringIO
 
 from django.core.files import temp as tempfile
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http.multipartparser import MultiPartParser
 from django.test import TestCase, client
 from django.utils import simplejson
+from django.utils import unittest
 from django.utils.hashcompat import sha_constructor
-from django.http.multipartparser import MultiPartParser
 
 from models import FileModel, temp_storage, UPLOAD_TO
 import uploadhandler
+
 
 UNICODE_FILENAME = u'test-0123456789_中文_Orléans.jpg'
 
@@ -147,7 +148,7 @@ class FileUploadTests(TestCase):
             'wsgi.input':     client.FakePayload(payload),
         }
         got = simplejson.loads(self.client.request(**r).content)
-        self.assert_(len(got['file']) < 256, "Got a long file name (%s characters)." % len(got['file']))
+        self.assertTrue(len(got['file']) < 256, "Got a long file name (%s characters)." % len(got['file']))
 
     def test_custom_upload_handler(self):
         # A small file (under the 5M quota)
@@ -163,12 +164,12 @@ class FileUploadTests(TestCase):
         # Small file posting should work.
         response = self.client.post('/file_uploads/quota/', {'f': smallfile})
         got = simplejson.loads(response.content)
-        self.assert_('f' in got)
+        self.assertTrue('f' in got)
 
         # Large files don't go through.
         response = self.client.post("/file_uploads/quota/", {'f': bigfile})
         got = simplejson.loads(response.content)
-        self.assert_('f' not in got)
+        self.assertTrue('f' not in got)
 
     def test_broken_custom_upload_handler(self):
         f = tempfile.NamedTemporaryFile()
@@ -223,7 +224,7 @@ class FileUploadTests(TestCase):
                 ret = super(POSTAccessingHandler, self).handle_uncaught_exception(request, resolver, exc_info)
                 p = request.POST
                 return ret
-        
+
         post_data = {
             'name': 'Ringo',
             'file_field': open(__file__),
@@ -244,7 +245,7 @@ class FileUploadTests(TestCase):
             response = self.client.post('/file_uploads/upload_errors/', post_data)
         except reference_error.__class__, err:
             self.failIf(
-                str(err) == str(reference_error), 
+                str(err) == str(reference_error),
                 "Caught a repeated exception that'll cause an infinite loop in file uploads."
             )
         except Exception, err:
@@ -274,7 +275,7 @@ class DirectoryCreationTests(unittest.TestCase):
         try:
             self.obj.testfile.save('foo.txt', SimpleUploadedFile('foo.txt', 'x'))
         except OSError, err:
-            self.assertEquals(err.errno, errno.EACCES)
+            self.assertEqual(err.errno, errno.EACCES)
         except Exception, err:
             self.fail("OSError [Errno %s] not raised." % errno.EACCES)
 
@@ -288,7 +289,7 @@ class DirectoryCreationTests(unittest.TestCase):
         except IOError, err:
             # The test needs to be done on a specific string as IOError
             # is raised even without the patch (just not early enough)
-            self.assertEquals(err.args[0],
+            self.assertEqual(err.args[0],
                               "%s exists and is not a directory." % UPLOAD_TO)
         except:
             self.fail("IOError not raised")

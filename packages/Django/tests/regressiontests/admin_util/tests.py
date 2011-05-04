@@ -1,18 +1,17 @@
 from datetime import datetime
-import unittest
 
 from django.conf import settings
-from django.db import models
-from django.utils.formats import localize
-from django.test import TestCase
-
 from django.contrib import admin
 from django.contrib.admin.util import display_for_field, label_for_field, lookup_field
+from django.contrib.admin.util import NestedObjects
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.contrib.sites.models import Site
-from django.contrib.admin.util import NestedObjects
+from django.db import models, DEFAULT_DB_ALIAS
+from django.test import TestCase
+from django.utils import unittest
+from django.utils.formats import localize
 
-from models import Article, Count
+from models import Article, Count, Event, Location
 
 
 class NestedObjectsTests(TestCase):
@@ -21,51 +20,50 @@ class NestedObjectsTests(TestCase):
 
     """
     def setUp(self):
-        self.n = NestedObjects()
+        self.n = NestedObjects(using=DEFAULT_DB_ALIAS)
         self.objs = [Count.objects.create(num=i) for i in range(5)]
 
     def _check(self, target):
-        self.assertEquals(self.n.nested(lambda obj: obj.num), target)
+        self.assertEqual(self.n.nested(lambda obj: obj.num), target)
 
-    def _add(self, obj, parent=None):
-        # don't bother providing the extra args that NestedObjects ignores
-        self.n.add(None, None, obj, None, parent)
+    def _connect(self, i, j):
+        self.objs[i].parent = self.objs[j]
+        self.objs[i].save()
+
+    def _collect(self, *indices):
+        self.n.collect([self.objs[i] for i in indices])
 
     def test_unrelated_roots(self):
-        self._add(self.objs[0])
-        self._add(self.objs[1])
-        self._add(self.objs[2], self.objs[1])
-
+        self._connect(2, 1)
+        self._collect(0)
+        self._collect(1)
         self._check([0, 1, [2]])
 
     def test_siblings(self):
-        self._add(self.objs[0])
-        self._add(self.objs[1], self.objs[0])
-        self._add(self.objs[2], self.objs[0])
-
+        self._connect(1, 0)
+        self._connect(2, 0)
+        self._collect(0)
         self._check([0, [1, 2]])
 
-    def test_duplicate_instances(self):
-        self._add(self.objs[0])
-        self._add(self.objs[1])
-        dupe = Count.objects.get(num=1)
-        self._add(dupe, self.objs[0])
-
-        self._check([0, 1])
-
     def test_non_added_parent(self):
-        self._add(self.objs[0], self.objs[1])
-
+        self._connect(0, 1)
+        self._collect(0)
         self._check([0])
 
     def test_cyclic(self):
-        self._add(self.objs[0], self.objs[2])
-        self._add(self.objs[1], self.objs[0])
-        self._add(self.objs[2], self.objs[1])
-        self._add(self.objs[0], self.objs[2])
-
+        self._connect(0, 2)
+        self._connect(1, 0)
+        self._connect(2, 1)
+        self._collect(0)
         self._check([0, [1, [2]]])
 
+    def test_queries(self):
+        self._connect(1, 0)
+        self._connect(2, 0)
+        # 1 query to fetch all children of 0 (1 and 2)
+        # 1 query to fetch all children of 1 and 2 (none)
+        # Should not require additional queries to populate the nested graph.
+        self.assertNumQueries(2, self._collect, 0)
 
 class UtilTests(unittest.TestCase):
     def test_values_from_lookup_field(self):
@@ -148,24 +146,24 @@ class UtilTests(unittest.TestCase):
         """
         Tests for label_for_field
         """
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("title", Article),
             "title"
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("title2", Article),
             "another name"
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("title2", Article, return_attr=True),
             ("another name", None)
         )
 
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("__unicode__", Article),
             "article"
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("__str__", Article),
             "article"
         )
@@ -177,29 +175,29 @@ class UtilTests(unittest.TestCase):
 
         def test_callable(obj):
             return "nothing"
-        self.assertEquals(
+        self.assertEqual(
             label_for_field(test_callable, Article),
             "Test callable"
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field(test_callable, Article, return_attr=True),
             ("Test callable", test_callable)
         )
 
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("test_from_model", Article),
             "Test from model"
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("test_from_model", Article, return_attr=True),
             ("Test from model", Article.test_from_model)
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("test_from_model_with_override", Article),
             "not What you Expect"
         )
 
-        self.assertEquals(
+        self.assertEqual(
             label_for_field(lambda x: "nothing", Article),
             "--"
         )
@@ -209,14 +207,31 @@ class UtilTests(unittest.TestCase):
                 return "nothing"
             test_from_model.short_description = "not Really the Model"
 
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("test_from_model", Article, model_admin=MockModelAdmin),
             "not Really the Model"
         )
-        self.assertEquals(
+        self.assertEqual(
             label_for_field("test_from_model", Article,
                 model_admin = MockModelAdmin,
                 return_attr = True
             ),
             ("not Really the Model", MockModelAdmin.test_from_model)
+        )
+
+    def test_related_name(self):
+        """
+        Regression test for #13963
+        """
+        self.assertEqual(
+            label_for_field('location', Event, return_attr=True),
+            ('location', None),
+        )
+        self.assertEqual(
+            label_for_field('event', Location, return_attr=True),
+            ('awesome event', None),
+        )
+        self.assertEqual(
+            label_for_field('guest', Event, return_attr=True),
+            ('awesome guest', None),
         )

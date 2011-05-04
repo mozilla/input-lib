@@ -1,12 +1,14 @@
 import StringIO
 import sys
 
-from django.test import TestCase, TransactionTestCase
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.core import management
 from django.db import DEFAULT_DB_ALIAS
+from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 
-from models import Article, Blog, Book, Category, Person, Tag, Visa
+from models import Article, Blog, Book, Category, Person, Spy, Tag, Visa
+
 
 class TestCaseFixtureLoadingTests(TestCase):
     fixtures = ['fixture1.json', 'fixture2.json']
@@ -23,9 +25,15 @@ class TestCaseFixtureLoadingTests(TestCase):
 
 class FixtureLoadingTests(TestCase):
 
-    def _dumpdata_assert(self, args, output, format='json', natural_keys=False):
+    def _dumpdata_assert(self, args, output, format='json', natural_keys=False,
+                         use_base_manager=False, exclude_list=[]):
         new_io = StringIO.StringIO()
-        management.call_command('dumpdata', *args, **{'format':format, 'stdout':new_io, 'use_natural_keys':natural_keys})
+        management.call_command('dumpdata', *args, **{'format':format,
+                                                      'stdout':new_io,
+                                                      'stderr':new_io,
+                                                      'use_natural_keys':natural_keys,
+                                                      'use_base_manager':use_base_manager,
+                                                      'exclude': exclude_list})
         command_output = new_io.getvalue().strip()
         self.assertEqual(command_output, output)
 
@@ -38,6 +46,7 @@ class FixtureLoadingTests(TestCase):
     def test_loading_and_dumping(self):
         new_io = StringIO.StringIO()
 
+        Site.objects.all().delete()
         # Load fixture 1. Single JSON file, with two objects.
         management.call_command('loaddata', 'fixture1.json', verbosity=0, commit=False)
         self.assertQuerysetEqual(Article.objects.all(), [
@@ -150,6 +159,60 @@ class FixtureLoadingTests(TestCase):
         self._dumpdata_assert(['fixtures'], """<?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0"><object pk="1" model="fixtures.category"><field type="CharField" name="title">News Stories</field><field type="TextField" name="description">Latest news stories</field></object><object pk="5" model="fixtures.article"><field type="CharField" name="headline">XML identified as leading cause of cancer</field><field type="DateTimeField" name="pub_date">2006-06-16 16:00:00</field></object><object pk="4" model="fixtures.article"><field type="CharField" name="headline">Django conquers world!</field><field type="DateTimeField" name="pub_date">2006-06-16 15:00:00</field></object><object pk="3" model="fixtures.article"><field type="CharField" name="headline">Copyright is fine the way it is</field><field type="DateTimeField" name="pub_date">2006-06-16 14:00:00</field></object><object pk="2" model="fixtures.article"><field type="CharField" name="headline">Poker on TV is great!</field><field type="DateTimeField" name="pub_date">2006-06-16 11:00:00</field></object><object pk="1" model="fixtures.article"><field type="CharField" name="headline">Python program becomes self aware</field><field type="DateTimeField" name="pub_date">2006-06-16 11:00:00</field></object><object pk="1" model="fixtures.tag"><field type="CharField" name="name">copyright</field><field to="contenttypes.contenttype" name="tagged_type" rel="ManyToOneRel"><natural>fixtures</natural><natural>article</natural></field><field type="PositiveIntegerField" name="tagged_id">3</field></object><object pk="2" model="fixtures.tag"><field type="CharField" name="name">legal</field><field to="contenttypes.contenttype" name="tagged_type" rel="ManyToOneRel"><natural>fixtures</natural><natural>article</natural></field><field type="PositiveIntegerField" name="tagged_id">3</field></object><object pk="3" model="fixtures.tag"><field type="CharField" name="name">django</field><field to="contenttypes.contenttype" name="tagged_type" rel="ManyToOneRel"><natural>fixtures</natural><natural>article</natural></field><field type="PositiveIntegerField" name="tagged_id">4</field></object><object pk="4" model="fixtures.tag"><field type="CharField" name="name">world domination</field><field to="contenttypes.contenttype" name="tagged_type" rel="ManyToOneRel"><natural>fixtures</natural><natural>article</natural></field><field type="PositiveIntegerField" name="tagged_id">4</field></object><object pk="3" model="fixtures.person"><field type="CharField" name="name">Artist formerly known as "Prince"</field></object><object pk="1" model="fixtures.person"><field type="CharField" name="name">Django Reinhardt</field></object><object pk="2" model="fixtures.person"><field type="CharField" name="name">Stephane Grappelli</field></object><object pk="1" model="fixtures.visa"><field to="fixtures.person" name="person" rel="ManyToOneRel"><natural>Django Reinhardt</natural></field><field to="auth.permission" name="permissions" rel="ManyToManyRel"><object><natural>add_user</natural><natural>auth</natural><natural>user</natural></object><object><natural>change_user</natural><natural>auth</natural><natural>user</natural></object><object><natural>delete_user</natural><natural>auth</natural><natural>user</natural></object></field></object><object pk="2" model="fixtures.visa"><field to="fixtures.person" name="person" rel="ManyToOneRel"><natural>Stephane Grappelli</natural></field><field to="auth.permission" name="permissions" rel="ManyToManyRel"><object><natural>add_user</natural><natural>auth</natural><natural>user</natural></object><object><natural>delete_user</natural><natural>auth</natural><natural>user</natural></object></field></object><object pk="3" model="fixtures.visa"><field to="fixtures.person" name="person" rel="ManyToOneRel"><natural>Artist formerly known as "Prince"</natural></field><field to="auth.permission" name="permissions" rel="ManyToManyRel"><object><natural>change_user</natural><natural>auth</natural><natural>user</natural></object></field></object><object pk="1" model="fixtures.book"><field type="CharField" name="name">Music for all ages</field><field to="fixtures.person" name="authors" rel="ManyToManyRel"><object><natural>Artist formerly known as "Prince"</natural></object><object><natural>Django Reinhardt</natural></object></field></object></django-objects>""", format='xml', natural_keys=True)
 
+    def test_dumpdata_with_excludes(self):
+        # Load fixture1 which has a site, two articles, and a category
+        Site.objects.all().delete()
+        management.call_command('loaddata', 'fixture1.json', verbosity=0, commit=False)
+
+        # Excluding fixtures app should only leave sites
+        self._dumpdata_assert(
+            ['sites', 'fixtures'],
+            '[{"pk": 1, "model": "sites.site", "fields": {"domain": "example.com", "name": "example.com"}}]',
+            exclude_list=['fixtures'])
+
+        # Excluding fixtures.Article should leave fixtures.Category
+        self._dumpdata_assert(
+            ['sites', 'fixtures'],
+            '[{"pk": 1, "model": "sites.site", "fields": {"domain": "example.com", "name": "example.com"}}, {"pk": 1, "model": "fixtures.category", "fields": {"description": "Latest news stories", "title": "News Stories"}}]',
+            exclude_list=['fixtures.Article'])
+
+        # Excluding fixtures and fixtures.Article should be a no-op
+        self._dumpdata_assert(
+            ['sites', 'fixtures'],
+            '[{"pk": 1, "model": "sites.site", "fields": {"domain": "example.com", "name": "example.com"}}, {"pk": 1, "model": "fixtures.category", "fields": {"description": "Latest news stories", "title": "News Stories"}}]',
+            exclude_list=['fixtures.Article'])
+
+        # Excluding sites and fixtures.Article should only leave fixtures.Category
+        self._dumpdata_assert(
+            ['sites', 'fixtures'],
+            '[{"pk": 1, "model": "fixtures.category", "fields": {"description": "Latest news stories", "title": "News Stories"}}]',
+            exclude_list=['fixtures.Article', 'sites'])
+
+        # Excluding a bogus app should throw an error
+        self.assertRaises(SystemExit,
+                          self._dumpdata_assert,
+                          ['fixtures', 'sites'],
+                          '',
+                          exclude_list=['foo_app'])
+
+        # Excluding a bogus model should throw an error
+        self.assertRaises(SystemExit,
+                          self._dumpdata_assert,
+                          ['fixtures', 'sites'],
+                          '',
+                          exclude_list=['fixtures.FooModel'])
+
+    def test_dumpdata_with_filtering_manager(self):
+        spy1 = Spy.objects.create(name='Paul')
+        spy2 = Spy.objects.create(name='Alex', cover_blown=True)
+        self.assertQuerysetEqual(Spy.objects.all(),
+                                 ['<Spy: Paul>'])
+        # Use the default manager
+        self._dumpdata_assert(['fixtures.Spy'],'[{"pk": %d, "model": "fixtures.spy", "fields": {"cover_blown": false}}]' % spy1.pk)
+        # Dump using Django's base manager. Should return all objects,
+        # even those normally filtered by the manager
+        self._dumpdata_assert(['fixtures.Spy'], '[{"pk": %d, "model": "fixtures.spy", "fields": {"cover_blown": true}}, {"pk": %d, "model": "fixtures.spy", "fields": {"cover_blown": false}}]' % (spy2.pk, spy1.pk), use_base_manager=True)
+
     def test_compress_format_loading(self):
         # Load fixture 4 (compressed), using format specification
         management.call_command('loaddata', 'fixture4.json', verbosity=0, commit=False)
@@ -232,46 +295,46 @@ class FixtureLoadingTests(TestCase):
         self._dumpdata_assert(['fixtures'], """<?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0"><object pk="1" model="fixtures.category"><field type="CharField" name="title">News Stories</field><field type="TextField" name="description">Latest news stories</field></object><object pk="3" model="fixtures.article"><field type="CharField" name="headline">Time to reform copyright</field><field type="DateTimeField" name="pub_date">2006-06-16 13:00:00</field></object><object pk="2" model="fixtures.article"><field type="CharField" name="headline">Poker has no place on ESPN</field><field type="DateTimeField" name="pub_date">2006-06-16 12:00:00</field></object><object pk="1" model="fixtures.article"><field type="CharField" name="headline">Python program becomes self aware</field><field type="DateTimeField" name="pub_date">2006-06-16 11:00:00</field></object><object pk="1" model="fixtures.tag"><field type="CharField" name="name">copyright</field><field to="contenttypes.contenttype" name="tagged_type" rel="ManyToOneRel"><natural>fixtures</natural><natural>article</natural></field><field type="PositiveIntegerField" name="tagged_id">3</field></object><object pk="2" model="fixtures.tag"><field type="CharField" name="name">law</field><field to="contenttypes.contenttype" name="tagged_type" rel="ManyToOneRel"><natural>fixtures</natural><natural>article</natural></field><field type="PositiveIntegerField" name="tagged_id">3</field></object><object pk="1" model="fixtures.person"><field type="CharField" name="name">Django Reinhardt</field></object><object pk="3" model="fixtures.person"><field type="CharField" name="name">Prince</field></object><object pk="2" model="fixtures.person"><field type="CharField" name="name">Stephane Grappelli</field></object></django-objects>""", format='xml', natural_keys=True)
 
-if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'] != 'django.db.backends.mysql':
-    class FixtureTransactionTests(TransactionTestCase):
-        def _dumpdata_assert(self, args, output, format='json'):
-            new_io = StringIO.StringIO()
-            management.call_command('dumpdata', *args, **{'format':format, 'stdout':new_io})
-            command_output = new_io.getvalue().strip()
-            self.assertEqual(command_output, output)
+class FixtureTransactionTests(TransactionTestCase):
+    def _dumpdata_assert(self, args, output, format='json'):
+        new_io = StringIO.StringIO()
+        management.call_command('dumpdata', *args, **{'format':format, 'stdout':new_io})
+        command_output = new_io.getvalue().strip()
+        self.assertEqual(command_output, output)
 
-        def test_format_discovery(self):
-            # Load fixture 1 again, using format discovery
-            management.call_command('loaddata', 'fixture1', verbosity=0, commit=False)
-            self.assertQuerysetEqual(Article.objects.all(), [
-                '<Article: Time to reform copyright>',
-                '<Article: Poker has no place on ESPN>',
-                '<Article: Python program becomes self aware>'
-            ])
+    @skipUnlessDBFeature('supports_forward_references')
+    def test_format_discovery(self):
+        # Load fixture 1 again, using format discovery
+        management.call_command('loaddata', 'fixture1', verbosity=0, commit=False)
+        self.assertQuerysetEqual(Article.objects.all(), [
+            '<Article: Time to reform copyright>',
+            '<Article: Poker has no place on ESPN>',
+            '<Article: Python program becomes self aware>'
+        ])
 
-            # Try to load fixture 2 using format discovery; this will fail
-            # because there are two fixture2's in the fixtures directory
-            new_io = StringIO.StringIO()
-            management.call_command('loaddata', 'fixture2', verbosity=0, stderr=new_io)
-            output = new_io.getvalue().strip().split('\n')
-            self.assertEqual(len(output), 1)
-            self.assertTrue(output[0].startswith("Multiple fixtures named 'fixture2'"))
+        # Try to load fixture 2 using format discovery; this will fail
+        # because there are two fixture2's in the fixtures directory
+        new_io = StringIO.StringIO()
+        management.call_command('loaddata', 'fixture2', verbosity=0, stderr=new_io)
+        output = new_io.getvalue().strip().split('\n')
+        self.assertEqual(len(output), 1)
+        self.assertTrue(output[0].startswith("Multiple fixtures named 'fixture2'"))
 
-            # object list is unaffected
-            self.assertQuerysetEqual(Article.objects.all(), [
-                '<Article: Time to reform copyright>',
-                '<Article: Poker has no place on ESPN>',
-                '<Article: Python program becomes self aware>'
-            ])
+        # object list is unaffected
+        self.assertQuerysetEqual(Article.objects.all(), [
+            '<Article: Time to reform copyright>',
+            '<Article: Poker has no place on ESPN>',
+            '<Article: Python program becomes self aware>'
+        ])
 
-            # Dump the current contents of the database as a JSON fixture
-            self._dumpdata_assert(['fixtures'], '[{"pk": 1, "model": "fixtures.category", "fields": {"description": "Latest news stories", "title": "News Stories"}}, {"pk": 3, "model": "fixtures.article", "fields": {"headline": "Time to reform copyright", "pub_date": "2006-06-16 13:00:00"}}, {"pk": 2, "model": "fixtures.article", "fields": {"headline": "Poker has no place on ESPN", "pub_date": "2006-06-16 12:00:00"}}, {"pk": 1, "model": "fixtures.article", "fields": {"headline": "Python program becomes self aware", "pub_date": "2006-06-16 11:00:00"}}]')
+        # Dump the current contents of the database as a JSON fixture
+        self._dumpdata_assert(['fixtures'], '[{"pk": 1, "model": "fixtures.category", "fields": {"description": "Latest news stories", "title": "News Stories"}}, {"pk": 3, "model": "fixtures.article", "fields": {"headline": "Time to reform copyright", "pub_date": "2006-06-16 13:00:00"}}, {"pk": 2, "model": "fixtures.article", "fields": {"headline": "Poker has no place on ESPN", "pub_date": "2006-06-16 12:00:00"}}, {"pk": 1, "model": "fixtures.article", "fields": {"headline": "Python program becomes self aware", "pub_date": "2006-06-16 11:00:00"}}]')
 
-            # Load fixture 4 (compressed), using format discovery
-            management.call_command('loaddata', 'fixture4', verbosity=0, commit=False)
-            self.assertQuerysetEqual(Article.objects.all(), [
-                '<Article: Django pets kitten>',
-                '<Article: Time to reform copyright>',
-                '<Article: Poker has no place on ESPN>',
-                '<Article: Python program becomes self aware>'
-            ])
+        # Load fixture 4 (compressed), using format discovery
+        management.call_command('loaddata', 'fixture4', verbosity=0, commit=False)
+        self.assertQuerysetEqual(Article.objects.all(), [
+            '<Article: Django pets kitten>',
+            '<Article: Time to reform copyright>',
+            '<Article: Poker has no place on ESPN>',
+            '<Article: Python program becomes self aware>'
+        ])

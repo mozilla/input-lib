@@ -11,7 +11,9 @@ from django.db.models.fields import *
 from django.db.models.fields.subclassing import SubfieldBase
 from django.db.models.fields.files import FileField, ImageField
 from django.db.models.fields.related import ForeignKey, OneToOneField, ManyToManyField, ManyToOneRel, ManyToManyRel, OneToOneRel
+from django.db.models.deletion import CASCADE, PROTECT, SET, SET_NULL, SET_DEFAULT, DO_NOTHING, ProtectedError
 from django.db.models import signals
+from django.utils.decorators import wraps
 
 # Admin stages.
 ADD, CHANGE, BOTH = 1, 2, 3
@@ -27,6 +29,7 @@ def permalink(func):
         (viewname, viewargs, viewkwargs)
     """
     from django.core.urlresolvers import reverse
+    @wraps(func)
     def inner(*args, **kwargs):
         bits = func(*args, **kwargs)
         return reverse(bits[0], None, *bits[1:3])

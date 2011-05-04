@@ -7,7 +7,7 @@ Sample usage:
 >>> feed = feedgenerator.Rss201rev2Feed(
 ...     title=u"Poynter E-Media Tidbits",
 ...     link=u"http://www.poynter.org/column.asp?id=31",
-...     description=u"A group weblog by the sharpest minds in online media/journalism/publishing.",
+...     description=u"A group Weblog by the sharpest minds in online media/journalism/publishing.",
 ...     language=u"en",
 ... )
 >>> feed.add_item(
@@ -27,19 +27,30 @@ import datetime
 import urlparse
 from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import force_unicode, iri_to_uri
+from django.utils import datetime_safe
 
 def rfc2822_date(date):
+    # We can't use strftime() because it produces locale-dependant results, so
+    # we have to map english month and day names manually
+    months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',)
+    days = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+    # Support datetime objects older than 1900
+    date = datetime_safe.new_datetime(date)
     # We do this ourselves to be timezone aware, email.Utils is not tz aware.
+    dow = days[date.weekday()]
+    month = months[date.month - 1]
+    time_str = date.strftime('%s, %%d %s %%Y %%H:%%M:%%S ' % (dow, month))
     if date.tzinfo:
-        time_str = date.strftime('%a, %d %b %Y %H:%M:%S ')
         offset = date.tzinfo.utcoffset(date)
         timezone = (offset.days * 24 * 60) + (offset.seconds / 60)
         hour, minute = divmod(timezone, 60)
         return time_str + "%+03d%02d" % (hour, minute)
     else:
-        return date.strftime('%a, %d %b %Y %H:%M:%S -0000')
+        return time_str + '-0000'
 
 def rfc3339_date(date):
+    # Support datetime objects older than 1900
+    date = datetime_safe.new_datetime(date)
     if date.tzinfo:
         time_str = date.strftime('%Y-%m-%dT%H:%M:%S')
         offset = date.tzinfo.utcoffset(date)
@@ -64,7 +75,7 @@ def get_tag_uri(url, date):
 
     d = ''
     if date is not None:
-        d = ',%s' % date.strftime('%Y-%m-%d')
+        d = ',%s' % datetime_safe.new_datetime(date).strftime('%Y-%m-%d')
     return u'tag:%s%s:%s/%s' % (hostname, d, path, fragment)
 
 class SyndicationFeed(object):
@@ -280,7 +291,7 @@ class Rss201rev2Feed(RssFeed):
 
 class Atom1Feed(SyndicationFeed):
     # Spec: http://atompub.org/2005/07/11/draft-ietf-atompub-format-10.html
-    mime_type = 'application/atom+xml'
+    mime_type = 'application/atom+xml; charset=utf8'
     ns = u"http://www.w3.org/2005/Atom"
 
     def write(self, outfile, encoding):

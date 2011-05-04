@@ -73,7 +73,7 @@ class FieldFile(File):
     def _get_size(self):
         self._require_file()
         if not self._committed:
-            return len(self.file)
+            return self.file.size
         return self.storage.size(self.name)
     size = property(_get_size)
 
@@ -93,7 +93,7 @@ class FieldFile(File):
         setattr(self.instance, self.field.name, self.name)
 
         # Update the filesize cache
-        self._size = len(content)
+        self._size = content.size
         self._committed = True
 
         # Save the object because it has changed, unless save is False
@@ -258,19 +258,6 @@ class FileField(Field):
     def contribute_to_class(self, cls, name):
         super(FileField, self).contribute_to_class(cls, name)
         setattr(cls, self.name, self.descriptor_class(self))
-        signals.post_delete.connect(self.delete_file, sender=cls)
-
-    def delete_file(self, instance, sender, **kwargs):
-        file = getattr(instance, self.attname)
-        # If no other object of this type references the file,
-        # and it's not the default value for future objects,
-        # delete it from the backend.
-        if file and file.name != self.default and \
-            not sender._default_manager.filter(**{self.name: file.name}):
-                file.delete(save=False)
-        elif file:
-            # Otherwise, just close the file, so it doesn't tie up resources.
-            file.close()
 
     def get_directory_name(self):
         return os.path.normpath(force_unicode(datetime.datetime.now().strftime(smart_str(self.upload_to))))
@@ -282,7 +269,15 @@ class FileField(Field):
         return os.path.join(self.get_directory_name(), self.get_filename(filename))
 
     def save_form_data(self, instance, data):
-        if data:
+        # Important: None means "no change", other false value means "clear"
+        # This subtle distinction (rather than a more explicit marker) is
+        # needed because we need to consume values that are also sane for a
+        # regular (non Model-) Form to find in its cleaned_data dictionary.
+        if data is not None:
+            # This value will be converted to unicode and stored in the
+            # database, so leaving False as-is is not acceptable.
+            if not data:
+                data = ''
             setattr(instance, self.name, data)
 
     def formfield(self, **kwargs):

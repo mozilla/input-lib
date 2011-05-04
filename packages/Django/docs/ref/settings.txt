@@ -49,13 +49,14 @@ models, views and template tags.
 ADMIN_MEDIA_PREFIX
 ------------------
 
-Default: ``'/media/'``
+Default: ``'/static/admin/'``
 
-The URL prefix for admin media -- CSS, JavaScript and images used by
-the Django administrative interface. Make sure to use a trailing
-slash, and to have this be different from the ``MEDIA_URL`` setting
-(since the same URL cannot be mapped onto two different sets of
-files).
+The URL prefix for admin media -- CSS, JavaScript and images used by the Django
+administrative interface. Make sure to use a trailing slash, and to have this be
+different from the :setting:`MEDIA_URL` setting (since the same URL cannot be
+mapped onto two different sets of files). For integration with :doc:`staticfiles
+</ref/contrib/staticfiles>`, this should be the same as
+:setting:`STATIC_URL` followed by ``'admin/'``.
 
 .. setting:: ADMINS
 
@@ -96,9 +97,14 @@ APPEND_SLASH
 
 Default: ``True``
 
-Whether to append trailing slashes to URLs. This is only used if
-``CommonMiddleware`` is installed (see :doc:`/topics/http/middleware`). See also
-``PREPEND_WWW``.
+When set to ``True``, if the request URL does not match any of the patterns
+in the URLconf and it doesn't end in a slash, an HTTP redirect is issued to the
+same URL with a slash appended. Note that the redirect may cause any data
+submitted in a POST request to be lost.
+
+The ``APPEND_SLASH`` setting is only used if
+:class:`~django.middleware.common.CommonMiddleware` is installed
+(see :doc:`/topics/http/middleware`). See also :setting:`PREPEND_WWW`.
 
 .. setting:: AUTHENTICATION_BACKENDS
 
@@ -121,14 +127,148 @@ Default: Not defined
 The site-specific user profile model used by this site. See
 :ref:`auth-profiles`.
 
-.. setting:: CACHE_BACKEND
+.. setting:: CACHES
 
-CACHE_BACKEND
--------------
+CACHES
+------
 
-Default: ``'locmem://'``
+.. versionadded:: 1.3
 
-The cache backend to use. See :doc:`/topics/cache`.
+Default::
+
+    {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+A dictionary containing the settings for all caches to be used with
+Django. It is a nested dictionary whose contents maps cache aliases
+to a dictionary containing the options for an individual cache.
+
+The :setting:`CACHES` setting must configure a ``default`` cache;
+any number of additional caches may also be specified. If you
+are using a cache backend other than the local memory cache, or
+you need to define multiple caches, other options will be required.
+The following cache options are available.
+
+.. setting:: CACHES-BACKEND
+
+BACKEND
+~~~~~~~
+
+Default: ``''`` (Empty string)
+
+The cache backend to use. The built-in cache backends are:
+
+    * ``'django.core.cache.backends.db.DatabaseCache'``
+    * ``'django.core.cache.backends.dummy.DummyCache'``
+    * ``'django.core.cache.backends.filebased.FileBasedCache'``
+    * ``'django.core.cache.backends.locmem.LocMemCache'``
+    * ``'django.core.cache.backends.memcached.MemcachedCache'``
+    * ``'django.core.cache.backends.memcached.PyLibMCCache'``
+
+You can use a cache backend that doesn't ship with Django by setting
+:setting:`BACKEND <CACHE-BACKEND>` to a fully-qualified path of a cache
+backend class (i.e. ``mypackage.backends.whatever.WhateverCache``).
+Writing a whole new cache backend from scratch is left as an exercise
+to the reader; see the other backends for examples.
+
+.. note::
+    Prior to Django 1.3, you could use a URI based version of the backend
+    name to reference the built-in cache backends (e.g., you could use
+    ``'db://tablename'`` to refer to the database backend). This format has
+    been deprecated, and will be removed in Django 1.5.
+
+.. setting:: CACHES-KEY_FUNCTION
+
+KEY_FUNCTION
+~~~~~~~~~~~~
+
+A string containing a dotted path to a function that defines how to
+compose a prefix, version and key into a final cache key. The default
+implementation is equivalent to the function::
+
+    def make_key(key, key_prefix, version):
+        return ':'.join([key_prefix, str(version), smart_str(key)])
+
+You may use any key function you want, as long as it has the same
+argument signature.
+
+See the :ref:`cache documentation <cache_key_transformation>` for more information.
+
+.. setting:: CACHES-KEY_PREFIX
+
+KEY_PREFIX
+~~~~~~~~~~
+
+Default: ``''`` (Empty string)
+
+A string that will be automatically included (prepended by default) to
+all cache keys used by the Django server.
+
+See the :ref:`cache documentation <cache_key_prefixing>` for more information.
+
+.. setting:: CACHES-LOCATION
+
+LOCATION
+~~~~~~~~
+
+Default: ``''`` (Empty string)
+
+The location of the cache to use. This might be the directory for a
+file system cache, a host and port for a memcache server, or simply an
+identifying name for a local memory cache. e.g.::
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/var/tmp/django_cache',
+        }
+    }
+
+.. setting:: CACHES-OPTIONS
+
+OPTIONS
+~~~~~~~
+
+Default: None
+
+Extra parameters to pass to the cache backend. Available parameters
+vary depending on your cache backend.
+
+Some information on available parameters can be found in the
+:doc:`Cache Backends </topics/cache>` documentation. For more information,
+consult your backend module's own documentation.
+
+.. setting:: CACHES-TIMEOUT
+
+TIMEOUT
+~~~~~~~
+
+Default: 300
+
+The number of seconds before a cache entry is considered stale.
+
+.. setting:: CACHES-VERSION
+
+VERSION
+~~~~~~~
+
+Default: ``1``
+
+The default version number for cache keys generated by the Django server.
+
+See the :ref:`cache documentation <cache_versioning>` for more information.
+
+.. setting:: CACHE_MIDDLEWARE_ALIAS
+
+CACHE_MIDDLEWARE_ALIAS
+----------------------
+
+Default: ``default``
+
+The cache connection to use for the cache middleware.
 
 .. setting:: CACHE_MIDDLEWARE_ANONYMOUS_ONLY
 
@@ -144,7 +284,7 @@ caches every page that doesn't have GET or POST parameters.
 If you set the value of this setting to ``True``, you should make sure you've
 activated ``AuthenticationMiddleware``.
 
-See the :doc:`cache documentation </topics/cache>` for more information.
+See :doc:`/topics/cache`.
 
 .. setting:: CACHE_MIDDLEWARE_KEY_PREFIX
 
@@ -153,8 +293,9 @@ CACHE_MIDDLEWARE_KEY_PREFIX
 
 Default: ``''`` (Empty string)
 
-The cache key prefix that the cache middleware should use. See
-:doc:`/topics/cache`.
+The cache key prefix that the cache middleware should use.
+
+See :doc:`/topics/cache`.
 
 .. setting:: CACHE_MIDDLEWARE_SECONDS
 
@@ -165,6 +306,8 @@ Default: ``600``
 
 The default number of seconds to cache a page when the caching middleware or
 ``cache_page()`` decorator is used.
+
+See :doc:`/topics/cache`.
 
 .. setting:: CSRF_COOKIE_DOMAIN
 
@@ -241,7 +384,7 @@ SQLite. This can be configured using the following::
 For other database backends, or more complex SQLite configurations, other options
 will be required. The following inner options are available.
 
-.. setting:: ENGINE
+.. setting:: DATABASE-ENGINE
 
 ENGINE
 ~~~~~~
@@ -309,8 +452,12 @@ OPTIONS
 
 Default: ``{}`` (Empty dictionary)
 
-Extra parameters to use when connecting to the database. Consult backend
-module's document for available keywords.
+Extra parameters to use when connecting to the database. Available parameters
+vary depending on your database backend.
+
+Some information on available parameters can be found in the
+:doc:`Database Backends </ref/databases>` documentation. For more information,
+consult your backend module's own documentation.
 
 .. setting:: PASSWORD
 
@@ -370,6 +517,20 @@ passed directly to the backend, so its format is backend-specific.
 Only supported for the ``mysql`` backend (see the `MySQL manual`_ for details).
 
 .. _MySQL manual: MySQL_
+
+.. setting:: TEST_DEPENDENCIES
+
+TEST_DEPENDENCIES
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.3
+
+Default: ``['default']``, for all databases other than ``default``,
+which has no dependencies.
+
+The creation-order dependencies of the database. See the documentation
+on :ref:`controlling the creation order of test databases
+<topics-testing-creation-dependencies>` for details.
 
 .. setting:: TEST_MIRROR
 
@@ -438,7 +599,7 @@ Default: ``'N j, Y'`` (e.g. ``Feb. 4, 2003``)
 The default formatting to use for displaying date fields in any part of the
 system. Note that if :setting:`USE_L10N` is set to ``True``, then the
 locale-dictated format has higher precedence and will be applied instead. See
-:ttag:`allowed date format strings <now>`.
+:tfilter:`allowed date format strings <date>`.
 
 .. versionchanged:: 1.2
     This setting can now be overriden by setting ``USE_L10N`` to ``True``.
@@ -478,7 +639,7 @@ Default: ``'N j, Y, P'`` (e.g. ``Feb. 4, 2003, 4 p.m.``)
 The default formatting to use for displaying datetime fields in any part of the
 system. Note that if :setting:`USE_L10N` is set to ``True``, then the
 locale-dictated format has higher precedence and will be applied instead. See
-:ttag:`allowed date format strings <now>`.
+:tfilter:`allowed date format strings <date>`.
 
 .. versionchanged:: 1.2
     This setting can now be overriden by setting ``USE_L10N`` to ``True``.
@@ -538,8 +699,6 @@ Never deploy a site into production with ``DEBUG`` turned on.
 DEBUG_PROPAGATE_EXCEPTIONS
 --------------------------
 
-.. versionadded:: 1.0
-
 Default: ``False``
 
 If set to True, Django's normal exception handling of view functions
@@ -585,7 +744,7 @@ isn't manually specified. Used with ``DEFAULT_CHARSET`` to construct the
 DEFAULT_FILE_STORAGE
 --------------------
 
-Default: ``'django.core.files.storage.FileSystemStorage'``
+Default: :class:`django.core.files.storage.FileSystemStorage`
 
 Default file storage class to be used for any file-related operations that don't
 specify a particular storage system. See :doc:`/topics/files`.
@@ -605,8 +764,6 @@ site manager(s).
 DEFAULT_INDEX_TABLESPACE
 ------------------------
 
-.. versionadded:: 1.0
-
 Default: ``''`` (Empty string)
 
 Default tablespace to use for indexes on fields that don't specify
@@ -616,8 +773,6 @@ one, if the backend supports it.
 
 DEFAULT_TABLESPACE
 ------------------
-
-.. versionadded:: 1.0
 
 Default: ``''`` (Empty string)
 
@@ -721,8 +876,6 @@ trailing space.
 EMAIL_USE_TLS
 -------------
 
-.. versionadded:: 1.0
-
 Default: ``False``
 
 Whether to use a TLS (secure) connection when talking to the SMTP server.
@@ -731,8 +884,6 @@ Whether to use a TLS (secure) connection when talking to the SMTP server.
 
 FILE_CHARSET
 ------------
-
-.. versionadded:: 1.0
 
 Default: ``'utf-8'``
 
@@ -743,8 +894,6 @@ template files and initial SQL data files.
 
 FILE_UPLOAD_HANDLERS
 --------------------
-
-.. versionadded:: 1.0
 
 Default::
 
@@ -757,8 +906,6 @@ A tuple of handlers to use for uploading. See :doc:`/topics/files` for details.
 
 FILE_UPLOAD_MAX_MEMORY_SIZE
 ---------------------------
-
-.. versionadded:: 1.0
 
 Default: ``2621440`` (i.e. 2.5 MB).
 
@@ -797,8 +944,6 @@ system's standard umask.
 
 FILE_UPLOAD_TEMP_DIR
 --------------------
-
-.. versionadded:: 1.0
 
 Default: ``None``
 
@@ -945,8 +1090,6 @@ standard :term:`language format<language code>`. For example, U.S. English is
 LANGUAGE_COOKIE_NAME
 --------------------
 
-.. versionadded:: 1.0
-
 Default: ``'django_language'``
 
 The name of the cookie to use for the language cookie. This can be whatever you
@@ -975,7 +1118,7 @@ Generally, the default value should suffice. Only set this setting if you want
 to restrict language selection to a subset of the Django-provided languages.
 
 If you define a custom ``LANGUAGES`` setting, it's OK to mark the languages as
-translation strings (as in the default value displayed above) -- but use a
+translation strings (as in the default value referred to above) -- but use a
 "dummy" ``gettext()`` function, not the one in ``django.utils.translation``.
 You should *never* import ``django.utils.translation`` from within your
 settings file, because that module in itself depends on the settings, and that
@@ -1006,12 +1149,55 @@ Default: ``()`` (Empty tuple)
 A tuple of directories where Django looks for translation files.
 See :ref:`using-translations-in-your-own-projects`.
 
+Example::
+
+    LOCALE_PATHS = (
+        '/home/www/project/common_files/locale',
+        '/var/local/translations/locale'
+    )
+
+Note that in the paths you add to the value of this setting, if you have the
+typical ``/path/to/locale/xx/LC_MESSAGES`` hierarchy, you should use the path to
+the ``locale`` directory (i.e. ``'/path/to/locale'``).
+
+.. setting:: LOGGING
+
+LOGGING
+-------
+
+.. versionadded:: 1.3
+
+Default: A logging configuration dictionary.
+
+A data structure containing configuration information. The contents of
+this data structure will be passed as the argument to the
+configuration method described in :setting:`LOGGING_CONFIG`.
+
+The default logging configuration passes HTTP 500 server errors to an
+email log handler; all other log messages are given to a NullHandler.
+
+.. setting:: LOGGING_CONFIG
+
+LOGGING_CONFIG
+--------------
+
+.. versionadded:: 1.3
+
+Default: ``'django.utils.log.dictConfig'``
+
+A path to a callable that will be used to configure logging in the
+Django project. Points at a instance of Python's `dictConfig`_
+configuration method by default.
+
+If you set :setting:`LOGGING_CONFIG` to ``None``, the logging
+configuration process will be skipped.
+
+.. _dictConfig: http://docs.python.org/library/logging.html#logging.dictConfig
+
 .. setting:: LOGIN_REDIRECT_URL
 
 LOGIN_REDIRECT_URL
 ------------------
-
-.. versionadded:: 1.0
 
 Default: ``'/accounts/profile/'``
 
@@ -1026,8 +1212,6 @@ decorator, for example.
 LOGIN_URL
 ---------
 
-.. versionadded:: 1.0
-
 Default: ``'/accounts/login/'``
 
 The URL where requests are redirected for login, especially when using the
@@ -1037,8 +1221,6 @@ The URL where requests are redirected for login, especially when using the
 
 LOGOUT_URL
 ----------
-
-.. versionadded:: 1.0
 
 Default: ``'/accounts/logout/'``
 
@@ -1061,8 +1243,12 @@ MEDIA_ROOT
 
 Default: ``''`` (Empty string)
 
-Absolute path to the directory that holds media for this installation.
-Example: ``"/home/media/media.lawrence.com/"`` See also ``MEDIA_URL``.
+Absolute path to the directory that holds media for this installation, used
+for :doc:`managing stored files </topics/files>`.
+
+Example: ``"/home/media/media.lawrence.com/"``
+
+See also :setting:`MEDIA_URL`.
 
 .. setting:: MEDIA_URL
 
@@ -1071,15 +1257,13 @@ MEDIA_URL
 
 Default: ``''`` (Empty string)
 
-URL that handles the media served from ``MEDIA_ROOT``.
-Example: ``"http://media.lawrence.com"``
+URL that handles the media served from :setting:`MEDIA_ROOT`, used
+for :doc:`managing stored files </topics/files>`.
 
-Note that this should have a trailing slash if it has a path component.
+Example: ``"http://media.lawrence.com/"``
 
-Good: ``"http://www.example.com/static/"``
-Bad: ``"http://www.example.com/static"``
-
-.. setting:: MIDDLEWARE_CLASSES
+.. versionchanged:: 1.3
+   It must end in a slash if set to a non-empty value.
 
 MESSAGE_LEVEL
 -------------
@@ -1118,6 +1302,8 @@ Default::
 Sets the mapping of message levels to message tags. See the
 :doc:`messages documentation </ref/contrib/messages>` for more details.
 
+.. setting:: MIDDLEWARE_CLASSES
+
 MIDDLEWARE_CLASSES
 ------------------
 
@@ -1152,7 +1338,7 @@ drilldown, the header for a given day displays the day and month. Different
 locales have different formats. For example, U.S. English would say
 "January 1," whereas Spanish might say "1 Enero."
 
-See :ttag:`allowed date format strings <now>`. See also ``DATE_FORMAT``,
+See :tfilter:`allowed date format strings <date>`. See also ``DATE_FORMAT``,
 ``DATETIME_FORMAT``, ``TIME_FORMAT`` and ``YEAR_MONTH_FORMAT``.
 
 .. setting:: NUMBER_GROUPING
@@ -1167,10 +1353,20 @@ Default: ``0``
 Number of digits grouped together on the integer part of a number. Common use
 is to display a thousand separator. If this setting is ``0``, then, no grouping
 will be applied to the number. If this setting is greater than ``0`` then the
-setting ``THOUSAND_SEPARATOR`` will be used as the separator between those
+setting :setting:`THOUSAND_SEPARATOR` will be used as the separator between those
 groups.
 
-See also ``THOUSAND_SEPARATOR``
+See also :setting:`THOUSAND_SEPARATOR` and :setting:`USE_THOUSAND_SEPARATOR`.
+
+.. setting:: PASSWORD_RESET_TIMEOUT_DAYS
+
+PASSWORD_RESET_TIMEOUT_DAYS
+---------------------------
+
+Default: ``3``
+
+The number of days a password reset link is valid for. Used by the
+:mod:`django.contrib.auth` password reset mechanism.
 
 .. setting:: PREPEND_WWW
 
@@ -1180,21 +1376,18 @@ PREPEND_WWW
 Default: ``False``
 
 Whether to prepend the "www." subdomain to URLs that don't have it. This is only
-used if ``CommonMiddleware`` is installed (see :doc:`/topics/http/middleware`).
-See also ``APPEND_SLASH``.
+used if :class:`~django.middleware.common.CommonMiddleware` is installed
+(see :doc:`/topics/http/middleware`). See also :setting:`APPEND_SLASH`.
 
 .. setting:: PROFANITIES_LIST
 
 PROFANITIES_LIST
 ----------------
 
+Default: ``()`` (Empty tuple)
+
 A tuple of profanities, as strings, that will trigger a validation error when
 the ``hasNoProfanities`` validator is called.
-
-We don't list the default values here, because that would be profane. To see
-the default values, see the file `django/conf/global_settings.py`_.
-
-.. _django/conf/global_settings.py: http://code.djangoproject.com/browser/django/trunk/django/conf/global_settings.py
 
 .. setting:: RESTRUCTUREDTEXT_FILTER_SETTINGS
 
@@ -1289,6 +1482,25 @@ The domain to use for session cookies. Set this to a string such as
 ``".lawrence.com"`` for cross-domain cookies, or use ``None`` for a standard
 domain cookie. See the :doc:`/topics/http/sessions`.
 
+.. setting:: SESSION_COOKIE_HTTPONLY
+
+SESSION_COOKIE_HTTPONLY
+-----------------------
+
+Default: ``False``
+
+Whether to use HTTPOnly flag on the session cookie. If this is set to
+``True``, client-side JavaScript will not to be able to access the
+session cookie.
+
+HTTPOnly_ is a flag included in a Set-Cookie HTTP response header. It
+is not part of the RFC2109 standard for cookies, and it isn't honored
+consistently by all browsers. However, when it is honored, it can be a
+useful way to mitigate the risk of client side script accessing the
+protected cookie data.
+
+.. _HTTPOnly: http://www.owasp.org/index.php/HTTPOnly
+
 .. setting:: SESSION_COOKIE_NAME
 
 SESSION_COOKIE_NAME
@@ -1303,8 +1515,6 @@ should be different from ``LANGUAGE_COOKIE_NAME``). See the :doc:`/topics/http/s
 
 SESSION_COOKIE_PATH
 -------------------
-
-.. versionadded:: 1.0
 
 Default: ``'/'``
 
@@ -1332,11 +1542,6 @@ See the :doc:`/topics/http/sessions`.
 SESSION_ENGINE
 --------------
 
-.. versionadded:: 1.0
-
-.. versionchanged:: 1.1
-   The ``cached_db`` backend was added
-
 Default: ``django.contrib.sessions.backends.db``
 
 Controls where Django stores session data. Valid values are:
@@ -1362,8 +1567,6 @@ See the :doc:`/topics/http/sessions`.
 
 SESSION_FILE_PATH
 -----------------
-
-.. versionadded:: 1.0
 
 Default: ``None``
 
@@ -1394,7 +1597,7 @@ Default: ``m/d/Y`` (e.g. ``12/31/2003``)
 An available formatting that can be used for displaying date fields on
 templates. Note that if :setting:`USE_L10N` is set to ``True``, then the
 corresponding locale-dictated format has higher precedence and will be applied.
-See :ttag:`allowed date format strings <now>`.
+See :tfilter:`allowed date format strings <date>`.
 
 See also ``DATE_FORMAT`` and ``SHORT_DATETIME_FORMAT``.
 
@@ -1410,7 +1613,7 @@ Default: ``m/d/Y P`` (e.g. ``12/31/2003 4 p.m.``)
 An available formatting that can be used for displaying datetime fields on
 templates. Note that if :setting:`USE_L10N` is set to ``True``, then the
 corresponding locale-dictated format has higher precedence and will be applied.
-See :ttag:`allowed date format strings <now>`.
+See :tfilter:`allowed date format strings <date>`.
 
 See also ``DATE_FORMAT`` and ``SHORT_DATETIME_FORMAT``.
 
@@ -1429,6 +1632,54 @@ See :doc:`/ref/contrib/sites`.
 
 .. _site framework docs: ../sites/
 
+.. setting:: STATIC_ROOT
+
+STATIC_ROOT
+-----------
+
+Default: ``''`` (Empty string)
+
+The absolute path to the directory where :djadmin:`collectstatic` will collect
+static files for deployment.
+
+Example: ``"/home/example.com/static/"``
+
+If the :doc:`staticfiles</ref/contrib/staticfiles>` contrib app is enabled
+(default) the :djadmin:`collectstatic` management command will collect static
+files into this directory. See the howto on :doc:`managing static
+files</howto/static-files>` for more details about usage.
+
+.. warning:: This should be an (initially empty) destination directory for
+    collecting your static files from their permanent locations into one
+    directory for ease of deployment; it is **not** a place to store your
+    static files permanently. You should do that in directories that will be
+    found by :doc:`staticfiles</ref/contrib/staticfiles>`'s
+    :setting:`finders<STATICFILES_FINDERS>`, which by default, are
+    ``'static/'`` app sub-directories and any directories you include in
+    :setting:`STATICFILES_DIRS`).
+
+See :doc:`staticfiles reference</ref/contrib/staticfiles>` and
+:setting:`STATIC_URL`.
+
+.. setting:: STATIC_URL
+
+STATIC_URL
+----------
+
+Default: ``None``
+
+URL to use when referring to static files located in :setting:`STATIC_ROOT`.
+
+Example: ``"/site_media/static/"`` or ``"http://static.example.com/"``
+
+If not ``None``, this will be used as the base path for
+:ref:`media definitions<form-media-paths>` and the
+:doc:`staticfiles app</ref/contrib/staticfiles>`.
+
+It must end in a slash if set to a non-empty value.
+
+See :setting:`STATIC_ROOT`.
+
 .. setting:: TEMPLATE_CONTEXT_PROCESSORS
 
 TEMPLATE_CONTEXT_PROCESSORS
@@ -1440,6 +1691,7 @@ Default::
     "django.core.context_processors.debug",
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
+    "django.core.context_processors.static",
     "django.contrib.messages.context_processors.messages")
 
 A tuple of callables that are used to populate the context in ``RequestContext``.
@@ -1447,7 +1699,7 @@ These callables take a request object as their argument and return a dictionary
 of items to be merged into the context.
 
 .. versionchanged:: 1.2
-   ``"django.contrib.messages.context_processors.messages"`` was added to the
+   ``django.contrib.messages.context_processors.messages`` was added to the
    default.  For more information, see the :doc:`messages documentation
    </ref/contrib/messages>`.
 
@@ -1455,6 +1707,10 @@ of items to be merged into the context.
     The auth context processor was moved in this release from its old location
     ``django.core.context_processors.auth`` to
     ``django.contrib.auth.context_processors.auth``.
+
+.. versionadded:: 1.3
+    The ``django.core.context_processors.static`` context processor
+    was added in this release.
 
 .. setting:: TEMPLATE_DEBUG
 
@@ -1501,6 +1757,12 @@ used instead of a string. The first item in the tuple should be the ``Loader``'s
 module, subsequent items are passed to the ``Loader`` during initialization. See
 :doc:`/ref/templates/api`.
 
+.. versionchanged:: 1.2
+    The class-based API for template loaders was introduced in Django 1.2
+    although  the ``TEMPLATE_LOADERS`` setting will accept strings that specify
+    function-based loaders until compatibility with them is completely removed in
+    Django 1.4.
+
 .. setting:: TEMPLATE_STRING_IF_INVALID
 
 TEMPLATE_STRING_IF_INVALID
@@ -1536,9 +1798,10 @@ THOUSAND_SEPARATOR
 Default ``,`` (Comma)
 
 Default thousand separator used when formatting numbers. This setting is
-used only when ``NUMBER_GROUPING`` is set.
+used only when ``NUMBER_GROUPING`` and ``USE_THOUSAND_SEPARATOR`` are set.
 
-See also ``NUMBER_GROUPING``, ``DECIMAL_SEPARATOR``
+See also :setting:`NUMBER_GROUPING`, :setting:`DECIMAL_SEPARATOR` and
+:setting:`USE_THOUSAND_SEPARATOR`.
 
 .. setting:: TIME_FORMAT
 
@@ -1550,7 +1813,7 @@ Default: ``'P'`` (e.g. ``4 p.m.``)
 The default formatting to use for displaying time fields in any part of the
 system. Note that if :setting:`USE_L10N` is set to ``True``, then the
 locale-dictated format has higher precedence and will be applied instead. See
-:ttag:`allowed date format strings <now>`.
+:tfilter:`allowed date format strings <date>`.
 
 .. versionchanged:: 1.2
     This setting can now be overriden by setting ``USE_L10N`` to ``True``.
@@ -1640,8 +1903,9 @@ USE_ETAGS
 Default: ``False``
 
 A boolean that specifies whether to output the "Etag" header. This saves
-bandwidth but slows down performance. This is only used if ``CommonMiddleware``
-is installed (see :doc:`/topics/http/middleware`).
+bandwidth but slows down performance. This is used by the ``CommonMiddleware``
+(see :doc:`/topics/http/middleware`) and in the``Cache Framework``
+(see :doc:`/topics/cache`).
 
 .. setting:: USE_I18N
 
@@ -1704,11 +1968,20 @@ drilldown, the header for a given month displays the month and the year.
 Different locales have different formats. For example, U.S. English would say
 "January 2006," whereas another locale might say "2006/January."
 
-See :ttag:`allowed date format strings <now>`. See also ``DATE_FORMAT``,
+See :tfilter:`allowed date format strings <date>`. See also ``DATE_FORMAT``,
 ``DATETIME_FORMAT``, ``TIME_FORMAT`` and ``MONTH_DAY_FORMAT``.
 
 Deprecated settings
 ===================
+
+.. setting:: CACHE_BACKEND
+
+CACHE_BACKEND
+-------------
+
+.. deprecated:: 1.3
+   This setting has been replaced by :setting:`BACKEND <CACHES-BACKEND>` in
+   :setting:`CACHES`.
 
 .. setting:: DATABASE_ENGINE
 

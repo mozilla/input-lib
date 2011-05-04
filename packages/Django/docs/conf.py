@@ -22,7 +22,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "_ext"))
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -50,9 +50,9 @@ copyright = 'Django Software Foundation and contributors'
 # built documents.
 #
 # The short X.Y version.
-version = '1.2'
+version = '1.3'
 # The full version, including alpha/beta/rc tags.
-release = version
+release = '1.3'
 # The next version to be released
 django_next_version = '1.3'
 
@@ -87,9 +87,9 @@ show_authors = False
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'trac'
 
-# Sphinx will recurse into subversion configuration folders and try to read  
-# any document file within. These should be ignored. 
-# Note: exclude_dirnames is new in Sphinx 0.5 
+# Sphinx will recurse into subversion configuration folders and try to read
+# any document file within. These should be ignored.
+# Note: exclude_dirnames is new in Sphinx 0.5
 exclude_dirnames = ['.svn']
 
 # -- Options for HTML output ---------------------------------------------------
@@ -125,7 +125,7 @@ html_theme_path = ["_theme"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+#html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

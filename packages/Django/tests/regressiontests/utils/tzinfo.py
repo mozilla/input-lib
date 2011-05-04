@@ -1,30 +1,18 @@
-"""
->>> from django.utils.tzinfo import FixedOffset
+import unittest
 
->>> FixedOffset(0)
-+0000
->>> FixedOffset(60)
-+0100
->>> FixedOffset(-60)
--0100
->>> FixedOffset(280)
-+0440
->>> FixedOffset(-280)
--0440
->>> FixedOffset(-78.4)
--0118
->>> FixedOffset(78.4)
-+0118
->>> FixedOffset(-5.5*60)
--0530
->>> FixedOffset(5.5*60)
-+0530
->>> FixedOffset(-.5*60)
--0030
->>> FixedOffset(.5*60)
-+0030
-"""
+from django.utils.tzinfo import FixedOffset
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+class TzinfoTests(unittest.TestCase):
+
+    def test_fixedoffset(self):
+        self.assertEqual(repr(FixedOffset(0)), '+0000')
+        self.assertEqual(repr(FixedOffset(60)), '+0100')
+        self.assertEqual(repr(FixedOffset(-60)), '-0100')
+        self.assertEqual(repr(FixedOffset(280)), '+0440')
+        self.assertEqual(repr(FixedOffset(-280)), '-0440')
+        self.assertEqual(repr(FixedOffset(-78.4)), '-0118')
+        self.assertEqual(repr(FixedOffset(78.4)), '+0118')
+        self.assertEqual(repr(FixedOffset(-5.5*60)), '-0530')
+        self.assertEqual(repr(FixedOffset(5.5*60)), '+0530')
+        self.assertEqual(repr(FixedOffset(-.5*60)), '-0030')
+        self.assertEqual(repr(FixedOffset(.5*60)), '+0030')

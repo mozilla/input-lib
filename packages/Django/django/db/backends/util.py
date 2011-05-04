@@ -3,36 +3,20 @@ import decimal
 from time import time
 
 from django.utils.hashcompat import md5_constructor
+from django.utils.log import getLogger
 
-class CursorDebugWrapper(object):
+
+logger = getLogger('django.db.backends')
+
+
+class CursorWrapper(object):
     def __init__(self, cursor, db):
         self.cursor = cursor
-        self.db = db # Instance of a BaseDatabaseWrapper subclass
-
-    def execute(self, sql, params=()):
-        start = time()
-        try:
-            return self.cursor.execute(sql, params)
-        finally:
-            stop = time()
-            sql = self.db.ops.last_executed_query(self.cursor, sql, params)
-            self.db.queries.append({
-                'sql': sql,
-                'time': "%.3f" % (stop - start),
-            })
-
-    def executemany(self, sql, param_list):
-        start = time()
-        try:
-            return self.cursor.executemany(sql, param_list)
-        finally:
-            stop = time()
-            self.db.queries.append({
-                'sql': '%s times: %s' % (len(param_list), sql),
-                'time': "%.3f" % (stop - start),
-            })
+        self.db = db
 
     def __getattr__(self, attr):
+        if self.db.is_managed():
+            self.db.set_dirty()
         if attr in self.__dict__:
             return self.__dict__[attr]
         else:
@@ -40,6 +24,41 @@ class CursorDebugWrapper(object):
 
     def __iter__(self):
         return iter(self.cursor)
+
+
+class CursorDebugWrapper(CursorWrapper):
+
+    def execute(self, sql, params=()):
+        start = time()
+        try:
+            return self.cursor.execute(sql, params)
+        finally:
+            stop = time()
+            duration = stop - start
+            sql = self.db.ops.last_executed_query(self.cursor, sql, params)
+            self.db.queries.append({
+                'sql': sql,
+                'time': "%.3f" % duration,
+            })
+            logger.debug('(%.3f) %s; args=%s' % (duration, sql, params),
+                extra={'duration':duration, 'sql':sql, 'params':params}
+            )
+
+    def executemany(self, sql, param_list):
+        start = time()
+        try:
+            return self.cursor.executemany(sql, param_list)
+        finally:
+            stop = time()
+            duration = stop - start
+            self.db.queries.append({
+                'sql': '%s times: %s' % (len(param_list), sql),
+                'time': "%.3f" % duration,
+            })
+            logger.debug('(%.3f) %s; args=%s' % (duration, sql, param_list),
+                extra={'duration':duration, 'sql':sql, 'params':param_list}
+            )
+
 
 ###############################################
 # Converters from database (string) to Python #
@@ -81,7 +100,7 @@ def typecast_timestamp(s): # does NOT store time zone information
     else:
         microseconds = '0'
     return datetime.datetime(int(dates[0]), int(dates[1]), int(dates[2]),
-        int(times[0]), int(times[1]), int(seconds), int(float('.'+microseconds) * 1000000))
+        int(times[0]), int(times[1]), int(seconds), int((microseconds + '000000')[:6]))
 
 def typecast_boolean(s):
     if s is None: return None
@@ -105,15 +124,15 @@ def rev_typecast_decimal(d):
         return None
     return str(d)
 
-def truncate_name(name, length=None):
+def truncate_name(name, length=None, hash_len=4):
     """Shortens a string to a repeatable mangled version with the given length.
     """
     if length is None or len(name) <= length:
         return name
 
-    hash = md5_constructor(name).hexdigest()[:4]
+    hash = md5_constructor(name).hexdigest()[:hash_len]
 
-    return '%s%s' % (name[:length-4], hash)
+    return '%s%s' % (name[:length-hash_len], hash)
 
 def format_number(value, max_digits, decimal_places):
     """

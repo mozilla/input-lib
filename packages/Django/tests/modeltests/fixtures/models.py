@@ -4,7 +4,7 @@
 Fixtures are a way of loading data into the database in bulk. Fixure data
 can be stored in any serializable format (including JSON and XML). Fixtures
 are identified by name, and are stored in either a directory named 'fixtures'
-in the application directory, on in one of the directories named in the
+in the application directory, or in one of the directories named in the
 ``FIXTURE_DIRS`` setting.
 """
 
@@ -71,6 +71,14 @@ class Person(models.Model):
 
     def natural_key(self):
         return (self.name,)
+
+class SpyManager(PersonManager):
+    def get_query_set(self):
+        return super(SpyManager, self).get_query_set().filter(cover_blown=False)
+
+class Spy(Person):
+    objects = SpyManager()
+    cover_blown = models.BooleanField(default=False)
 
 class Visa(models.Model):
     person = models.ForeignKey(Person)

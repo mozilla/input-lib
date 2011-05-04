@@ -74,12 +74,11 @@ volunteers; you can read all about them over at the :doc:`list of committers
 Which sites use Django?
 -----------------------
 
-The Django wiki features a consistently growing `list of Django-powered sites`_.
-Feel free to add your Django-powered site to the list.
+`DjangoSites.org`_ features a constantly growing list of Django-powered sites.
 
-.. _list of Django-powered sites: http://code.djangoproject.com/wiki/DjangoPoweredSites
+.. _DjangoSites.org: http://djangosites.org
 
-.. _mtv:
+.. _faq-mtv:
 
 Django appears to be a MVC framework, but you call the Controller the "view", and the View the "template". How come you don't use the standard names?
 -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -167,14 +166,14 @@ How can I download the Django documentation to read it offline?
 ---------------------------------------------------------------
 
 The Django docs are available in the ``docs`` directory of each Django tarball
-release. These docs are in ReST (ReStructured Text) format, and each text file
+release. These docs are in reST (reStructuredText) format, and each text file
 corresponds to a Web page on the official Django site.
 
 Because the documentation is `stored in revision control`_, you can browse
 documentation changes just like you can browse code changes.
 
 Technically, the docs on Django's site are generated from the latest development
-versions of those ReST documents, so the docs on the Django site may offer more
+versions of those reST documents, so the docs on the Django site may offer more
 information than the docs that come with the latest Django release.
 
 .. _stored in revision control: http://code.djangoproject.com/browser/django/trunk/docs

@@ -1,8 +1,11 @@
-from django.test import TestCase
 from django.forms.models import inlineformset_factory
+from django.test import TestCase
+
 from regressiontests.inline_formsets.models import Poet, Poem, School, Parent, Child
 
+
 class DeletionTests(TestCase):
+
     def test_deletion(self):
         PoemFormSet = inlineformset_factory(Poet, Poem, can_delete=True)
         poet = Poet.objects.create(name='test')
@@ -18,7 +21,7 @@ class DeletionTests(TestCase):
         }
         formset = PoemFormSet(data, instance=poet)
         formset.save()
-        self.failUnless(formset.is_valid())
+        self.assertTrue(formset.is_valid())
         self.assertEqual(Poem.objects.count(), 0)
 
     def test_add_form_deletion_when_invalid(self):
@@ -56,13 +59,13 @@ class DeletionTests(TestCase):
         """
         PoemFormSet = inlineformset_factory(Poet, Poem, can_delete=True)
         poet = Poet.objects.create(name='test')
-        poet.poem_set.create(name='test poem')
+        poem = poet.poem_set.create(name='test poem')
         data = {
             'poem_set-TOTAL_FORMS': u'1',
             'poem_set-INITIAL_FORMS': u'1',
             'poem_set-MAX_NUM_FORMS': u'0',
-            'poem_set-0-id': u'1',
-            'poem_set-0-poem': u'1',
+            'poem_set-0-id': unicode(poem.id),
+            'poem_set-0-poem': unicode(poem.id),
             'poem_set-0-name': u'x' * 1000,
         }
         formset = PoemFormSet(data, instance=poet)
@@ -103,3 +106,51 @@ class DeletionTests(TestCase):
             obj.save()
         self.assertEqual(school.child_set.count(), 1)
 
+
+class InlineFormsetFactoryTest(TestCase):
+    def test_inline_formset_factory(self):
+        """
+        These should both work without a problem.
+        """
+        inlineformset_factory(Parent, Child, fk_name='mother')
+        inlineformset_factory(Parent, Child, fk_name='father')
+
+    def test_exception_on_unspecified_foreign_key(self):
+        """
+        Child has two ForeignKeys to Parent, so if we don't specify which one
+        to use for the inline formset, we should get an exception.
+        """
+        self.assertRaisesRegexp(Exception,
+            "<class 'regressiontests.inline_formsets.models.Child'> has more than 1 ForeignKey to <class 'regressiontests.inline_formsets.models.Parent'>",
+            inlineformset_factory, Parent, Child
+        )
+
+    def test_fk_name_not_foreign_key_field_from_child(self):
+        """
+        If we specify fk_name, but it isn't a ForeignKey from the child model
+        to the parent model, we should get an exception.
+        """
+        self.assertRaises(Exception,
+            "fk_name 'school' is not a ForeignKey to <class 'regressiontests.inline_formsets.models.Parent'>",
+            inlineformset_factory, Parent, Child, fk_name='school'
+        )
+
+    def test_non_foreign_key_field(self):
+        """
+        If the field specified in fk_name is not a ForeignKey, we should get an
+        exception.
+        """
+        self.assertRaisesRegexp(Exception,
+            "<class 'regressiontests.inline_formsets.models.Child'> has no field named 'test'",
+            inlineformset_factory, Parent, Child, fk_name='test'
+        )
+
+    def test_any_iterable_allowed_as_argument_to_exclude(self):
+        # Regression test for #9171.
+        inlineformset_factory(
+            Parent, Child, exclude=['school'], fk_name='mother'
+        )
+
+        inlineformset_factory(
+            Parent, Child, exclude=('school',), fk_name='mother'
+        )

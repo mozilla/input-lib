@@ -7,7 +7,7 @@ from itertools import dropwhile
 from optparse import make_option
 from subprocess import PIPE, Popen
 
-from django.core.management.base import CommandError, BaseCommand
+from django.core.management.base import CommandError, NoArgsCommand
 from django.utils.text import get_text_list
 
 pythonize_re = re.compile(r'(?:^|\n)\s*//')
@@ -115,7 +115,8 @@ def copy_plural_forms(msgs, locale, domain, verbosity):
 
 
 def make_messages(locale=None, domain='django', verbosity='1', all=False,
-        extensions=None, symlinks=False, ignore_patterns=[]):
+        extensions=None, symlinks=False, ignore_patterns=[], no_wrap=False,
+        no_obsolete=False):
     """
     Uses the locale directory from the Django SVN tree or an application/
     project to process all
@@ -133,6 +134,8 @@ def make_messages(locale=None, domain='django', verbosity='1', all=False,
     if os.path.isdir(os.path.join('conf', 'locale')):
         localedir = os.path.abspath(os.path.join('conf', 'locale'))
         invoked_for_django = True
+        # Ignoring all contrib apps
+        ignore_patterns += ['contrib/*']
     elif os.path.isdir('locale'):
         localedir = os.path.abspath('locale')
     else:
@@ -142,11 +145,7 @@ def make_messages(locale=None, domain='django', verbosity='1', all=False,
         raise CommandError("currently makemessages only supports domains 'django' and 'djangojs'")
 
     if (locale is None and not all) or domain is None:
-        # backwards compatible error message
-        if not sys.argv[0].endswith("make-messages.py"):
-            message = "Type '%s help %s' for usage.\n" % (os.path.basename(sys.argv[0]), sys.argv[1])
-        else:
-            message = "usage: make-messages.py -l <language>\n   or: make-messages.py -a\n"
+        message = "Type '%s help %s' for usage information." % (os.path.basename(sys.argv[0]), sys.argv[1])
         raise CommandError(message)
 
     # We require gettext version 0.15 or newer.
@@ -163,6 +162,8 @@ def make_messages(locale=None, domain='django', verbosity='1', all=False,
     elif all:
         locale_dirs = filter(os.path.isdir, glob.glob('%s/*' % localedir))
         languages = [os.path.basename(l) for l in locale_dirs]
+
+    wrap = no_wrap and '--no-wrap' or ''
 
     for locale in languages:
         if verbosity > 0:
@@ -190,19 +191,31 @@ def make_messages(locale=None, domain='django', verbosity='1', all=False,
                     f.write(src)
                 finally:
                     f.close()
-                cmd = 'xgettext -d %s -L Perl --keyword=gettext_noop --keyword=gettext_lazy --keyword=ngettext_lazy:1,2 --from-code UTF-8 -o - "%s"' % (domain, os.path.join(dirpath, thefile))
+                cmd = (
+                    'xgettext -d %s -L Perl %s --keyword=gettext_noop '
+                    '--keyword=gettext_lazy --keyword=ngettext_lazy:1,2 '
+                    '--keyword=pgettext:1c,2 --keyword=npgettext:1c,2,3 '
+                    '--from-code UTF-8 --add-comments=Translators -o - "%s"' % (
+                        domain, wrap, os.path.join(dirpath, thefile)
+                    )
+                )
                 msgs, errors = _popen(cmd)
                 if errors:
-                    raise CommandError("errors happened while running xgettext on %s\n%s" % (file, errors))
-                old = '#: '+os.path.join(dirpath, thefile)[2:]
-                new = '#: '+os.path.join(dirpath, file)[2:]
-                msgs = msgs.replace(old, new)
-                if os.path.exists(potfile):
-                    # Strip the header
-                    msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
-                else:
-                    msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
+                    os.unlink(os.path.join(dirpath, thefile))
+                    if os.path.exists(potfile):
+                        os.unlink(potfile)
+                    raise CommandError(
+                        "errors happened while running xgettext on %s\n%s" %
+                        (file, errors))
                 if msgs:
+                    old = '#: ' + os.path.join(dirpath, thefile)[2:]
+                    new = '#: ' + os.path.join(dirpath, file)[2:]
+                    msgs = msgs.replace(old, new)
+                    if os.path.exists(potfile):
+                        # Strip the header
+                        msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
+                    else:
+                        msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
                     f = open(potfile, 'ab')
                     try:
                         f.write(msgs)
@@ -211,36 +224,46 @@ def make_messages(locale=None, domain='django', verbosity='1', all=False,
                 os.unlink(os.path.join(dirpath, thefile))
             elif domain == 'django' and (file_ext == '.py' or file_ext in extensions):
                 thefile = file
+                orig_file = os.path.join(dirpath, file)
                 if file_ext in extensions:
-                    src = open(os.path.join(dirpath, file), "rU").read()
+                    src = open(orig_file, "rU").read()
                     thefile = '%s.py' % file
+                    f = open(os.path.join(dirpath, thefile), "w")
                     try:
-                        f = open(os.path.join(dirpath, thefile), "w")
-                        try:
-                            f.write(templatize(src))
-                        finally:
-                            f.close()
-                    except SyntaxError, msg:
-                        msg = "%s (file: %s)" % (msg, os.path.join(dirpath, file))
-                        raise SyntaxError(msg)
+                        f.write(templatize(src, orig_file[2:]))
+                    finally:
+                        f.close()
                 if verbosity > 1:
                     sys.stdout.write('processing file %s in %s\n' % (file, dirpath))
-                cmd = 'xgettext -d %s -L Python --keyword=gettext_noop --keyword=gettext_lazy --keyword=ngettext_lazy:1,2 --keyword=ugettext_noop --keyword=ugettext_lazy --keyword=ungettext_lazy:1,2 --from-code UTF-8 -o - "%s"' % (
-                    domain, os.path.join(dirpath, thefile))
+                cmd = (
+                    'xgettext -d %s -L Python %s --keyword=gettext_noop '
+                    '--keyword=gettext_lazy --keyword=ngettext_lazy:1,2 '
+                    '--keyword=ugettext_noop --keyword=ugettext_lazy '
+                    '--keyword=ungettext_lazy:1,2 --keyword=pgettext:1c,2 '
+                    '--keyword=npgettext:1c,2,3 --keyword=pgettext_lazy:1c,2 '
+                    '--keyword=npgettext_lazy:1c,2,3 --from-code UTF-8 '
+                    '--add-comments=Translators -o - "%s"' % (
+                        domain, wrap, os.path.join(dirpath, thefile))
+                )
                 msgs, errors = _popen(cmd)
                 if errors:
-                    raise CommandError("errors happened while running xgettext on %s\n%s" % (file, errors))
-
-                if thefile != file:
-                    old = '#: '+os.path.join(dirpath, thefile)[2:]
-                    new = '#: '+os.path.join(dirpath, file)[2:]
-                    msgs = msgs.replace(old, new)
-                if os.path.exists(potfile):
-                    # Strip the header
-                    msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
-                else:
-                    msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
+                    if thefile != file:
+                        os.unlink(os.path.join(dirpath, thefile))
+                    if os.path.exists(potfile):
+                        os.unlink(potfile)
+                    raise CommandError(
+                        "errors happened while running xgettext on %s\n%s" %
+                        (file, errors))
                 if msgs:
+                    if thefile != file:
+                        old = '#: ' + os.path.join(dirpath, thefile)[2:]
+                        new = '#: ' + orig_file[2:]
+                        msgs = msgs.replace(old, new)
+                    if os.path.exists(potfile):
+                        # Strip the header
+                        msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
+                    else:
+                        msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
                     f = open(potfile, 'ab')
                     try:
                         f.write(msgs)
@@ -250,36 +273,50 @@ def make_messages(locale=None, domain='django', verbosity='1', all=False,
                     os.unlink(os.path.join(dirpath, thefile))
 
         if os.path.exists(potfile):
-            msgs, errors = _popen('msguniq --to-code=utf-8 "%s"' % potfile)
+            msgs, errors = _popen('msguniq %s --to-code=utf-8 "%s"' %
+                                  (wrap, potfile))
             if errors:
-                raise CommandError("errors happened while running msguniq\n%s" % errors)
-            f = open(potfile, 'w')
-            try:
-                f.write(msgs)
-            finally:
-                f.close()
+                os.unlink(potfile)
+                raise CommandError(
+                    "errors happened while running msguniq\n%s" % errors)
             if os.path.exists(pofile):
-                msgs, errors = _popen('msgmerge -q "%s" "%s"' % (pofile, potfile))
+                f = open(potfile, 'w')
+                try:
+                    f.write(msgs)
+                finally:
+                    f.close()
+                msgs, errors = _popen('msgmerge %s -q "%s" "%s"' %
+                                      (wrap, pofile, potfile))
                 if errors:
-                    raise CommandError("errors happened while running msgmerge\n%s" % errors)
+                    os.unlink(potfile)
+                    raise CommandError(
+                        "errors happened while running msgmerge\n%s" % errors)
             elif not invoked_for_django:
                 msgs = copy_plural_forms(msgs, locale, domain, verbosity)
+            msgs = msgs.replace(
+                "#. #-#-#-#-#  %s.pot (PACKAGE VERSION)  #-#-#-#-#\n" % domain, "")
             f = open(pofile, 'wb')
             try:
                 f.write(msgs)
             finally:
                 f.close()
             os.unlink(potfile)
+            if no_obsolete:
+                msgs, errors = _popen('msgattrib %s -o "%s" --no-obsolete "%s"' %
+                                      (wrap, pofile, pofile))
+                if errors:
+                    raise CommandError(
+                        "errors happened while running msgattrib\n%s" % errors)
 
 
-class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
+class Command(NoArgsCommand):
+    option_list = NoArgsCommand.option_list + (
         make_option('--locale', '-l', default=None, dest='locale',
-            help='Creates or updates the message files only for the given locale (e.g. pt_BR).'),
+            help='Creates or updates the message files for the given locale (e.g. pt_BR).'),
         make_option('--domain', '-d', default='django', dest='domain',
             help='The domain of the message files (default: "django").'),
         make_option('--all', '-a', action='store_true', dest='all',
-            default=False, help='Reexamines all source code and templates for new translation strings and updates all message files for all available languages.'),
+            default=False, help='Updates the message files for all existing locales.'),
         make_option('--extension', '-e', dest='extensions',
             help='The file extension(s) to examine (default: ".html", separate multiple extensions with commas, or use -e multiple times)',
             action='append'),
@@ -289,16 +326,21 @@ class Command(BaseCommand):
             default=[], metavar='PATTERN', help='Ignore files or directories matching this glob-style pattern. Use multiple times to ignore more.'),
         make_option('--no-default-ignore', action='store_false', dest='use_default_ignore_patterns',
             default=True, help="Don't ignore the common glob-style patterns 'CVS', '.*' and '*~'."),
+        make_option('--no-wrap', action='store_true', dest='no_wrap',
+            default=False, help="Don't break long message lines into several lines"),
+        make_option('--no-obsolete', action='store_true', dest='no_obsolete',
+            default=False, help="Remove obsolete message strings"),
     )
-    help = "Runs over the entire source tree of the current directory and pulls out all strings marked for translation. It creates (or updates) a message file in the conf/locale (in the django tree) or locale (for project and application) directory."
+    help = ( "Runs over the entire source tree of the current directory and "
+"pulls out all strings marked for translation. It creates (or updates) a message "
+"file in the conf/locale (in the django tree) or locale (for projects and "
+"applications) directory.\n\nYou must run this command with one of either the "
+"--locale or --all options.")
 
     requires_model_validation = False
     can_import_settings = False
 
-    def handle(self, *args, **options):
-        if len(args) != 0:
-            raise CommandError("Command doesn't accept any arguments")
-
+    def handle_noargs(self, *args, **options):
         locale = options.get('locale')
         domain = options.get('domain')
         verbosity = int(options.get('verbosity'))
@@ -309,13 +351,15 @@ class Command(BaseCommand):
         if options.get('use_default_ignore_patterns'):
             ignore_patterns += ['CVS', '.*', '*~']
         ignore_patterns = list(set(ignore_patterns))
-
+        no_wrap = options.get('no_wrap')
+        no_obsolete = options.get('no_obsolete')
         if domain == 'djangojs':
             extensions = handle_extensions(extensions or ['js'])
         else:
             extensions = handle_extensions(extensions or ['html'])
 
         if verbosity > 1:
-            sys.stdout.write('examining files with the extensions: %s\n' % get_text_list(list(extensions), 'and'))
+            sys.stdout.write('examining files with the extensions: %s\n'
+                             % get_text_list(list(extensions), 'and'))
 
-        make_messages(locale, domain, verbosity, process_all, extensions, symlinks, ignore_patterns)
+        make_messages(locale, domain, verbosity, process_all, extensions, symlinks, ignore_patterns, no_wrap, no_obsolete)

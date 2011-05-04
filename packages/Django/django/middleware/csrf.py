@@ -13,12 +13,17 @@ from django.conf import settings
 from django.core.urlresolvers import get_callable
 from django.utils.cache import patch_vary_headers
 from django.utils.hashcompat import md5_constructor
+from django.utils.http import same_origin
+from django.utils.log import getLogger
 from django.utils.safestring import mark_safe
+from django.utils.crypto import constant_time_compare
 
 _POST_FORM_RE = \
     re.compile(r'(<form\W[^>]*\bmethod\s*=\s*(\'|"|)POST(\'|"|)\b[^>]*>)', re.IGNORECASE)
 
 _HTML_TYPES = ('text/html', 'application/xhtml+xml')
+
+logger = getLogger('django.request')
 
 # Use the system (hardware-based) random number generator if it exists.
 if hasattr(random, 'SystemRandom'):
@@ -84,16 +89,21 @@ class CsrfViewMiddleware(object):
     This middleware should be used in conjunction with the csrf_token template
     tag.
     """
-    def process_view(self, request, callback, callback_args, callback_kwargs):
-        if getattr(request, 'csrf_processing_done', False):
-            return None
+    # The _accept and _reject methods currently only exist for the sake of the
+    # requires_csrf_token decorator.
+    def _accept(self, request):
+        # Avoid checking the request twice by adding a custom attribute to
+        # request.  This will be relevant when both decorator and middleware
+        # are used.
+        request.csrf_processing_done = True
+        return None
 
-        reject = lambda s: _get_failure_view()(request, reason=s)
-        def accept():
-            # Avoid checking the request twice by adding a custom attribute to
-            # request.  This will be relevant when both decorator and middleware
-            # are used.
-            request.csrf_processing_done = True
+    def _reject(self, request, reason):
+        return _get_failure_view()(request, reason=reason)
+
+    def process_view(self, request, callback, callback_args, callback_kwargs):
+
+        if getattr(request, 'csrf_processing_done', False):
             return None
 
         # If the user doesn't have a CSRF cookie, generate one and store it in the
@@ -124,45 +134,45 @@ class CsrfViewMiddleware(object):
                 # the creation of CSRF cookies, so that everything else continues to
                 # work exactly the same (e.g. cookies are sent etc), but before the
                 # any branches that call reject()
-                return accept()
-
-            if request.is_ajax():
-                # .is_ajax() is based on the presence of X-Requested-With.  In
-                # the context of a browser, this can only be sent if using
-                # XmlHttpRequest.  Browsers implement careful policies for
-                # XmlHttpRequest:
-                #
-                #  * Normally, only same-domain requests are allowed.
-                #
-                #  * Some browsers (e.g. Firefox 3.5 and later) relax this
-                #    carefully:
-                #
-                #    * if it is a 'simple' GET or POST request (which can
-                #      include no custom headers), it is allowed to be cross
-                #      domain.  These requests will not be recognized as AJAX.
-                #
-                #    * if a 'preflight' check with the server confirms that the
-                #      server is expecting and allows the request, cross domain
-                #      requests even with custom headers are allowed. These
-                #      requests will be recognized as AJAX, but can only get
-                #      through when the developer has specifically opted in to
-                #      allowing the cross-domain POST request.
-                #
-                # So in all cases, it is safe to allow these requests through.
-                return accept()
+                return self._accept(request)
 
             if request.is_secure():
-                # Strict referer checking for HTTPS
+                # Suppose user visits http://example.com/
+                # An active network attacker,(man-in-the-middle, MITM) sends a
+                # POST form which targets https://example.com/detonate-bomb/ and
+                # submits it via javascript.
+                #
+                # The attacker will need to provide a CSRF cookie and token, but
+                # that is no problem for a MITM and the session independent
+                # nonce we are using. So the MITM can circumvent the CSRF
+                # protection. This is true for any HTTP connection, but anyone
+                # using HTTPS expects better!  For this reason, for
+                # https://example.com/ we need additional protection that treats
+                # http://example.com/ as completely untrusted.  Under HTTPS,
+                # Barth et al. found that the Referer header is missing for
+                # same-domain requests in only about 0.2% of cases or less, so
+                # we can use strict Referer checking.
                 referer = request.META.get('HTTP_REFERER')
                 if referer is None:
-                    return reject(REASON_NO_REFERER)
+                    logger.warning('Forbidden (%s): %s' % (REASON_NO_REFERER, request.path),
+                        extra={
+                            'status_code': 403,
+                            'request': request,
+                        }
+                    )
+                    return self._reject(request, REASON_NO_REFERER)
 
-                # The following check ensures that the referer is HTTPS,
-                # the domains match and the ports match.  This might be too strict.
+                # Note that request.get_host() includes the port
                 good_referer = 'https://%s/' % request.get_host()
-                if not referer.startswith(good_referer):
-                    return reject(REASON_BAD_REFERER %
-                                  (referer, good_referer))
+                if not same_origin(referer, good_referer):
+                    reason = REASON_BAD_REFERER % (referer, good_referer)
+                    logger.warning('Forbidden (%s): %s' % (reason, request.path),
+                        extra={
+                            'status_code': 403,
+                            'request': request,
+                        }
+                    )
+                    return self._reject(request, reason)
 
             # If the user didn't already have a CSRF cookie, then fall back to
             # the Django 1.1 method (hash of session ID), so a request is not
@@ -176,20 +186,42 @@ class CsrfViewMiddleware(object):
                     # No CSRF cookie and no session cookie. For POST requests,
                     # we insist on a CSRF cookie, and in this way we can avoid
                     # all CSRF attacks, including login CSRF.
-                    return reject(REASON_NO_COOKIE)
+                    logger.warning('Forbidden (%s): %s' % (REASON_NO_COOKIE, request.path),
+                        extra={
+                            'status_code': 403,
+                            'request': request,
+                        }
+                    )
+                    return self._reject(request, REASON_NO_COOKIE)
             else:
                 csrf_token = request.META["CSRF_COOKIE"]
 
             # check incoming token
-            request_csrf_token = request.POST.get('csrfmiddlewaretoken', None)
-            if request_csrf_token != csrf_token:
+            request_csrf_token = request.POST.get('csrfmiddlewaretoken', '')
+            if request_csrf_token == "":
+                # Fall back to X-CSRFToken, to make things easier for AJAX
+                request_csrf_token = request.META.get('HTTP_X_CSRFTOKEN', '')
+
+            if not constant_time_compare(request_csrf_token, csrf_token):
                 if cookie_is_new:
                     # probably a problem setting the CSRF cookie
-                    return reject(REASON_NO_CSRF_COOKIE)
+                    logger.warning('Forbidden (%s): %s' % (REASON_NO_CSRF_COOKIE, request.path),
+                        extra={
+                            'status_code': 403,
+                            'request': request,
+                        }
+                    )
+                    return self._reject(request, REASON_NO_CSRF_COOKIE)
                 else:
-                    return reject(REASON_BAD_TOKEN)
+                    logger.warning('Forbidden (%s): %s' % (REASON_BAD_TOKEN, request.path),
+                        extra={
+                            'status_code': 403,
+                            'request': request,
+                        }
+                    )
+                    return self._reject(request, REASON_BAD_TOKEN)
 
-        return accept()
+        return self._accept(request)
 
     def process_response(self, request, response):
         if getattr(response, 'csrf_processing_done', False):
@@ -227,7 +259,7 @@ class CsrfResponseMiddleware(object):
         import warnings
         warnings.warn(
             "CsrfResponseMiddleware and CsrfMiddleware are deprecated; use CsrfViewMiddleware and the template tag instead (see CSRF documentation).",
-            PendingDeprecationWarning
+            DeprecationWarning
         )
 
     def process_response(self, request, response):

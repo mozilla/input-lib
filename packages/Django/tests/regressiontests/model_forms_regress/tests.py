@@ -1,36 +1,44 @@
 from datetime import date
 
-from django import db
 from django import forms
-from django.forms.models import modelform_factory, ModelChoiceField
-from django.conf import settings
+from django.core.exceptions import FieldError, ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.forms.models import (modelform_factory, ModelChoiceField,
+    fields_for_model, construct_instance)
+from django.utils import unittest
 from django.test import TestCase
 
 from models import Person, RealPerson, Triple, FilePathModel, Article, \
-    Publication, CustomFF, Author, Author1, Homepage
+    Publication, CustomFF, Author, Author1, Homepage, Document, Edition
 
 
 class ModelMultipleChoiceFieldTests(TestCase):
-
-    def setUp(self):
-        self.old_debug = settings.DEBUG
-        settings.DEBUG = True
-
-    def tearDown(self):
-        settings.DEBUG = self.old_debug
-
     def test_model_multiple_choice_number_of_queries(self):
         """
         Test that ModelMultipleChoiceField does O(1) queries instead of
         O(n) (#10156).
         """
+        persons = [Person.objects.create(name="Person %s" % i) for i in range(30)]
+
+        f = forms.ModelMultipleChoiceField(queryset=Person.objects.all())
+        self.assertNumQueries(1, f.clean, [p.pk for p in persons[1:11:2]])
+
+    def test_model_multiple_choice_run_validators(self):
+        """
+        Test that ModelMultipleChoiceField run given validators (#14144).
+        """
         for i in range(30):
             Person.objects.create(name="Person %s" % i)
 
-        db.reset_queries()
-        f = forms.ModelMultipleChoiceField(queryset=Person.objects.all())
-        selected = f.clean([1, 3, 5, 7, 9])
-        self.assertEquals(len(db.connection.queries), 1)
+        self._validator_run = False
+        def my_validator(value):
+            self._validator_run = True
+
+        f = forms.ModelMultipleChoiceField(queryset=Person.objects.all(),
+                                           validators=[my_validator])
+
+        f.clean([p.pk for p in Person.objects.all()[8:9]])
+        self.assertTrue(self._validator_run)
 
 class TripleForm(forms.ModelForm):
     class Meta:
@@ -47,10 +55,10 @@ class UniqueTogetherTests(TestCase):
         Triple.objects.create(left=1, middle=2, right=3)
 
         form = TripleForm({'left': '1', 'middle': '2', 'right': '3'})
-        self.failIf(form.is_valid())
+        self.assertFalse(form.is_valid())
 
         form = TripleForm({'left': '1', 'middle': '3', 'right': '1'})
-        self.failUnless(form.is_valid())
+        self.assertTrue(form.is_valid())
 
 class TripleFormWithCleanOverride(forms.ModelForm):
     class Meta:
@@ -68,10 +76,10 @@ class OverrideCleanTests(TestCase):
         optional.
         """
         form = TripleFormWithCleanOverride({'left': 1, 'middle': 2, 'right': 1})
-        self.failUnless(form.is_valid())
+        self.assertTrue(form.is_valid())
         # form.instance.left will be None if the instance was not constructed
         # by form.full_clean().
-        self.assertEquals(form.instance.left, 1)
+        self.assertEqual(form.instance.left, 1)
 
 # Regression test for #12960.
 # Make sure the cleaned_data returned from ModelForm.clean() is applied to the
@@ -117,19 +125,20 @@ class ManyToManyCallableInitialTests(TestCase):
             return db_field.formfield(**kwargs)
 
         # Set up some Publications to use as data
-        Publication(title="First Book", date_published=date(2007,1,1)).save()
-        Publication(title="Second Book", date_published=date(2008,1,1)).save()
-        Publication(title="Third Book", date_published=date(2009,1,1)).save()
+        book1 = Publication.objects.create(title="First Book", date_published=date(2007,1,1))
+        book2 = Publication.objects.create(title="Second Book", date_published=date(2008,1,1))
+        book3 = Publication.objects.create(title="Third Book", date_published=date(2009,1,1))
 
         # Create a ModelForm, instantiate it, and check that the output is as expected
         ModelForm = modelform_factory(Article, formfield_callback=formfield_for_dbfield)
         form = ModelForm()
-        self.assertEquals(form.as_ul(), u"""<li><label for="id_headline">Headline:</label> <input id="id_headline" type="text" name="headline" maxlength="100" /></li>
+        self.assertEqual(form.as_ul(), u"""<li><label for="id_headline">Headline:</label> <input id="id_headline" type="text" name="headline" maxlength="100" /></li>
 <li><label for="id_publications">Publications:</label> <select multiple="multiple" name="publications" id="id_publications">
-<option value="1" selected="selected">First Book</option>
-<option value="2" selected="selected">Second Book</option>
-<option value="3">Third Book</option>
-</select>  Hold down "Control", or "Command" on a Mac, to select more than one.</li>""")
+<option value="%d" selected="selected">First Book</option>
+<option value="%d" selected="selected">Second Book</option>
+<option value="%d">Third Book</option>
+</select> <span class="helptext"> Hold down "Control", or "Command" on a Mac, to select more than one.</span></li>"""
+            % (book1.pk, book2.pk, book3.pk))
 
 class CFFForm(forms.ModelForm):
     class Meta:
@@ -184,7 +193,7 @@ class OneToOneFieldTests(TestCase):
             date_published=date(1991, 8, 22))
         author = Author.objects.create(publication=publication, full_name='John Doe')
         form = AuthorForm({'publication':u'', 'full_name':'John Doe'}, instance=author)
-        self.assert_(form.is_valid())
+        self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data['publication'], None)
         author = form.save()
         # author object returned from form still retains original publication object
@@ -202,7 +211,7 @@ class OneToOneFieldTests(TestCase):
             date_published=date(1991, 8, 22))
         author = Author1.objects.create(publication=publication, full_name='John Doe')
         form = AuthorForm({'publication':u'', 'full_name':'John Doe'}, instance=author)
-        self.assert_(not form.is_valid())
+        self.assertTrue(not form.is_valid())
 
 
 class ModelChoiceForm(forms.Form):
@@ -215,8 +224,8 @@ class TestTicket11183(TestCase):
         field1 = form1.fields['person']
         # To allow the widget to change the queryset of field1.widget.choices correctly,
         # without affecting other forms, the following must hold:
-        self.assert_(field1 is not ModelChoiceForm.base_fields['person'])
-        self.assert_(field1.widget.choices.field is field1)
+        self.assertTrue(field1 is not ModelChoiceForm.base_fields['person'])
+        self.assertTrue(field1.widget.choices.field is field1)
 
 class HomepageForm(forms.ModelForm):
     class Meta:
@@ -244,12 +253,12 @@ class URLFieldTests(TestCase):
         form = HomepageForm({'url': 'example.com'})
         form.is_valid()
         # self.assertTrue(form.is_valid())
-        # self.assertEquals(form.cleaned_data['url'], 'http://example.com/')
+        # self.assertEqual(form.cleaned_data['url'], 'http://example.com/')
 
         form = HomepageForm({'url': 'example.com/test'})
         form.is_valid()
         # self.assertTrue(form.is_valid())
-        # self.assertEquals(form.cleaned_data['url'], 'http://example.com/test')
+        # self.assertEqual(form.cleaned_data['url'], 'http://example.com/test')
 
 
 class FormFieldCallbackTests(TestCase):
@@ -294,3 +303,160 @@ class FormFieldCallbackTests(TestCase):
         self.assertRaises(TypeError, modelform_factory, Person,
                           formfield_callback='not a function or callable')
 
+
+class InvalidFieldAndFactory(TestCase):
+    """ Tests for #11905 """
+
+    def test_extra_field_model_form(self):
+        try:
+            class ExtraPersonForm(forms.ModelForm):
+                """ ModelForm with an extra field """
+
+                age = forms.IntegerField()
+
+                class Meta:
+                    model = Person
+                    fields = ('name', 'no-field')
+        except FieldError, e:
+            # Make sure the exception contains some reference to the
+            # field responsible for the problem.
+            self.assertTrue('no-field' in e.args[0])
+        else:
+            self.fail('Invalid "no-field" field not caught')
+
+    def test_extra_declared_field_model_form(self):
+        try:
+            class ExtraPersonForm(forms.ModelForm):
+                """ ModelForm with an extra field """
+
+                age = forms.IntegerField()
+
+                class Meta:
+                    model = Person
+                    fields = ('name', 'age')
+        except FieldError:
+            self.fail('Declarative field raised FieldError incorrectly')
+
+    def test_extra_field_modelform_factory(self):
+        self.assertRaises(FieldError, modelform_factory,
+                          Person, fields=['no-field', 'name'])
+
+
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+
+class FileFieldTests(unittest.TestCase):
+    def test_clean_false(self):
+        """
+        If the ``clean`` method on a non-required FileField receives False as
+        the data (meaning clear the field value), it returns False, regardless
+        of the value of ``initial``.
+
+        """
+        f = forms.FileField(required=False)
+        self.assertEqual(f.clean(False), False)
+        self.assertEqual(f.clean(False, 'initial'), False)
+
+    def test_clean_false_required(self):
+        """
+        If the ``clean`` method on a required FileField receives False as the
+        data, it has the same effect as None: initial is returned if non-empty,
+        otherwise the validation catches the lack of a required value.
+
+        """
+        f = forms.FileField(required=True)
+        self.assertEqual(f.clean(False, 'initial'), 'initial')
+        self.assertRaises(ValidationError, f.clean, False)
+
+    def test_full_clear(self):
+        """
+        Integration happy-path test that a model FileField can actually be set
+        and cleared via a ModelForm.
+
+        """
+        form = DocumentForm()
+        self.assertTrue('name="myfile"' in unicode(form))
+        self.assertTrue('myfile-clear' not in unicode(form))
+        form = DocumentForm(files={'myfile': SimpleUploadedFile('something.txt', 'content')})
+        self.assertTrue(form.is_valid())
+        doc = form.save(commit=False)
+        self.assertEqual(doc.myfile.name, 'something.txt')
+        form = DocumentForm(instance=doc)
+        self.assertTrue('myfile-clear' in unicode(form))
+        form = DocumentForm(instance=doc, data={'myfile-clear': 'true'})
+        doc = form.save(commit=False)
+        self.assertEqual(bool(doc.myfile), False)
+
+    def test_clear_and_file_contradiction(self):
+        """
+        If the user submits a new file upload AND checks the clear checkbox,
+        they get a validation error, and the bound redisplay of the form still
+        includes the current file and the clear checkbox.
+
+        """
+        form = DocumentForm(files={'myfile': SimpleUploadedFile('something.txt', 'content')})
+        self.assertTrue(form.is_valid())
+        doc = form.save(commit=False)
+        form = DocumentForm(instance=doc,
+                            files={'myfile': SimpleUploadedFile('something.txt', 'content')},
+                            data={'myfile-clear': 'true'})
+        self.assertTrue(not form.is_valid())
+        self.assertEqual(form.errors['myfile'],
+                         [u'Please either submit a file or check the clear checkbox, not both.'])
+        rendered = unicode(form)
+        self.assertTrue('something.txt' in rendered)
+        self.assertTrue('myfile-clear' in rendered)
+
+class EditionForm(forms.ModelForm):
+    author = forms.ModelChoiceField(queryset=Person.objects.all())
+    publication = forms.ModelChoiceField(queryset=Publication.objects.all())
+    edition = forms.IntegerField()
+    isbn = forms.CharField(max_length=13)
+
+    class Meta:
+        model = Edition
+
+class UniqueErrorsTests(TestCase):
+    def setUp(self):
+        self.author1 = Person.objects.create(name=u'Author #1')
+        self.author2 = Person.objects.create(name=u'Author #2')
+        self.pub1 = Publication.objects.create(title='Pub #1', date_published=date(2000, 10, 31))
+        self.pub2 = Publication.objects.create(title='Pub #2', date_published=date(2004, 1, 5))
+        form = EditionForm(data={'author': self.author1.pk, 'publication': self.pub1.pk, 'edition': 1, 'isbn': '9783161484100'})
+        form.save()
+
+    def test_unique_error_message(self):
+        form = EditionForm(data={'author': self.author1.pk, 'publication': self.pub2.pk, 'edition': 1, 'isbn': '9783161484100'})
+        self.assertEqual(form.errors, {'isbn': [u'Edition with this Isbn already exists.']})
+
+    def test_unique_together_error_message(self):
+        form = EditionForm(data={'author': self.author1.pk, 'publication': self.pub1.pk, 'edition': 2, 'isbn': '9783161489999'})
+        self.assertEqual(form.errors, {'__all__': [u'Edition with this Author and Publication already exists.']})
+        form = EditionForm(data={'author': self.author2.pk, 'publication': self.pub1.pk, 'edition': 1, 'isbn': '9783161487777'})
+        self.assertEqual(form.errors, {'__all__': [u'Edition with this Publication and Edition already exists.']})
+
+
+class EmptyFieldsTestCase(TestCase):
+    "Tests for fields=() cases as reported in #14119"
+    class EmptyPersonForm(forms.ModelForm):
+        class Meta:
+            model = Person
+            fields = ()
+
+    def test_empty_fields_to_fields_for_model(self):
+        "An argument of fields=() to fields_for_model should return an empty dictionary"
+        field_dict = fields_for_model(Person, fields=())
+        self.assertEqual(len(field_dict), 0)
+
+    def test_empty_fields_on_modelform(self):
+        "No fields on a ModelForm should actually result in no fields"
+        form = self.EmptyPersonForm()
+        self.assertEqual(len(form.fields), 0)
+
+    def test_empty_fields_to_construct_instance(self):
+        "No fields should be set on a model instance if construct_instance receives fields=()"
+        form = modelform_factory(Person)({'name': 'John Doe'})
+        self.assertTrue(form.is_valid())
+        instance = construct_instance(form, Person(), fields=())
+        self.assertEqual(instance.name, '')

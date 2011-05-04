@@ -8,7 +8,7 @@ try:
 except ImportError:
     from django.utils.functional import wraps  # Python 2.4 fallback.
 
-from django.template import Variable, Library
+from django.template.base import Variable, Library
 from django.conf import settings
 from django.utils import formats
 from django.utils.encoding import force_unicode, iri_to_uri
@@ -64,29 +64,10 @@ def capfirst(value):
 capfirst.is_safe=True
 capfirst = stringfilter(capfirst)
 
-_base_js_escapes = (
-    ('\\', r'\u005C'),
-    ('\'', r'\u0027'),
-    ('"', r'\u0022'),
-    ('>', r'\u003E'),
-    ('<', r'\u003C'),
-    ('&', r'\u0026'),
-    ('=', r'\u003D'),
-    ('-', r'\u002D'),
-    (';', r'\u003B'),
-    (u'\u2028', r'\u2028'),
-    (u'\u2029', r'\u2029')
-)
-
-# Escape every ASCII character with a value less than 32.
-_js_escapes = (_base_js_escapes +
-               tuple([('%c' % z, '\\u%04X' % z) for z in range(32)]))
-
 def escapejs(value):
     """Hex encodes characters for use in JavaScript strings."""
-    for bad, good in _js_escapes:
-        value = value.replace(bad, good)
-    return value
+    from django.utils.html import escapejs
+    return escapejs(value)
 escapejs = stringfilter(escapejs)
 
 def fix_ampersands(value):
@@ -168,9 +149,19 @@ def floatformat(text, arg=-1):
     if p == 0:
         exp = Decimal(1)
     else:
-        exp = Decimal('1.0') / (Decimal(10) ** abs(p))
+        exp = Decimal(u'1.0') / (Decimal(10) ** abs(p))
     try:
-        return mark_safe(formats.number_format(u'%s' % str(d.quantize(exp, ROUND_HALF_UP)), abs(p)))
+        # Avoid conversion to scientific notation by accessing `sign`, `digits`
+        # and `exponent` from `Decimal.as_tuple()` directly.
+        sign, digits, exponent = d.quantize(exp, ROUND_HALF_UP).as_tuple()
+        digits = [unicode(digit) for digit in reversed(digits)]
+        while len(digits) <= abs(exponent):
+            digits.append(u'0')
+        digits.insert(-exponent, u'.')
+        if sign:
+            digits.append(u'-')
+        number = u''.join(reversed(digits))
+        return mark_safe(formats.number_format(number, abs(p)))
     except InvalidOperation:
         return input_val
 floatformat.is_safe = True
@@ -291,10 +282,20 @@ def upper(value):
 upper.is_safe = False
 upper = stringfilter(upper)
 
-def urlencode(value):
-    """Escapes a value for use in a URL."""
+def urlencode(value, safe=None):
+    """
+    Escapes a value for use in a URL.
+
+    Takes an optional ``safe`` parameter used to determine the characters which
+    should not be escaped by Django's ``urlquote`` method. If not provided, the
+    default safe characters will be used (but an empty string can be provided
+    when *all* characters should be escaped).
+    """
     from django.utils.http import urlquote
-    return urlquote(value)
+    kwargs = {}
+    if safe is not None:
+        kwargs['safe'] = safe
+    return urlquote(value, **kwargs)
 urlencode.is_safe = False
 urlencode = stringfilter(urlencode)
 
@@ -469,10 +470,7 @@ def dictsort(value, arg):
     Takes a list of dicts, returns that list sorted by the property given in
     the argument.
     """
-    var_resolve = Variable(arg).resolve
-    decorated = [(var_resolve(item), item) for item in value]
-    decorated.sort()
-    return [item[1] for item in decorated]
+    return sorted(value, key=Variable(arg).resolve)
 dictsort.is_safe = False
 
 def dictsortreversed(value, arg):
@@ -480,11 +478,7 @@ def dictsortreversed(value, arg):
     Takes a list of dicts, returns that list sorted in reverse order by the
     property given in the argument.
     """
-    var_resolve = Variable(arg).resolve
-    decorated = [(var_resolve(item), item) for item in value]
-    decorated.sort()
-    decorated.reverse()
-    return [item[1] for item in decorated]
+    return sorted(value, key=Variable(arg).resolve, reverse=True)
 dictsortreversed.is_safe = False
 
 def first(value):
@@ -601,6 +595,10 @@ def unordered_list(value, autoescape=None):
         first_item, second_item = list_
         if second_item == []:
             return [first_item], True
+        try:
+            it = iter(second_item)  # see if second item is iterable
+        except TypeError:
+            return list_, False
         old_style_list = True
         new_second_item = []
         for sublist in second_item:
@@ -731,7 +729,6 @@ timesince.is_safe = False
 def timeuntil(value, arg=None):
     """Formats a date as the time until that date (i.e. "4 days, 6 hours")."""
     from django.utils.timesince import timeuntil
-    from datetime import datetime
     if not value:
         return u''
     try:
@@ -805,15 +802,21 @@ def filesizeformat(bytes):
     try:
         bytes = float(bytes)
     except (TypeError,ValueError,UnicodeDecodeError):
-        return u"0 bytes"
+        return ungettext("%(size)d byte", "%(size)d bytes", 0) % {'size': 0}
+
+    filesize_number_format = lambda value: formats.number_format(round(value, 1), 1)
 
     if bytes < 1024:
         return ungettext("%(size)d byte", "%(size)d bytes", bytes) % {'size': bytes}
     if bytes < 1024 * 1024:
-        return ugettext("%.1f KB") % (bytes / 1024)
+        return ugettext("%s KB") % filesize_number_format(bytes / 1024)
     if bytes < 1024 * 1024 * 1024:
-        return ugettext("%.1f MB") % (bytes / (1024 * 1024))
-    return ugettext("%.1f GB") % (bytes / (1024 * 1024 * 1024))
+        return ugettext("%s MB") % filesize_number_format(bytes / (1024 * 1024))
+    if bytes < 1024 * 1024 * 1024 * 1024:
+        return ugettext("%s GB") % filesize_number_format(bytes / (1024 * 1024 * 1024))
+    if bytes < 1024 * 1024 * 1024 * 1024 * 1024:
+        return ugettext("%s TB") % filesize_number_format(bytes / (1024 * 1024 * 1024 * 1024))
+    return ugettext("%s PB") % filesize_number_format(bytes / (1024 * 1024 * 1024 * 1024 * 1024))
 filesizeformat.is_safe = True
 
 def pluralize(value, arg=u's'):

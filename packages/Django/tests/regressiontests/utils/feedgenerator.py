@@ -1,9 +1,8 @@
 import datetime
-from unittest import TestCase
 
-from django.utils import feedgenerator, tzinfo
+from django.utils import feedgenerator, tzinfo, unittest
 
-class FeedgeneratorTest(TestCase):
+class FeedgeneratorTest(unittest.TestCase):
     """
     Tests for the low-level syndication feed framework.
     """
@@ -59,5 +58,14 @@ class FeedgeneratorTest(TestCase):
         self.assertEqual(
             feedgenerator.rfc3339_date(datetime.datetime(2008, 11, 14, 13, 37, 0, tzinfo=tzinfo.FixedOffset(datetime.timedelta(minutes=120)))),
             "2008-11-14T13:37:00+02:00"
+        )
+
+    def test_atom1_mime_type(self):
+        """
+        Test to make sure Atom MIME type has UTF8 Charset parameter set
+        """
+        atom_feed = feedgenerator.Atom1Feed("title", "link", "description")
+        self.assertEqual(
+            atom_feed.mime_type, "application/atom+xml; charset=utf8"
         )
 

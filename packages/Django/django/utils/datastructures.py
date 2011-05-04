@@ -1,6 +1,6 @@
 from types import GeneratorType
 
-from django.utils.copycompat import deepcopy
+from django.utils.copycompat import copy, deepcopy
 
 
 class MergeDict(object):
@@ -76,6 +76,27 @@ class MergeDict(object):
     def copy(self):
         """Returns a copy of this object."""
         return self.__copy__()
+
+    def __str__(self):
+        '''
+        Returns something like
+
+            "{'key1': 'val1', 'key2': 'val2', 'key3': 'val3'}"
+
+        instead of the generic "<object meta-data>" inherited from object.
+        '''
+        return str(dict(self.items()))
+
+    def __repr__(self):
+        '''
+        Returns something like
+
+            MergeDict({'key1': 'val1', 'key2': 'val2'}, {'key3': 'val3'})
+
+        instead of generic "<object meta-data>" inherited from object.
+        '''
+        dictreprs = ', '.join(repr(d) for d in self.dicts)
+        return '%s(%s)' % (self.__class__.__name__, dictreprs)
 
 class SortedDict(dict):
     """
@@ -242,7 +263,10 @@ class MultiValueDict(dict):
         super(MultiValueDict, self).__setitem__(key, [value])
 
     def __copy__(self):
-        return self.__class__(super(MultiValueDict, self).items())
+        return self.__class__([
+            (k, v[:])
+            for k, v in self.lists()
+        ])
 
     def __deepcopy__(self, memo=None):
         import django.utils.copycompat as copy
@@ -340,8 +364,8 @@ class MultiValueDict(dict):
             yield self[key]
 
     def copy(self):
-        """Returns a copy of this object."""
-        return self.__deepcopy__()
+        """Returns a shallow copy of this object."""
+        return copy(self)
 
     def update(self, *args, **kwargs):
         """
@@ -470,4 +494,3 @@ class DictWrapper(dict):
         if use_func:
             return self.func(value)
         return value
-

@@ -17,7 +17,7 @@ except ImportError:
 
 from django.conf import settings
 from django.core import serializers, management
-from django.db import transaction, DEFAULT_DB_ALIAS
+from django.db import transaction, DEFAULT_DB_ALIAS, connection
 from django.test import TestCase
 from django.utils.functional import curry
 
@@ -222,9 +222,6 @@ The end."""),
     (data_obj, 180, USStateData, "MA"),
     (data_obj, 181, USStateData, None),
     (data_obj, 182, USStateData, ""),
-    (data_obj, 190, XMLData, "<foo></foo>"),
-    (data_obj, 191, XMLData, None),
-    (data_obj, 192, XMLData, ""),
 
     (generic_obj, 200, GenericData, ['Generic Object 1', 'tag1', 'tag2']),
     (generic_obj, 201, GenericData, ['Generic Object 2', 'tag2', 'tag3']),
@@ -335,7 +332,7 @@ The end."""),
 # Because Oracle treats the empty string as NULL, Oracle is expected to fail
 # when field.empty_strings_allowed is True and the value is None; skip these
 # tests.
-if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'] == 'django.db.backends.oracle':
+if connection.features.interprets_empty_strings_as_nulls:
     test_data = [data for data in test_data
                  if not (data[0] == data_obj and
                          data[2]._meta.get_field('data').empty_strings_allowed and
@@ -344,7 +341,7 @@ if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'] == 'django.db.backends.oracle'
 # Regression test for #8651 -- a FK to an object iwth PK of 0
 # This won't work on MySQL since it won't let you create an object
 # with a primary key of 0,
-if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'] != 'django.db.backends.mysql':
+if connection.features.allows_primary_key_0:
     test_data.extend([
         (data_obj, 0, Anchor, "Anchor 0"),
         (fk_obj, 465, FKData, 0),
@@ -384,7 +381,7 @@ def serializerTest(format, self):
     # Assert that the number of objects deserialized is the
     # same as the number that was serialized.
     for klass, count in instance_count.items():
-        self.assertEquals(count, klass.objects.count())
+        self.assertEqual(count, klass.objects.count())
 
 def fieldsTest(format, self):
     obj = ComplexModel(field1='first', field2='second', field3='third')

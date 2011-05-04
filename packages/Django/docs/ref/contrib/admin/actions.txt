@@ -2,8 +2,6 @@
 Admin actions
 =============
 
-.. versionadded:: 1.1
-
 .. currentmodule:: django.contrib.admin
 
 The basic workflow of Django's admin is, in a nutshell, "select an object,
@@ -174,6 +172,8 @@ tells the :class:`ModelAdmin` to look up the action as a method.
 Defining actions as methods gives the action more straightforward, idiomatic
 access to the :class:`ModelAdmin` itself, allowing the action to call any of the
 methods provided by the admin.
+
+.. _custom-admin-action:
 
 For example, we can use ``self`` to flash a message to the user informing her
 that the action was successful::

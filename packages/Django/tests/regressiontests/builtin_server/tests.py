@@ -1,6 +1,7 @@
-from unittest import TestCase
 from StringIO import StringIO
+
 from django.core.servers.basehttp import ServerHandler
+from django.utils.unittest import TestCase
 
 #
 # Tests for #9659: wsgi.file_wrapper in the builtin server.
@@ -40,12 +41,12 @@ class WSGIFileWrapperTests(TestCase):
         err = StringIO()
         handler = FileWrapperHandler(None, StringIO(), err, env)
         handler.run(wsgi_app_file_wrapper)
-        self.assert_(handler._used_sendfile)
+        self.assertTrue(handler._used_sendfile)
 
     def test_file_wrapper_no_sendfile(self):
         env = {'SERVER_PROTOCOL': 'HTTP/1.0'}
         err = StringIO()
         handler = FileWrapperHandler(None, StringIO(), err, env)
         handler.run(wsgi_app)
-        self.failIf(handler._used_sendfile)
+        self.assertFalse(handler._used_sendfile)
         self.assertEqual(handler.stdout.getvalue().splitlines()[-1],'Hello World!')

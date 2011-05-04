@@ -1,11 +1,9 @@
-import hmac
-
 from django.conf import settings
 from django.contrib.messages import constants
 from django.contrib.messages.storage.base import BaseStorage, Message
-from django.http import CompatCookie
+from django.http import SimpleCookie
 from django.utils import simplejson as json
-from django.utils.hashcompat import sha_hmac
+from django.utils.crypto import salted_hmac, constant_time_compare
 
 
 class MessageEncoder(json.JSONEncoder):
@@ -74,9 +72,11 @@ class CookieStorage(BaseStorage):
         store, or deletes the cookie.
         """
         if encoded_data:
-            response.set_cookie(self.cookie_name, encoded_data)
+            response.set_cookie(self.cookie_name, encoded_data,
+                domain=settings.SESSION_COOKIE_DOMAIN)
         else:
-            response.delete_cookie(self.cookie_name)
+            response.delete_cookie(self.cookie_name,
+                domain=settings.SESSION_COOKIE_DOMAIN)
 
     def _store(self, messages, response, remove_oldest=True, *args, **kwargs):
         """
@@ -90,9 +90,9 @@ class CookieStorage(BaseStorage):
         unstored_messages = []
         encoded_data = self._encode(messages)
         if self.max_cookie_size:
-            # data is going to be stored eventually by CompatCookie, which
+            # data is going to be stored eventually by SimpleCookie, which
             # adds it's own overhead, which we must account for.
-            cookie = CompatCookie() # create outside the loop
+            cookie = SimpleCookie() # create outside the loop
             def stored_length(val):
                 return len(cookie.value_encode(val)[1])
 
@@ -111,8 +111,8 @@ class CookieStorage(BaseStorage):
         Creates an HMAC/SHA1 hash based on the value and the project setting's
         SECRET_KEY, modified to make it unique for the present purpose.
         """
-        key = 'django.contrib.messages' + settings.SECRET_KEY
-        return hmac.new(key, value, sha_hmac).hexdigest()
+        key_salt = 'django.contrib.messages'
+        return salted_hmac(key_salt, value).hexdigest()
 
     def _encode(self, messages, encode_empty=False):
         """
@@ -139,7 +139,7 @@ class CookieStorage(BaseStorage):
         bits = data.split('$', 1)
         if len(bits) == 2:
             hash, value = bits
-            if hash == self._hash(value):
+            if constant_time_compare(hash, self._hash(value)):
                 try:
                     # If we get here (and the JSON decode works), everything is
                     # good. In any other case, drop back and return None.

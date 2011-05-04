@@ -9,12 +9,14 @@ a list of all possible variables.
 import os
 import re
 import time     # Needed for Windows
+import warnings
 
 from django.conf import global_settings
 from django.utils.functional import LazyObject
 from django.utils import importlib
 
 ENVIRONMENT_VARIABLE = "DJANGO_SETTINGS_MODULE"
+
 
 class LazySettings(LazyObject):
     """
@@ -59,7 +61,19 @@ class LazySettings(LazyObject):
         return bool(self._wrapped)
     configured = property(configured)
 
-class Settings(object):
+
+class BaseSettings(object):
+    """
+    Common logic for settings whether set by a module or by the user.
+    """
+    def __setattr__(self, name, value):
+        if name in ("MEDIA_URL", "STATIC_URL") and value and not value.endswith('/'):
+            warnings.warn('If set, %s must end with a slash' % name,
+                          PendingDeprecationWarning)
+        object.__setattr__(self, name, value)
+
+
+class Settings(BaseSettings):
     def __init__(self, settings_module):
         # update this dict from global settings (but only for ALL_CAPS settings)
         for setting in dir(global_settings):
@@ -72,7 +86,7 @@ class Settings(object):
         try:
             mod = importlib.import_module(self.SETTINGS_MODULE)
         except ImportError, e:
-            raise ImportError("Could not import settings '%s' (Is it on sys.path? Does it have syntax errors?): %s" % (self.SETTINGS_MODULE, e))
+            raise ImportError("Could not import settings '%s' (Is it on sys.path?): %s" % (self.SETTINGS_MODULE, e))
 
         # Settings that should be converted into tuples if they're mistakenly entered
         # as strings.
@@ -102,13 +116,30 @@ class Settings(object):
                 new_installed_apps.append(app)
         self.INSTALLED_APPS = new_installed_apps
 
-        if hasattr(time, 'tzset') and getattr(self, 'TIME_ZONE'):
+        if hasattr(time, 'tzset') and self.TIME_ZONE:
+            # When we can, attempt to validate the timezone. If we can't find
+            # this file, no check happens and it's harmless.
+            zoneinfo_root = '/usr/share/zoneinfo'
+            if (os.path.exists(zoneinfo_root) and not
+                    os.path.exists(os.path.join(zoneinfo_root, *(self.TIME_ZONE.split('/'))))):
+                raise ValueError("Incorrect timezone setting: %s" % self.TIME_ZONE)
             # Move the time zone info into os.environ. See ticket #2315 for why
             # we don't do this unconditionally (breaks Windows).
             os.environ['TZ'] = self.TIME_ZONE
             time.tzset()
 
-class UserSettingsHolder(object):
+        # Settings are configured, so we can set up the logger if required
+        if self.LOGGING_CONFIG:
+            # First find the logging configuration function ...
+            logging_config_path, logging_config_func_name = self.LOGGING_CONFIG.rsplit('.', 1)
+            logging_config_module = importlib.import_module(logging_config_path)
+            logging_config_func = getattr(logging_config_module, logging_config_func_name)
+
+            # ... then invoke it with the logging settings
+            logging_config_func(self.LOGGING)
+
+
+class UserSettingsHolder(BaseSettings):
     """
     Holder for user configured settings.
     """

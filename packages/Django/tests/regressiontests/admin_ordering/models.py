@@ -1,5 +1,6 @@
 # coding: utf-8
 from django.db import models
+from django.contrib import admin
 
 class Band(models.Model):
     name = models.CharField(max_length=100)
@@ -9,38 +10,17 @@ class Band(models.Model):
     class Meta:
         ordering = ('name',)
 
-__test__ = {'API_TESTS': """
+class Song(models.Model):
+    band = models.ForeignKey(Band)
+    name = models.CharField(max_length=100)
+    duration = models.IntegerField()
 
-Let's make sure that ModelAdmin.queryset uses the ordering we define in
-ModelAdmin rather that ordering defined in the model's inner Meta
-class.
+    class Meta:
+        ordering = ('name',)
 
->>> from django.contrib.admin.options import ModelAdmin
+class SongInlineDefaultOrdering(admin.StackedInline):
+    model = Song
 
->>> b1 = Band(name='Aerosmith', bio='', rank=3)
->>> b1.save()
->>> b2 = Band(name='Radiohead', bio='', rank=1)
->>> b2.save()
->>> b3 = Band(name='Van Halen', bio='', rank=2)
->>> b3.save()
-
-The default ordering should be by name, as specified in the inner Meta class.
-
->>> ma = ModelAdmin(Band, None)
->>> [b.name for b in ma.queryset(None)]
-[u'Aerosmith', u'Radiohead', u'Van Halen']
-
-
-Let's use a custom ModelAdmin that changes the ordering, and make sure it
-actually changes.
-
->>> class BandAdmin(ModelAdmin):
-...     ordering = ('rank',) # default ordering is ('name',)
-...
-
->>> ma = BandAdmin(Band, None)
->>> [b.name for b in ma.queryset(None)]
-[u'Radiohead', u'Van Halen', u'Aerosmith']
-
-"""
-}
+class SongInlineNewOrdering(admin.StackedInline):
+    model = Song
+    ordering = ('duration', )

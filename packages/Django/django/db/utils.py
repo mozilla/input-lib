@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.importlib import import_module
 
+
 DEFAULT_DB_ALIAS = 'default'
 
 # Define some exceptions that mirror the PEP249 interface.
@@ -23,7 +24,7 @@ def load_backend(backend_name):
         import warnings
         warnings.warn(
             "Short names for DATABASE_ENGINE are deprecated; prepend with 'django.db.backends.'",
-            PendingDeprecationWarning
+            DeprecationWarning
         )
         return module
     except ImportError, e:
@@ -40,12 +41,13 @@ def load_backend(backend_name):
                         and not f.startswith('.')]
             except EnvironmentError:
                 available_backends = []
-            available_backends.sort()
+            if backend_name.startswith('django.db.backends.'):
+                backend_name = backend_name[19:] # See #15621.
             if backend_name not in available_backends:
                 error_msg = ("%r isn't an available database backend. \n" +
                     "Try using django.db.backends.XXX, where XXX is one of:\n    %s\n" +
                     "Error was: %s") % \
-                    (backend_name, ", ".join(map(repr, available_backends)), e_user)
+                    (backend_name, ", ".join(map(repr, sorted(available_backends))), e_user)
                 raise ImproperlyConfigured(error_msg)
             else:
                 raise # If there's some other error, this must be an error in Django itself.
@@ -111,9 +113,11 @@ class ConnectionRouter(object):
                 except ImportError, e:
                     raise ImproperlyConfigured('Error importing database router %s: "%s"' % (klass_name, e))
                 try:
-                    router = getattr(module, klass_name)()
+                    router_class = getattr(module, klass_name)
                 except AttributeError:
                     raise ImproperlyConfigured('Module "%s" does not define a database router name "%s"' % (module, klass_name))
+                else:
+                    router = router_class()
             else:
                 router = r
             self.routers.append(router)
@@ -123,12 +127,14 @@ class ConnectionRouter(object):
             chosen_db = None
             for router in self.routers:
                 try:
-                    chosen_db = getattr(router, action)(model, **hints)
-                    if chosen_db:
-                        return chosen_db
+                    method = getattr(router, action)
                 except AttributeError:
                     # If the router doesn't have a method, skip to the next one.
                     pass
+                else:
+                    chosen_db = method(model, **hints)
+                    if chosen_db:
+                        return chosen_db
             try:
                 return hints['instance']._state.db or DEFAULT_DB_ALIAS
             except KeyError:
@@ -141,21 +147,25 @@ class ConnectionRouter(object):
     def allow_relation(self, obj1, obj2, **hints):
         for router in self.routers:
             try:
-                allow = router.allow_relation(obj1, obj2, **hints)
-                if allow is not None:
-                    return allow
+                method = router.allow_relation
             except AttributeError:
                 # If the router doesn't have a method, skip to the next one.
                 pass
+            else:
+                allow = method(obj1, obj2, **hints)
+                if allow is not None:
+                    return allow
         return obj1._state.db == obj2._state.db
 
     def allow_syncdb(self, db, model):
         for router in self.routers:
             try:
-                allow = router.allow_syncdb(db, model)
-                if allow is not None:
-                    return allow
+                method = router.allow_syncdb
             except AttributeError:
                 # If the router doesn't have a method, skip to the next one.
                 pass
+            else:
+                allow = method(db, model)
+                if allow is not None:
+                    return allow
         return True

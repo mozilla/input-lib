@@ -12,8 +12,10 @@ This document contains all the gory details about all the `field options`_ and
 
 .. seealso::
 
-    If the built-in fields don't do the trick, you can easily :doc:`write your
-    own custom model fields </howto/custom-model-fields>`.
+    If the built-in fields don't do the trick, you can try
+    :mod:`django.contrib.localflavor`, which contains assorted pieces of code
+    that are useful for particular countries or cultures. Also, you can easily
+    :doc:`write your own custom model fields </howto/custom-model-fields>`.
 
 .. note::
 
@@ -68,6 +70,8 @@ Note that this is different than :attr:`~Field.null`. :attr:`~Field.null` is
 purely database-related, whereas :attr:`~Field.blank` is validation-related. If
 a field has ``blank=True``, validation on Django's admin site will allow entry
 of an empty value. If a field has ``blank=False``, the field will be required.
+
+.. _field-choices:
 
 ``choices``
 -----------
@@ -170,8 +174,6 @@ If ``True``, djadmin:`django-admin.py sqlindexes <sqlindexes>` will output a
 -----------------
 
 .. attribute:: Field.db_tablespace
-
-.. versionadded:: 1.0
 
 The name of the database tablespace to use for this field's index, if this field
 is indexed. The default is the project's :setting:`DEFAULT_INDEX_TABLESPACE`
@@ -411,6 +413,11 @@ The admin represents this as an ``<input type="text">`` with a JavaScript
 calendar, and a shortcut for "Today".  The JavaScript calendar will always
 start the week on a Sunday.
 
+.. note::
+    As currently implemented, setting ``auto_now`` or ``auto_now_add`` to
+    ``True`` will cause the field to have ``editable=False`` and ``blank=True``
+    set.
+
 ``DateTimeField``
 -----------------
 
@@ -425,8 +432,6 @@ JavaScript shortcuts.
 ``DecimalField``
 ----------------
 
-.. versionadded:: 1.0
-
 .. class:: DecimalField(max_digits=None, decimal_places=None, [**options])
 
 A fixed-precision decimal number, represented in Python by a
@@ -434,11 +439,12 @@ A fixed-precision decimal number, represented in Python by a
 
 .. attribute:: DecimalField.max_digits
 
-    The maximum number of digits allowed in the number
+    The maximum number of digits allowed in the number. Note that this number
+    must be greater than ``decimal_places``, if it exists.
 
 .. attribute:: DecimalField.decimal_places
 
-    The number of decimal places to store with the number
+    The number of decimal places to store with the number.
 
 For example, to store numbers up to 999 with a resolution of 2 decimal places,
 you'd use::
@@ -451,6 +457,12 @@ decimal places::
     models.DecimalField(..., max_digits=19, decimal_places=10)
 
 The admin represents this as an ``<input type="text">`` (a single-line input).
+
+.. note::
+
+    For more information about the differences between the
+    :class:`FloatField` and :class:`DecimalField` classes, please
+    see :ref:`FloatField vs. DecimalField <floatfield_vs_decimalfield>`.
 
 ``EmailField``
 --------------
@@ -482,8 +494,6 @@ Has one **required** argument:
     date/time of the file upload (so that uploaded files don't fill up the given
     directory).
 
-    .. versionchanged:: 1.0
-
     This may also be a callable, such as a function, which will be called to
     obtain the upload path, including the filename. This callable must be able
     to accept two arguments, and return a Unix-style path (with forward slashes)
@@ -512,8 +522,6 @@ Also has one optional argument:
 
 .. attribute:: FileField.storage
 
-    .. versionadded:: 1.0
-
     Optional. A storage object, which handles the storage and retrieval of your
     files. See :doc:`/topics/files` for details on how to provide this object.
 
@@ -537,7 +545,7 @@ takes a few steps:
        (relative to :setting:`MEDIA_ROOT`). You'll most likely want to use the
        convenience :attr:`~django.core.files.File.url` function provided by
        Django. For example, if your :class:`ImageField` is called ``mug_shot``,
-       you can get the absolute URL to your image in a template with
+       you can get the absolute path to your image in a template with
        ``{{ object.mug_shot.url }}``.
 
 For example, say your :setting:`MEDIA_ROOT` is set to ``'/home/media'``, and
@@ -547,10 +555,17 @@ four-digit year, ``'%m'`` is the two-digit month and ``'%d'`` is the two-digit
 day. If you upload a file on Jan. 15, 2007, it will be saved in the directory
 ``/home/media/photos/2007/01/15``.
 
-If you want to retrieve the upload file's on-disk filename, or a URL that refers
-to that file, or the file's size, you can use the
-:attr:`~django.core.files.File.name`, :attr:`~django.core.files.File.url`
-and :attr:`~django.core.files.File.size` attributes; see :doc:`/topics/files`.
+If you wanted to retrieve the uploaded file's on-disk filename, or the file's
+size, you could use the :attr:`~django.core.files.File.name` and
+:attr:`~django.core.files.File.size` attributes respectively; for more
+information on the available attributes and methods, see the
+:class:`~django.core.files.File` class reference and the :doc:`/topics/files`
+topic guide.
+
+The uploaded file's relative URL can be obtained using the
+:attr:`~django.db.models.fields.FileField.url` attribute. Internally,
+this calls the :meth:`~django.core.files.storage.Storage.url` method of the
+underlying :class:`~django.core.files.storage.Storage` class.
 
 Note that whenever you deal with uploaded files, you should pay close attention
 to where you're uploading them and what type of files they are, to avoid
@@ -559,9 +574,6 @@ what you think they are. For example, if you blindly let somebody upload files,
 without validation, to a directory that's within your Web server's document
 root, then somebody could upload a CGI or PHP script and execute that script by
 visiting its URL on your site. Don't allow that.
-
-.. versionadded:: 1.0
-   The ``max_length`` argument was added in this version.
 
 By default, :class:`FileField` instances are
 created as ``varchar(100)`` columns in your database. As with other fields, you
@@ -645,9 +657,6 @@ base filename, not the full path. So, this example::
 because the :attr:`~FilePathField.match` applies to the base filename
 (``foo.gif`` and ``bar.gif``).
 
-.. versionadded:: 1.0
-   The ``max_length`` argument was added in this version.
-
 By default, :class:`FilePathField` instances are
 created as ``varchar(100)`` columns in your database. As with other fields, you
 can change the maximum length using the :attr:`~CharField.max_length` argument.
@@ -657,11 +666,23 @@ can change the maximum length using the :attr:`~CharField.max_length` argument.
 
 .. class:: FloatField([**options])
 
-.. versionchanged:: 1.0
-
 A floating-point number represented in Python by a ``float`` instance.
 
 The admin represents this as an ``<input type="text">`` (a single-line input).
+
+.. _floatfield_vs_decimalfield:
+
+.. admonition:: ``FloatField`` vs. ``DecimalField``
+
+    The :class:`FloatField` class is sometimes mixed up with the
+    :class:`DecimalField` class. Although they both represent real numbers, they
+    represent those numbers differently. ``FloatField`` uses Python's ``float``
+    type internally, while ``DecimalField`` uses Python's ``Decimal`` type. For
+    information on the difference between the two, see Python's documentation on
+    `Decimal fixed point and floating point arithmetic`_.
+
+.. _Decimal fixed point and floating point arithmetic: http://docs.python.org/library/decimal.html
+
 
 ``ImageField``
 --------------
@@ -691,9 +712,6 @@ optional arguments:
 Requires the `Python Imaging Library`_.
 
 .. _Python Imaging Library: http://www.pythonware.com/products/pil/
-
-.. versionadded:: 1.0
-   The ``max_length`` argument was added in this version.
 
 By default, :class:`ImageField` instances are created as ``varchar(100)``
 columns in your database. As with other fields, you can change the maximum
@@ -818,17 +836,18 @@ Like all :class:`CharField` subclasses, :class:`URLField` takes the optional
 ``XMLField``
 ------------
 
+.. deprecated:: 1.3
+   ``XMLField`` is deprecated. Use TextField instead.
+
 .. class:: XMLField(schema_path=None, [**options])
 
-A :class:`TextField` that checks that the value is valid XML that matches a
-given schema. Takes one required argument:
+A :class:`TextField` that stores XML data and a path to a schema. Takes one
+optional argument:
 
 .. attribute:: schema_path
 
-    The filesystem path to a RelaxNG_ schema against which to validate the
-    field.
+    The filesystem path to a schema for the field.
 
-.. _RelaxNG: http://www.relaxng.org/
 
 Relationship fields
 ===================
@@ -866,8 +885,6 @@ you can use the name of the model, rather than the model object itself::
 
     class Manufacturer(models.Model):
         # ...
-
-.. versionadded:: 1.0
 
 To refer to models defined in another application, you can explicitly specify
 a model with the full application label. For example, if the ``Manufacturer``
@@ -925,10 +942,62 @@ define the details of how the relation works.
     <abstract-base-classes>`; and when you do so
     :ref:`some special syntax <abstract-related-name>` is available.
 
+    If you'd prefer Django didn't create a backwards relation, set ``related_name``
+    to ``'+'``. For example, this will ensure that the ``User`` model won't get a
+    backwards relation to this model::
+
+        user = models.ForeignKey(User, related_name='+')
+
 .. attribute:: ForeignKey.to_field
 
     The field on the related object that the relation is to. By default, Django
     uses the primary key of the related object.
+
+.. versionadded:: 1.3
+
+.. attribute:: ForeignKey.on_delete
+
+    When an object referenced by a :class:`ForeignKey` is deleted, Django by
+    default emulates the behavior of the SQL constraint ``ON DELETE CASCADE``
+    and also deletes the object containing the ``ForeignKey``. This behavior
+    can be overridden by specifying the :attr:`on_delete` argument. For
+    example, if you have a nullable :class:`ForeignKey` and you want it to be
+    set null when the referenced object is deleted::
+
+        user = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
+
+    The possible values for :attr:`on_delete` are found in
+    :mod:`django.db.models`:
+
+    * :attr:`~django.db.models.CASCADE`: Cascade deletes; the default.
+
+    * :attr:`~django.db.models.PROTECT`: Prevent deletion of the referenced
+      object by raising :exc:`django.db.models.ProtectedError`, a subclass of
+      :exc:`django.db.IntegrityError`.
+
+    * :attr:`~django.db.models.SET_NULL`: Set the :class:`ForeignKey` null;
+      this is only possible if :attr:`null` is ``True``.
+
+    * :attr:`~django.db.models.SET_DEFAULT`: Set the :class:`ForeignKey` to its
+      default value; a default for the :class:`ForeignKey` must be set.
+
+    * :func:`~django.db.models.SET()`: Set the :class:`ForeignKey` to the value
+      passed to :func:`~django.db.models.SET()`, or if a callable is passed in,
+      the result of calling it. In most cases, passing a callable will be
+      necessary to avoid executing queries at the time your models.py is
+      imported::
+
+        def get_sentinel_user():
+            return User.objects.get_or_create(username='deleted')[0]
+
+        class MyModel(models.Model):
+            user = models.ForeignKey(User, on_delete=models.SET(get_sentinel_user))
+
+    * :attr:`~django.db.models.DO_NOTHING`: Take no action. If your database
+      backend enforces referential integrity, this will cause an
+      :exc:`~django.db.IntegrityError` unless you manually add a SQL ``ON
+      DELETE`` constraint to the database field (perhaps using
+      :ref:`initial sql<initial-sql>`).
 
 .. _ref-manytomany:
 

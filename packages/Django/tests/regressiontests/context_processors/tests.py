@@ -1,6 +1,7 @@
 """
 Tests for Django's bundled context processors.
 """
+import warnings
 
 from django.conf import settings
 from django.contrib.auth import authenticate
@@ -45,6 +46,16 @@ class AuthContextProcessorTests(TestCase):
     """
     urls = 'regressiontests.context_processors.urls'
     fixtures = ['context-processors-users.xml']
+
+    def setUp(self):
+        self.save_warnings_state()
+        warnings.filterwarnings('ignore', category=DeprecationWarning,
+                                module='django.contrib.auth.models')
+        warnings.filterwarnings('ignore', category=DeprecationWarning,
+                                module='django.core.context_processors')
+
+    def tearDown(self):
+        self.restore_warnings_state()
 
     def test_session_not_accessed(self):
         """

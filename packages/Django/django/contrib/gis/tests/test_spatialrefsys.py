@@ -1,7 +1,8 @@
-import unittest
-
 from django.db import connection
+from django.contrib.gis.gdal import GDAL_VERSION
 from django.contrib.gis.tests.utils import mysql, no_mysql, oracle, postgis, spatialite
+from django.utils import unittest
+
 
 test_srs = ({'srid' : 4326,
              'auth_name' : ('EPSG', True),
@@ -9,7 +10,7 @@ test_srs = ({'srid' : 4326,
              'srtext' : 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',
              'srtext14' : 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',
              'proj4' : '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs ',
-             'spheroid' : 'WGS 84', 'name' : 'WGS 84', 
+             'spheroid' : 'WGS 84', 'name' : 'WGS 84',
              'geographic' : True, 'projected' : False, 'spatialite' : True,
              'ellipsoid' : (6378137.0, 6356752.3, 298.257223563), # From proj's "cs2cs -le" and Wikipedia (semi-minor only)
              'eprec' : (1, 1, 9),
@@ -49,7 +50,7 @@ class SpatialRefSysTest(unittest.TestCase):
             auth_name, oracle_flag = sd['auth_name']
             if postgis or (oracle and oracle_flag):
                 self.assertEqual(True, srs.auth_name.startswith(auth_name))
-                
+
             self.assertEqual(sd['auth_srid'], srs.auth_srid)
 
             # No proj.4 and different srtext on oracle backends :(
@@ -78,7 +79,8 @@ class SpatialRefSysTest(unittest.TestCase):
             # Testing the SpatialReference object directly.
             if postgis or spatialite:
                 srs = sr.srs
-                self.assertEqual(sd['proj4'], srs.proj4)
+                if GDAL_VERSION <= (1, 8):
+                    self.assertEqual(sd['proj4'], srs.proj4)
                 # No `srtext` field in the `spatial_ref_sys` table in SpatiaLite
                 if not spatialite:
                     if connection.ops.spatial_version >= (1, 4, 0):

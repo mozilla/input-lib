@@ -112,14 +112,15 @@ class Command(BaseCommand):
                     formats = []
 
             if formats:
-                if verbosity > 1:
+                if verbosity >= 2:
                     self.stdout.write("Loading '%s' fixtures...\n" % fixture_name)
             else:
                 self.stderr.write(
                     self.style.ERROR("Problem installing fixture '%s': %s is not a known serialization format.\n" %
                         (fixture_name, format)))
-                transaction.rollback(using=using)
-                transaction.leave_transaction_management(using=using)
+                if commit:
+                    transaction.rollback(using=using)
+                    transaction.leave_transaction_management(using=using)
                 return
 
             if os.path.isabs(fixture_name):
@@ -128,7 +129,7 @@ class Command(BaseCommand):
                 fixture_dirs = app_fixtures + list(settings.FIXTURE_DIRS) + ['']
 
             for fixture_dir in fixture_dirs:
-                if verbosity > 1:
+                if verbosity >= 2:
                     self.stdout.write("Checking %s for fixtures...\n" % humanize(fixture_dir))
 
                 label_found = False
@@ -141,7 +142,7 @@ class Command(BaseCommand):
                         if p
                     )
 
-                    if verbosity > 1:
+                    if verbosity >= 3:
                         self.stdout.write("Trying %s for %s fixture '%s'...\n" % \
                             (humanize(fixture_dir), file_name, fixture_name))
                     full_path = os.path.join(fixture_dir, file_name)
@@ -152,14 +153,15 @@ class Command(BaseCommand):
                             fixture.close()
                             self.stderr.write(self.style.ERROR("Multiple fixtures named '%s' in %s. Aborting.\n" %
                                 (fixture_name, humanize(fixture_dir))))
-                            transaction.rollback(using=using)
-                            transaction.leave_transaction_management(using=using)
+                            if commit:
+                                transaction.rollback(using=using)
+                                transaction.leave_transaction_management(using=using)
                             return
                         else:
                             fixture_count += 1
                             objects_in_fixture = 0
                             loaded_objects_in_fixture = 0
-                            if verbosity > 0:
+                            if verbosity >= 2:
                                 self.stdout.write("Installing %s fixture '%s' from %s.\n" % \
                                     (format, fixture_name, humanize(fixture_dir)))
                             try:
@@ -178,8 +180,9 @@ class Command(BaseCommand):
                             except Exception:
                                 import traceback
                                 fixture.close()
-                                transaction.rollback(using=using)
-                                transaction.leave_transaction_management(using=using)
+                                if commit:
+                                    transaction.rollback(using=using)
+                                    transaction.leave_transaction_management(using=using)
                                 if show_traceback:
                                     traceback.print_exc()
                                 else:
@@ -196,12 +199,13 @@ class Command(BaseCommand):
                                 self.stderr.write(
                                     self.style.ERROR("No fixture data found for '%s'. (File format may be invalid.)\n" %
                                         (fixture_name)))
-                                transaction.rollback(using=using)
-                                transaction.leave_transaction_management(using=using)
+                                if commit:
+                                    transaction.rollback(using=using)
+                                    transaction.leave_transaction_management(using=using)
                                 return
 
                     except Exception, e:
-                        if verbosity > 1:
+                        if verbosity >= 2:
                             self.stdout.write("No %s fixture '%s' in %s.\n" % \
                                 (format, fixture_name, humanize(fixture_dir)))
 
@@ -210,7 +214,7 @@ class Command(BaseCommand):
         if loaded_object_count > 0:
             sequence_sql = connection.ops.sequence_reset_sql(self.style, models)
             if sequence_sql:
-                if verbosity > 1:
+                if verbosity >= 2:
                     self.stdout.write("Resetting sequences\n")
                 for line in sequence_sql:
                     cursor.execute(line)
@@ -220,10 +224,10 @@ class Command(BaseCommand):
             transaction.leave_transaction_management(using=using)
 
         if fixture_object_count == 0:
-            if verbosity > 0:
+            if verbosity >= 1:
                 self.stdout.write("No fixtures found.\n")
         else:
-            if verbosity > 0:
+            if verbosity >= 1:
                 if fixture_object_count == loaded_object_count:
                     self.stdout.write("Installed %d object(s) from %d fixture(s)\n" % (
                         loaded_object_count, fixture_count))

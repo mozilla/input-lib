@@ -23,7 +23,7 @@ Django's ``LocaleMiddleware``.
 
 More details about how the caching works:
 
-* Only parameter-less GET or HEAD-requests with status code 200 are cached.
+* Only GET or HEAD-requests with status code 200 are cached.
 
 * The number of seconds each page is stored for is set by the "max-age" section
   of the response's "Cache-Control" header, falling back to the
@@ -34,8 +34,8 @@ More details about how the caching works:
   and effective way of avoiding the caching of the Django admin (and any other
   user-specific content).
 
-* This middleware expects that a HEAD request is answered with a response
-  exactly like the corresponding GET request.
+* This middleware expects that a HEAD request is answered with the same response
+  headers exactly like the corresponding GET request.
 
 * When a hit occurs, a shallow copy of the original response object is returned
   from process_request.
@@ -49,8 +49,9 @@ More details about how the caching works:
 """
 
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import get_cache, DEFAULT_CACHE_ALIAS
 from django.utils.cache import get_cache_key, learn_cache_key, patch_response_headers, get_max_age
+
 
 class UpdateCacheMiddleware(object):
     """
@@ -65,17 +66,32 @@ class UpdateCacheMiddleware(object):
         self.cache_timeout = settings.CACHE_MIDDLEWARE_SECONDS
         self.key_prefix = settings.CACHE_MIDDLEWARE_KEY_PREFIX
         self.cache_anonymous_only = getattr(settings, 'CACHE_MIDDLEWARE_ANONYMOUS_ONLY', False)
+        self.cache_alias = settings.CACHE_MIDDLEWARE_ALIAS
+        self.cache = get_cache(self.cache_alias)
+
+    def _session_accessed(self, request):
+        try:
+            return request.session.accessed
+        except AttributeError:
+            return False
+
+    def _should_update_cache(self, request, response):
+        if not hasattr(request, '_cache_update_cache') or not request._cache_update_cache:
+            return False
+        # If the session has not been accessed otherwise, we don't want to
+        # cause it to be accessed here. If it hasn't been accessed, then the
+        # user's logged-in status has not affected the response anyway.
+        if self.cache_anonymous_only and self._session_accessed(request):
+            assert hasattr(request, 'user'), "The Django cache middleware with CACHE_MIDDLEWARE_ANONYMOUS_ONLY=True requires authentication middleware to be installed. Edit your MIDDLEWARE_CLASSES setting to insert 'django.contrib.auth.middleware.AuthenticationMiddleware' before the CacheMiddleware."
+            if request.user.is_authenticated():
+                # Don't cache user-variable requests from authenticated users.
+                return False
+        return True
 
     def process_response(self, request, response):
         """Sets the cache, if needed."""
-        if not hasattr(request, '_cache_update_cache') or not request._cache_update_cache:
+        if not self._should_update_cache(request, response):
             # We don't need to update the cache, just return.
-            return response
-        if request.method != 'GET':
-            # This is a stronger requirement than above. It is needed
-            # because of interactions between this middleware and the
-            # HTTPMiddleware, which throws the body of a HEAD-request
-            # away before this middleware gets a chance to cache it.
             return response
         if not response.status_code == 200:
             return response
@@ -90,8 +106,13 @@ class UpdateCacheMiddleware(object):
             return response
         patch_response_headers(response, timeout)
         if timeout:
-            cache_key = learn_cache_key(request, response, timeout, self.key_prefix)
-            cache.set(cache_key, response, timeout)
+            cache_key = learn_cache_key(request, response, timeout, self.key_prefix, cache=self.cache)
+            if hasattr(response, 'render') and callable(response.render):
+                response.add_post_render_callback(
+                    lambda r: self.cache.set(cache_key, r, timeout)
+                )
+            else:
+                self.cache.set(cache_key, response, timeout)
         return response
 
 class FetchFromCacheMiddleware(object):
@@ -106,33 +127,34 @@ class FetchFromCacheMiddleware(object):
         self.cache_timeout = settings.CACHE_MIDDLEWARE_SECONDS
         self.key_prefix = settings.CACHE_MIDDLEWARE_KEY_PREFIX
         self.cache_anonymous_only = getattr(settings, 'CACHE_MIDDLEWARE_ANONYMOUS_ONLY', False)
+        self.cache_alias = settings.CACHE_MIDDLEWARE_ALIAS
+        self.cache = get_cache(self.cache_alias)
 
     def process_request(self, request):
         """
         Checks whether the page is already cached and returns the cached
         version if available.
         """
-        if self.cache_anonymous_only:
-            assert hasattr(request, 'user'), "The Django cache middleware with CACHE_MIDDLEWARE_ANONYMOUS_ONLY=True requires authentication middleware to be installed. Edit your MIDDLEWARE_CLASSES setting to insert 'django.contrib.auth.middleware.AuthenticationMiddleware' before the CacheMiddleware."
-
-        if not request.method in ('GET', 'HEAD') or request.GET:
+        if not request.method in ('GET', 'HEAD'):
             request._cache_update_cache = False
             return None # Don't bother checking the cache.
 
-        if self.cache_anonymous_only and request.user.is_authenticated():
-            request._cache_update_cache = False
-            return None # Don't cache requests from authenticated users.
-
-        cache_key = get_cache_key(request, self.key_prefix)
+        # try and get the cached GET response
+        cache_key = get_cache_key(request, self.key_prefix, 'GET', cache=self.cache)
         if cache_key is None:
             request._cache_update_cache = True
             return None # No cache information available, need to rebuild.
+        response = self.cache.get(cache_key, None)
+        # if it wasn't found and we are looking for a HEAD, try looking just for that
+        if response is None and request.method == 'HEAD':
+            cache_key = get_cache_key(request, self.key_prefix, 'HEAD', cache=self.cache)
+            response = self.cache.get(cache_key, None)
 
-        response = cache.get(cache_key, None)
         if response is None:
             request._cache_update_cache = True
             return None # No cache information available, need to rebuild.
 
+        # hit, return cached response
         request._cache_update_cache = False
         return response
 
@@ -143,14 +165,41 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
     Also used as the hook point for the cache decorator, which is generated
     using the decorator-from-middleware utility.
     """
-    def __init__(self, cache_timeout=None, key_prefix=None, cache_anonymous_only=None):
-        self.cache_timeout = cache_timeout
-        if cache_timeout is None:
-            self.cache_timeout = settings.CACHE_MIDDLEWARE_SECONDS
-        self.key_prefix = key_prefix
-        if key_prefix is None:
+    def __init__(self, cache_timeout=None, cache_anonymous_only=None, **kwargs):
+        # We need to differentiate between "provided, but using default value",
+        # and "not provided". If the value is provided using a default, then
+        # we fall back to system defaults. If it is not provided at all,
+        # we need to use middleware defaults.
+
+        cache_kwargs = {}
+
+        try:
+            self.key_prefix = kwargs['key_prefix']
+            if self.key_prefix is not None:
+                cache_kwargs['KEY_PREFIX'] = self.key_prefix
+            else:
+                self.key_prefix = ''
+        except KeyError:
             self.key_prefix = settings.CACHE_MIDDLEWARE_KEY_PREFIX
+            cache_kwargs['KEY_PREFIX'] = self.key_prefix
+
+        try:
+            self.cache_alias = kwargs['cache_alias']
+            if self.cache_alias is None:
+                self.cache_alias = DEFAULT_CACHE_ALIAS
+            if cache_timeout is not None:
+                cache_kwargs['TIMEOUT'] = cache_timeout
+        except KeyError:
+            self.cache_alias = settings.CACHE_MIDDLEWARE_ALIAS
+            if cache_timeout is None:
+                cache_kwargs['TIMEOUT'] = settings.CACHE_MIDDLEWARE_SECONDS
+            else:
+                cache_kwargs['TIMEOUT'] = cache_timeout
+
         if cache_anonymous_only is None:
             self.cache_anonymous_only = getattr(settings, 'CACHE_MIDDLEWARE_ANONYMOUS_ONLY', False)
         else:
             self.cache_anonymous_only = cache_anonymous_only
+
+        self.cache = get_cache(self.cache_alias, **cache_kwargs)
+        self.cache_timeout = self.cache.default_timeout

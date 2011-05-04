@@ -212,25 +212,23 @@ fields. We've specified ``auto_id=False`` to simplify the output::
     ...     cc_myself = forms.BooleanField(required=False)
     >>> f = HelpTextContactForm(auto_id=False)
     >>> print f.as_table()
-    <tr><th>Subject:</th><td><input type="text" name="subject" maxlength="100" /><br />100 characters max.</td></tr>
+    <tr><th>Subject:</th><td><input type="text" name="subject" maxlength="100" /><br /><span class="helptext">100 characters max.</span></td></tr>
     <tr><th>Message:</th><td><input type="text" name="message" /></td></tr>
     <tr><th>Sender:</th><td><input type="text" name="sender" /><br />A valid e-mail address, please.</td></tr>
     <tr><th>Cc myself:</th><td><input type="checkbox" name="cc_myself" /></td></tr>
     >>> print f.as_ul()
-    <li>Subject: <input type="text" name="subject" maxlength="100" /> 100 characters max.</li>
+    <li>Subject: <input type="text" name="subject" maxlength="100" /> <span class="helptext">100 characters max.</span></li>
     <li>Message: <input type="text" name="message" /></li>
     <li>Sender: <input type="text" name="sender" /> A valid e-mail address, please.</li>
     <li>Cc myself: <input type="checkbox" name="cc_myself" /></li>
     >>> print f.as_p()
-    <p>Subject: <input type="text" name="subject" maxlength="100" /> 100 characters max.</p>
+    <p>Subject: <input type="text" name="subject" maxlength="100" /> <span class="helptext">100 characters max.</span></p>
     <p>Message: <input type="text" name="message" /></p>
     <p>Sender: <input type="text" name="sender" /> A valid e-mail address, please.</p>
     <p>Cc myself: <input type="checkbox" name="cc_myself" /></p>
 
 ``error_messages``
 ~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.0
 
 .. attribute:: Field.error_messages
 
@@ -303,11 +301,6 @@ For each field, we describe the default widget used if you don't specify
       the field has ``required=True``.
     * Error message keys: ``required``
 
-.. versionchanged:: 1.0
-   The empty value for a ``CheckboxInput`` (and hence the standard
-   ``BooleanField``) has changed to return ``False`` instead of ``None`` in
-   the Django 1.0.
-
 .. note::
 
     Since all ``Field`` subclasses have ``required=True`` by default, the
@@ -347,25 +340,31 @@ Has two optional arguments for validation:
     * Validates that the given value exists in the list of choices.
     * Error message keys: ``required``, ``invalid_choice``
 
+The ``invalid_choice`` error message may contain ``%(value)s``, which will be
+replaced with the selected choice.
+
 Takes one extra required argument:
 
 .. attribute:: ChoiceField.choices
 
     An iterable (e.g., a list or tuple) of 2-tuples to use as choices for this
-    field.
+    field. This argument accepts the same formats as the ``choices`` argument
+    to a model field. See the :ref:`model field reference documentation on
+    choices <field-choices>` for more details.
 
 ``TypedChoiceField``
 ~~~~~~~~~~~~~~~~~~~~
 
 .. class:: TypedChoiceField(**kwargs)
 
-Just like a :class:`ChoiceField`, except :class:`TypedChoiceField` takes an
-extra ``coerce`` argument.
+Just like a :class:`ChoiceField`, except :class:`TypedChoiceField` takes two
+extra arguments, ``coerce`` and ``empty_value``.
 
     * Default widget: ``Select``
     * Empty value: Whatever you've given as ``empty_value``
-    * Normalizes to: the value returned by the ``coerce`` argument.
-    * Validates that the given value exists in the list of choices.
+    * Normalizes to: A value of the type provided by the ``coerce`` argument.
+    * Validates that the given value exists in the list of choices and can be
+      coerced.
     * Error message keys: ``required``, ``invalid_choice``
 
 Takes extra arguments:
@@ -408,10 +407,6 @@ If no ``input_formats`` argument is provided, the default input formats are::
     '%B %d %Y', '%B %d, %Y',            # 'October 25 2006', 'October 25, 2006'
     '%d %B %Y', '%d %B, %Y',            # '25 October 2006', '25 October, 2006'
 
-.. versionchanged:: 1.1
-   The ``DateField`` previously used a ``TextInput`` widget by default. It now
-   uses a ``DateInput`` widget.
-
 ``DateTimeField``
 ~~~~~~~~~~~~~~~~~
 
@@ -443,13 +438,8 @@ If no ``input_formats`` argument is provided, the default input formats are::
     '%m/%d/%y %H:%M',        # '10/25/06 14:30'
     '%m/%d/%y',              # '10/25/06'
 
-.. versionchanged:: 1.0
-   The ``DateTimeField`` used to use a ``TextInput`` widget by default. This has now changed.
-
 ``DecimalField``
 ~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.0
 
 .. class:: DecimalField(**kwargs)
 
@@ -462,12 +452,16 @@ If no ``input_formats`` argument is provided, the default input formats are::
       ``min_value``, ``max_digits``, ``max_decimal_places``,
       ``max_whole_digits``
 
+The ``max_value`` and ``min_value`` error messages may contain
+``%(limit_value)s``, which will be substituted by the appropriate limit.
+
 Takes four optional arguments:
 
 .. attribute:: DecimalField.max_value
 .. attribute:: DecimalField.min_value
 
-    These attributes define the limits for the fields value.
+    These control the range of values permitted in the field, and should be
+    given as ``decimal.Decimal`` values.
 
 .. attribute:: DecimalField.max_digits
 
@@ -503,16 +497,15 @@ given length.
 ``FileField``
 ~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
-
 .. class:: FileField(**kwargs)
 
-    * Default widget: ``FileInput``
+    * Default widget: ``ClearableFileInput``
     * Empty value: ``None``
     * Normalizes to: An ``UploadedFile`` object that wraps the file content
       and file name into a single object.
     * Validates that non-empty file data has been bound to the form.
-    * Error message keys: ``required``, ``invalid``, ``missing``, ``empty``
+    * Error message keys: ``required``, ``invalid``, ``missing``, ``empty``,
+      ``max_length``
 
 To learn more about the ``UploadedFile`` object, see the :doc:`file uploads
 documentation </topics/http/file-uploads>`.
@@ -520,10 +513,12 @@ documentation </topics/http/file-uploads>`.
 When you use a ``FileField`` in a form, you must also remember to
 :ref:`bind the file data to the form <binding-uploaded-files>`.
 
+The ``max_length`` error refers to the length of the filename. In the error
+message for that key, ``%(max)d`` will be replaced with the maximum filename
+length and ``%(length)d`` will be replaced with the current filename length.
+
 ``FilePathField``
 ~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.0
 
 .. class:: FilePathField(**kwargs)
 
@@ -569,11 +564,9 @@ These control the range of values permitted in the field.
 ``ImageField``
 ~~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
-
 .. class:: ImageField(**kwargs)
 
-    * Default widget: ``FileInput``
+    * Default widget: ``ClearableFileInput``
     * Empty value: ``None``
     * Normalizes to: An ``UploadedFile`` object that wraps the file content
       and file name into a single object.
@@ -601,6 +594,9 @@ When you use an ``ImageField`` on a form, you must also remember to
       whitespace is allowed, as in Python's ``int()`` function.
     * Error message keys: ``required``, ``invalid``, ``max_value``,
       ``min_value``
+
+The ``max_value`` and ``min_value`` error messages may contain
+``%(limit_value)s``, which will be substituted by the appropriate limit.
 
 Takes two optional arguments for validation:
 
@@ -633,7 +629,33 @@ Takes two optional arguments for validation:
       of choices.
     * Error message keys: ``required``, ``invalid_choice``, ``invalid_list``
 
-Takes one extra argument, ``choices``, as for ``ChoiceField``.
+The ``invalid_choice`` error message may contain ``%(value)s``, which will be
+replaced with the selected choice.
+
+Takes one extra required argument, ``choices``, as for ``ChoiceField``.
+
+``TypedMultipleChoiceField``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. class:: TypedMultipleChoiceField(**kwargs)
+
+.. versionadded:: 1.3
+
+Just like a :class:`MultipleChoiceField`, except :class:`TypedMultipleChoiceField`
+takes two extra arguments, ``coerce`` and ``empty_value``.
+
+    * Default widget: ``SelectMultiple``
+    * Empty value: Whatever you've given as ``empty_value``
+    * Normalizes to: A list of values of the type provided by the ``coerce``
+      argument.
+    * Validates that the given values exists in the list of choices and can be
+      coerced.
+    * Error message keys: ``required``, ``invalid_choice``
+
+The ``invalid_choice`` error message may contain ``%(value)s``, which will be
+replaced with the selected choice.
+
+Takes two extra arguments, ``coerce`` and ``empty_value``, as for ``TypedChoiceField``.
 
 ``NullBooleanField``
 ~~~~~~~~~~~~~~~~~~~~
@@ -680,8 +702,8 @@ and the error message as the value.
    * Default widget: ``TextInput``
    * Empty value: ``''`` (an empty string)
    * Normalizes to: A Unicode object.
-   * Validates that the given value contains only letters, numbers and
-     hyphens.
+   * Validates that the given value contains only letters, numbers,
+     underscores, and hyphens.
    * Error messages: ``required``, ``invalid``
 
 This field is intended for use in representing a model
@@ -775,7 +797,7 @@ Takes one extra required argument:
         ...
         ValidationError: [u'Ensure this value has at most 20 characters (it has 28).']
 
-``MultiValuefield``
+``MultiValueField``
 ~~~~~~~~~~~~~~~~~~~
 
 .. class:: MultiValueField(**kwargs)
@@ -814,7 +836,8 @@ Takes one extra required argument:
     * Normalizes to: A Python ``datetime.datetime`` object.
     * Validates that the given value is a ``datetime.datetime`` or string
       formatted in a particular datetime format.
-    * Error message keys: ``required``, ``invalid``
+    * Error message keys: ``required``, ``invalid``, ``invalid_date``,
+      ``invalid_time``
 
 Takes two optional arguments:
 
@@ -834,11 +857,6 @@ for ``DateField`` are used.
 If no ``input_time_formats`` argument is provided, the default input formats
 for ``TimeField`` are used.
 
-.. versionchanged:: 1.1
-   The ``SplitDateTimeField`` previously used two ``TextInput`` widgets by
-   default. The ``input_date_formats`` and ``input_time_formats`` arguments
-   are also new.
-
 Fields which handle relationships
 ---------------------------------
 
@@ -855,6 +873,12 @@ objects (in the case of ``ModelMultipleChoiceField``) into the
 ~~~~~~~~~~~~~~~~~~~~
 
 .. class:: ModelChoiceField(**kwargs)
+
+    * Default widget: ``Select``
+    * Empty value: ``None``
+    * Normalizes to: A model instance.
+    * Validates that the given id exists in the queryset.
+    * Error message keys: ``required``, ``invalid_choice``
 
 Allows the selection of a single model object, suitable for
 representing a foreign key.  A single argument is required:
@@ -900,6 +924,14 @@ example::
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. class:: ModelMultipleChoiceField(**kwargs)
+
+    * Default widget: ``SelectMultiple``
+    * Empty value: ``[]`` (an empty list)
+    * Normalizes to: A list of model instances.
+    * Validates that every id in the given list of values exists in the
+      queryset.
+    * Error message keys: ``required``, ``list``, ``invalid_choice``,
+      ``invalid_pk_value``
 
 Allows the selection of one or more model objects, suitable for
 representing a many-to-many relation. As with :class:`ModelChoiceField`,

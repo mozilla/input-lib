@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import re
 import types
-from unittest import TestCase
 from datetime import datetime, timedelta
+
 from django.core.exceptions import ValidationError
 from django.core.validators import *
+from django.utils.unittest import TestCase
+
 
 NOW = datetime.now()
 
@@ -90,7 +92,7 @@ TEST_DATA = (
     (URLValidator(), 'http://www.example.com/', None),
     (URLValidator(), 'http://www.example.com:8000/test', None),
     (URLValidator(), 'http://valid-with-hyphens.com/', None),
-    (URLValidator(), 'http://subdomain.domain.com/', None),
+    (URLValidator(), 'http://subdomain.example.com/', None),
     (URLValidator(), 'http://200.8.9.10/', None),
     (URLValidator(), 'http://200.8.9.10:8000/test', None),
     (URLValidator(), 'http://valid-----hyphens.com/', None),
@@ -139,18 +141,18 @@ def create_simple_test_method(validator, expected, value, num):
 class TestSimpleValidators(TestCase):
     def test_single_message(self):
         v = ValidationError('Not Valid')
-        self.assertEquals(str(v), "[u'Not Valid']")
-        self.assertEquals(repr(v), "ValidationError([u'Not Valid'])")
+        self.assertEqual(str(v), "[u'Not Valid']")
+        self.assertEqual(repr(v), "ValidationError([u'Not Valid'])")
 
     def test_message_list(self):
         v = ValidationError(['First Problem', 'Second Problem'])
-        self.assertEquals(str(v), "[u'First Problem', u'Second Problem']")
-        self.assertEquals(repr(v), "ValidationError([u'First Problem', u'Second Problem'])")
+        self.assertEqual(str(v), "[u'First Problem', u'Second Problem']")
+        self.assertEqual(repr(v), "ValidationError([u'First Problem', u'Second Problem'])")
 
     def test_message_dict(self):
         v = ValidationError({'first': 'First Problem'})
-        self.assertEquals(str(v), "{'first': 'First Problem'}")
-        self.assertEquals(repr(v), "ValidationError({'first': 'First Problem'})")
+        self.assertEqual(str(v), "{'first': 'First Problem'}")
+        self.assertEqual(repr(v), "ValidationError({'first': 'First Problem'})")
 
 test_counter = 0
 for validator, value, expected in TEST_DATA:

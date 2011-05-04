@@ -16,6 +16,11 @@ js_info_dict = {
     'packages': ('regressiontests.views',),
 }
 
+js_info_dict_english_translation = {
+    'domain': 'djangojs',
+    'packages': ('regressiontests.views.app0',),
+}
+
 js_info_dict_multi_packages1 = {
     'domain': 'djangojs',
     'packages': ('regressiontests.views.app1', 'regressiontests.views.app2'),
@@ -31,6 +36,16 @@ date_based_info_dict = {
     'date_field': 'date_created',
     'month_format': '%m',
 }
+
+object_list_dict = {
+    'queryset': Article.objects.all(),
+    'paginate_by': 2,
+}
+
+object_list_no_paginate_by = {
+    'queryset': Article.objects.all(),
+}
+
 numeric_days_info_dict = dict(date_based_info_dict, day_format='%d')
 
 date_based_datefield_info_dict = dict(date_based_info_dict, queryset=DateArticle.objects.all())
@@ -46,6 +61,7 @@ urlpatterns = patterns('',
     # i18n views
     (r'^i18n/', include('django.conf.urls.i18n')),
     (r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
+    (r'^jsi18n_english_translation/$', 'django.views.i18n.javascript_catalog', js_info_dict_english_translation),
     (r'^jsi18n_multi_packages1/$', 'django.views.i18n.javascript_catalog', js_info_dict_multi_packages1),
     (r'^jsi18n_multi_packages2/$', 'django.views.i18n.javascript_catalog', js_info_dict_multi_packages2),
 
@@ -77,7 +93,6 @@ urlpatterns += patterns('django.views.generic.date_based',
 )
 
 # crud generic views.
-
 urlpatterns += patterns('django.views.generic.create_update',
     (r'^create_update/member/create/article/$', 'create_object',
         dict(login_required=True, model=Article)),
@@ -105,6 +120,12 @@ urlpatterns += patterns('django.views.generic.create_update',
         'update_object', dict(slug_field='slug', model=UrlArticle)),
 )
 
+urlpatterns += patterns('django.views.generic.list_detail',
+    (r'^object_list/page(?P<page>[\w]*)/$', 'object_list', object_list_dict),
+    (r'^object_list_no_paginate_by/page(?P<page>[0-9]+)/$', 'object_list',
+     object_list_no_paginate_by),
+)
+
 # a view that raises an exception for the debug view
 urlpatterns += patterns('',
     (r'^raises/$', views.raises),
@@ -122,4 +143,24 @@ urlpatterns += patterns('django.views.generic.simple',
 urlpatterns += patterns('regressiontests.views.views',
     url(r'view_exception/(?P<n>\d+)/$', 'view_exception', name='view_exception'),
     url(r'template_exception/(?P<n>\d+)/$', 'template_exception', name='template_exception'),
+    url(r'^raises_template_does_not_exist/$', 'raises_template_does_not_exist', name='raises_template_does_not_exist'),
+
+    (r'^shortcuts/render_to_response/$', 'render_to_response_view'),
+    (r'^shortcuts/render_to_response/request_context/$', 'render_to_response_view_with_request_context'),
+    (r'^shortcuts/render_to_response/mimetype/$', 'render_to_response_view_with_mimetype'),
+    (r'^shortcuts/render/$', 'render_view'),
+    (r'^shortcuts/render/base_context/$', 'render_view_with_base_context'),
+    (r'^shortcuts/render/content_type/$', 'render_view_with_content_type'),
+    (r'^shortcuts/render/status/$', 'render_view_with_status'),
+    (r'^shortcuts/render/current_app/$', 'render_view_with_current_app'),
+    (r'^shortcuts/render/current_app_conflict/$', 'render_view_with_current_app_conflict'),
+)
+
+# simple generic views.
+urlpatterns += patterns('django.views.generic.simple',
+    (r'^simple/redirect_to/$', 'redirect_to', dict(url='/views/simple/target/')),
+    (r'^simple/redirect_to_temp/$', 'redirect_to', dict(url='/views/simple/target/', permanent=False)),
+    (r'^simple/redirect_to_none/$', 'redirect_to', dict(url=None)),
+    (r'^simple/redirect_to_arg/(?P<id>\d+)/$', 'redirect_to', dict(url='/views/simple/target_arg/%(id)s/')),
+    (r'^simple/redirect_to_query/$', 'redirect_to', dict(url='/views/simple/target/', query_string=True)),
 )

@@ -21,7 +21,7 @@ Having trouble? We'd like to help!
   `post a question`_.
 
 * Ask a question in the `#django IRC channel`_, or search the `IRC logs`_ to see
-  if its been asked before.
+  if it's been asked before.
 
 * Report bugs with Django in our `ticket tracker`_.
 
@@ -91,9 +91,12 @@ The view layer
     * **The basics:**
       :doc:`URLconfs <topics/http/urls>` |
       :doc:`View functions <topics/http/views>` |
-      :doc:`Shortcuts <topics/http/shortcuts>`
+      :doc:`Shortcuts <topics/http/shortcuts>` |
+      :doc:`Decorators <topics/http/decorators>`
 
-    * **Reference:**  :doc:`Request/response objects <ref/request-response>`
+    * **Reference:**
+      :doc:`Request/response objects <ref/request-response>` |
+      :doc:`TemplateResponse objects <ref/template-response>`
 
     * **File uploads:**
       :doc:`Overview <topics/http/file-uploads>` |
@@ -103,8 +106,8 @@ The view layer
       :doc:`Custom storage <howto/custom-file-storage>`
 
     * **Generic views:**
-      :doc:`Overview<topics/generic-views>` |
-      :doc:`Built-in generic views<ref/generic-views>`
+      :doc:`Overview<topics/class-based-views>` |
+      :doc:`Built-in generic views<ref/class-based-views>`
 
     * **Advanced:**
       :doc:`Generating CSV <howto/outputting-csv>` |
@@ -155,13 +158,13 @@ The development process
       :doc:`Apache/mod_python <howto/deployment/modpython>` |
       :doc:`FastCGI/SCGI/AJP <howto/deployment/fastcgi>` |
       :doc:`Apache authentication <howto/apache-auth>` |
-      :doc:`Serving static files <howto/static-files>` |
+      :doc:`Handling static files <howto/static-files>` |
       :doc:`Tracking code errors by e-mail <howto/error-reporting>`
 
 Other batteries included
 ========================
 
-    * :doc:`Admin site <ref/contrib/admin/index>` | :doc:`Admin actions <ref/contrib/admin/actions>`
+    * :doc:`Admin site <ref/contrib/admin/index>` | :doc:`Admin actions <ref/contrib/admin/actions>` | :doc:`Admin documentation generator<ref/contrib/admin/admindocs>`
     * :doc:`Authentication <topics/auth>`
     * :doc:`Cache system <topics/cache>`
     * :doc:`Conditional content processing <topics/conditional-view-processing>`
@@ -176,6 +179,7 @@ Other batteries included
     * :doc:`Internationalization <topics/i18n/index>`
     * :doc:`Jython support <howto/jython>`
     * :doc:`"Local flavor" <ref/contrib/localflavor>`
+    * :doc:`Logging <topics/logging>`
     * :doc:`Messages <ref/contrib/messages>`
     * :doc:`Pagination <topics/pagination>`
     * :doc:`Redirects <ref/contrib/redirects>`
@@ -184,10 +188,12 @@ Other batteries included
     * :doc:`Signals <topics/signals>`
     * :doc:`Sitemaps <ref/contrib/sitemaps>`
     * :doc:`Sites <ref/contrib/sites>`
+    * :doc:`Static Files <ref/contrib/staticfiles>`
     * :doc:`Syndication feeds (RSS/Atom) <ref/contrib/syndication>`
     * :doc:`Unicode in Django <ref/unicode>`
     * :doc:`Web design helpers <ref/contrib/webdesign>`
     * :doc:`Validators <ref/validators>`
+    * Function-based generic views (Deprecated) :doc:`Overview<topics/generic-views>` | :doc:`Built-in generic views<ref/generic-views>` | :doc:`Migration guide<topics/generic-views-migration>`
 
 The Django open-source project
 ==============================

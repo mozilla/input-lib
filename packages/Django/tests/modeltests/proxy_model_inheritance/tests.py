@@ -17,7 +17,7 @@ from django.test import TransactionTestCase
 class ProxyModelInheritanceTests(TransactionTestCase):
 
     def setUp(self):
-        self.old_sys_path = sys.path
+        self.old_sys_path = sys.path[:]
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         self.old_installed_apps = settings.INSTALLED_APPS
         settings.INSTALLED_APPS = ('app1', 'app2')
@@ -32,5 +32,5 @@ class ProxyModelInheritanceTests(TransactionTestCase):
         sys.path = self.old_sys_path
 
     def test_table_exists(self):
-        self.assertEquals(NiceModel.objects.all().count(), 0)
-        self.assertEquals(ProxyModel.objects.all().count(), 0)
+        self.assertEqual(NiceModel.objects.all().count(), 0)
+        self.assertEqual(ProxyModel.objects.all().count(), 0)

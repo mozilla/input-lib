@@ -7,7 +7,7 @@ from django.utils import importlib
 from django.utils.translation import check_for_language, activate, to_locale, get_language
 from django.utils.text import javascript_quote
 from django.utils.encoding import smart_unicode
-from django.utils.formats import get_format_modules
+from django.utils.formats import get_format_modules, get_format
 
 def set_language(request):
     """
@@ -49,10 +49,7 @@ def get_formats():
     result = {}
     for module in [settings] + get_format_modules(reverse=True):
         for attr in FORMAT_SETTINGS:
-            try:
-                result[attr] = getattr(module, attr)
-            except AttributeError:
-                pass
+            result[attr] = get_format(attr)
     src = []
     for k, v in result.items():
         if isinstance(v, (basestring, int)):
@@ -68,6 +65,8 @@ NullSource = """
 function gettext(msgid) { return msgid; }
 function ngettext(singular, plural, count) { return (count == 1) ? singular : plural; }
 function gettext_noop(msgid) { return msgid; }
+function pgettext(context, msgid) { return msgid; }
+function npgettext(context, singular, plural, count) { return (count == 1) ? singular : plural; }
 """
 
 LibHead = """
@@ -98,6 +97,21 @@ function ngettext(singular, plural, count) {
 
 function gettext_noop(msgid) { return msgid; }
 
+function pgettext(context, msgid) {
+  var value = gettext(context + '\x04' + msgid);
+  if (value.indexOf('\x04') != -1) {
+    value = msgid;
+  }
+  return value;
+}
+
+function npgettext(context, singular, plural, count) {
+  var value = ngettext(context + '\x04' + singular, context + '\x04' + plural, count);
+  if (value.indexOf('\x04') != -1) {
+    value = ngettext(singular, plural, count);
+  }
+  return value;
+}
 """
 
 LibFormatHead = """
@@ -177,23 +191,27 @@ def javascript_catalog(request, domain='djangojs', packages=None):
     locale = to_locale(get_language())
     t = {}
     paths = []
-    en_catalog_missing = False
-    # first load all english languages files for defaults
+    en_selected = locale.startswith('en')
+    en_catalog_missing = True
+    # paths of requested packages
     for package in packages:
         p = importlib.import_module(package)
         path = os.path.join(os.path.dirname(p.__file__), 'locale')
         paths.append(path)
+    # add the filesystem paths listed in the LOCALE_PATHS setting
+    paths.extend(list(reversed(settings.LOCALE_PATHS)))
+    # first load all english languages files for defaults
+    for path in paths:
         try:
             catalog = gettext_module.translation(domain, path, ['en'])
             t.update(catalog._catalog)
         except IOError:
-            # 'en' catalog was missing.
-            if locale.startswith('en'):
-                # If 'en' is the selected language this would cause issues
-                # later on if default_locale is something other than 'en'.
-                en_catalog_missing = True
-            # Otherwise it is harmless.
             pass
+        else:
+            # 'en' is the selected language and at least one of the packages
+            # listed in `packages` has an 'en' catalog
+            if en_selected:
+                en_catalog_missing = False
     # next load the settings.LANGUAGE_CODE translations if it isn't english
     if default_locale != 'en':
         for path in paths:
@@ -205,12 +223,11 @@ def javascript_catalog(request, domain='djangojs', packages=None):
                 t.update(catalog._catalog)
     # last load the currently selected language, if it isn't identical to the default.
     if locale != default_locale:
-        # If the flag en_catalog_missing has been set, the currently
-        # selected language is English but it doesn't have a translation
-        # catalog (presumably due to being the language translated from).
-        # If that is the case, a wrong language catalog might have been
-        # loaded in the previous step. It needs to be discarded.
-        if en_catalog_missing:
+        # If the currently selected language is English but it doesn't have a
+        # translation catalog (presumably due to being the language translated
+        # from) then a wrong language catalog might have been loaded in the
+        # previous step. It needs to be discarded.
+        if en_selected and en_catalog_missing:
             t = {}
         else:
             locale_t = {}
@@ -262,4 +279,3 @@ def javascript_catalog(request, domain='djangojs', packages=None):
     src.append(LibFormatFoot)
     src = ''.join(src)
     return http.HttpResponse(src, 'text/javascript')
-

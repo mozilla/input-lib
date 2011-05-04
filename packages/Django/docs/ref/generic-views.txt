@@ -2,13 +2,23 @@
 Generic views
 =============
 
+
+.. versionchanged:: 1.3
+
+.. note::
+
+    From Django 1.3, function-based generic views have been deprecated in favor
+    of a class-based approach, described in the class-based views :doc:`topic
+    guide </topics/class-based-views>` and :doc:`detailed reference
+    </ref/class-based-views>`.
+
 Writing Web applications can be monotonous, because we repeat certain patterns
 again and again. In Django, the most common of these patterns have been
 abstracted into "generic views" that let you quickly provide common views of
 an object without actually needing to write any Python code.
 
 A general introduction to generic views can be found in the :doc:`topic guide
-</topics/http/generic-views>`.
+</topics/generic-views>`.
 
 This reference contains details of Django's built-in generic views, along with
 a list of all keyword arguments that a generic view expects. Remember that
@@ -18,6 +28,8 @@ additional-information dictionary.
 Most generic views require the ``queryset`` key, which is a ``QuerySet``
 instance; see :doc:`/topics/db/queries` for more information about ``QuerySet``
 objects.
+
+.. module:: django.views.generic.simple
 
 "Simple" generic views
 ======================
@@ -52,9 +64,11 @@ which is a dictionary of the parameters captured in the URL.
 
 Given the following URL patterns::
 
-    urlpatterns = patterns('django.views.generic.simple',
-        (r'^foo/$',             'direct_to_template', {'template': 'foo_index.html'}),
-        (r'^foo/(?P<id>\d+)/$', 'direct_to_template', {'template': 'foo_detail.html'}),
+    from django.views.generic.simple import direct_to_template
+
+    urlpatterns = patterns('',
+        (r'^foo/$',             direct_to_template, {'template': 'foo_index.html'}),
+        (r'^foo/(?P<id>\d+)/$', direct_to_template, {'template': 'foo_detail.html'}),
     )
 
 ... a request to ``/foo/`` would render the template ``foo_index.html``, and a
@@ -88,38 +102,53 @@ If the given URL is ``None``, Django will return an ``HttpResponseGone`` (410).
       redirect will use status code 301. If ``False``, then the redirect will
       use status code 302. By default, ``permanent`` is ``True``.
 
-.. versionadded:: 1.1
-    The ``permanent`` keyword argument is new in Django 1.1.
+    * ``query_string``: Whether to pass along the GET query string to
+      the new location. If ``True``, then the query string is appended
+      to the URL. If ``False``, then the query string is discarded. By
+      default, ``query_string`` is ``False``.
+
+.. versionadded:: 1.3
+    The ``query_string`` keyword argument is new in Django 1.3.
 
 **Example:**
 
 This example issues a permanent redirect (HTTP status code 301) from
 ``/foo/<id>/`` to ``/bar/<id>/``::
 
-    urlpatterns = patterns('django.views.generic.simple',
-        ('^foo/(?P<id>\d+)/$', 'redirect_to', {'url': '/bar/%(id)s/'}),
+    from django.views.generic.simple import redirect_to
+
+    urlpatterns = patterns('',
+        ('^foo/(?P<id>\d+)/$', redirect_to, {'url': '/bar/%(id)s/'}),
     )
 
 This example issues a non-permanent redirect (HTTP status code 302) from
 ``/foo/<id>/`` to ``/bar/<id>/``::
 
-    urlpatterns = patterns('django.views.generic.simple',
-        ('^foo/(?P<id>\d+)/$', 'redirect_to', {'url': '/bar/%(id)s/', 'permanent': False}),
+    from django.views.generic.simple import redirect_to
+
+    urlpatterns = patterns('',
+        ('^foo/(?P<id>\d+)/$', redirect_to, {'url': '/bar/%(id)s/', 'permanent': False}),
     )
 
 This example returns a 410 HTTP error for requests to ``/bar/``::
 
-    urlpatterns = patterns('django.views.generic.simple',
-        ('^bar/$', 'redirect_to', {'url': None}),
+    from django.views.generic.simple import redirect_to
+
+    urlpatterns = patterns('',
+        ('^bar/$', redirect_to, {'url': None}),
     )
 
 This example shows how ``"%"`` characters must be written in the URL in order
 to avoid confusion with Python's string formatting markers. If the redirect
 string is written as ``"%7Ejacob/"`` (with only a single ``%``), an exception would be raised::
 
-    urlpatterns = patterns('django.views.generic.simple',
-        ('^bar/$', 'redirect_to', {'url': '%%7Ejacob.'}),
+    from django.views.generic.simple import redirect_to
+
+    urlpatterns = patterns('',
+        ('^bar/$', redirect_to, {'url': '%%7Ejacob.'}),
     )
+
+.. module:: django.views.generic.date_based
 
 Date-based generic views
 ========================
@@ -176,8 +205,6 @@ a date in the *future* are not included unless you set ``allow_future`` to
       specified in ``date_field`` is greater than the current date/time. By
       default, this is ``False``.
 
-    .. versionadded:: 1.0
-
     * ``template_object_name``: Designates the name of the template variable
       to use in the template context. By default, this is ``'latest'``.
 
@@ -197,13 +224,10 @@ If ``template_name`` isn't specified, this view will use the template
 
 In addition to ``extra_context``, the template's context will be:
 
-    * ``date_list``: A list of ``datetime.date`` objects representing all
-      years that have objects available according to ``queryset``. These are
-      ordered in reverse. This is equivalent to
-      ``queryset.dates(date_field, 'year')[::-1]``.
-
-    .. versionchanged:: 1.0
-       The behaviour depending on ``template_object_name`` is new in this version.
+    * ``date_list``: A ``DateQuerySet`` object containing all years that have
+      have objects available according to ``queryset``, represented as
+      ``datetime.datetime`` objects. These are ordered in reverse. This is
+      equivalent to ``queryset.dates(date_field, 'year')[::-1]``.
 
     * ``latest``: The ``num_latest`` objects in the system, ordered descending
       by ``date_field``. For example, if ``num_latest`` is ``10``, then
@@ -282,9 +306,9 @@ If ``template_name`` isn't specified, this view will use the template
 
 In addition to ``extra_context``, the template's context will be:
 
-    * ``date_list``: A list of ``datetime.date`` objects representing all
-      months that have objects available in the given year, according to
-      ``queryset``, in ascending order.
+    * ``date_list``: A ``DateQuerySet`` object containing all months that have
+      have objects available according to ``queryset``, represented as
+      ``datetime.datetime`` objects, in ascending order.
 
     * ``year``: The given year, as a four-character string.
 
@@ -372,9 +396,9 @@ If ``template_name`` isn't specified, this view will use the template
 
 In addition to ``extra_context``, the template's context will be:
 
-    * ``date_list``: A list of ``datetime.date`` objects representing all
-      days that have objects available in the given month, according to
-      ``queryset``, in ascending order.    
+    * ``date_list``: A ``DateQuerySet`` object containing all days that have
+      have objects available in the given month, according to ``queryset``,
+      represented as ``datetime.datetime`` objects, in ascending order.
 
     * ``month``: A ``datetime.date`` object representing the given month.
 
@@ -657,6 +681,8 @@ In addition to ``extra_context``, the template's context will be:
       ``template_object_name`` is ``'foo'``, this variable's name will be
       ``foo``.
 
+.. module:: django.views.generic.list_detail
+
 List/detail generic views
 =========================
 
@@ -721,9 +747,6 @@ If ``template_name`` isn't specified, this view will use the template
 
 **Template context:**
 
-.. versionadded:: 1.0
-   The ``paginator`` and ``page_obj`` context variables are new.
-
 In addition to ``extra_context``, the template's context will be:
 
     * ``object_list``: The list of objects. This variable's name depends on the
@@ -766,8 +789,6 @@ represented as page ``1``.
 
 For more on pagination, read the :doc:`pagination documentation
 </topics/pagination>`.
-
-.. versionadded:: 1.0
 
 As a special case, you are also permitted to use ``last`` as a value for
 ``page``::
@@ -847,17 +868,13 @@ In addition to ``extra_context``, the template's context will be:
       ``template_object_name`` is ``'foo'``, this variable's name will be
       ``foo``.
 
+.. module:: django.views.generic.create_update
+
 Create/update/delete generic views
 ==================================
 
 The ``django.views.generic.create_update`` module contains a set of functions
 for creating, editing and deleting objects.
-
-.. versionchanged:: 1.0
-
-``django.views.generic.create_update.create_object`` and
-``django.views.generic.create_update.update_object`` now use the new :doc:`forms
-library </topics/forms/index>` to build and display the form.
 
 ``django.views.generic.create_update.create_object``
 ----------------------------------------------------
@@ -979,7 +996,8 @@ model class.
       ``False``.
 
       If this is ``True``, and a non-logged-in user attempts to visit this page
-      or save the form, Django will redirect the request to ``/accounts/login/``.
+      or save the form, Django will redirect to :setting:`LOGIN_URL` (which
+      defaults to ``/accounts/login/``).
 
     * ``template_name``: The full name of a template to use in rendering the
       page. This lets you override the default template name (see below).
@@ -1039,7 +1057,7 @@ contain a form that POSTs to the same URL.
 **Required arguments:**
 
     * ``model``: The Django model class of the object that the form will
-      create.
+      delete.
 
     * Either ``object_id`` or (``slug`` *and* ``slug_field``) is required.
 
@@ -1061,7 +1079,8 @@ contain a form that POSTs to the same URL.
       ``False``.
 
       If this is ``True``, and a non-logged-in user attempts to visit this page
-      or save the form, Django will redirect the request to ``/accounts/login/``.
+      or save the form, Django will redirect to :setting:`LOGIN_URL` (which
+      defaults to ``/accounts/login/``).
 
     * ``template_name``: The full name of a template to use in rendering the
       page. This lets you override the default template name (see below).

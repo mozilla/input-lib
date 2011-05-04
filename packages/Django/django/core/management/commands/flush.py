@@ -9,7 +9,6 @@ from django.core.management.sql import sql_flush, emit_post_sync_signal
 from django.utils.importlib import import_module
 
 
-
 class Command(NoArgsCommand):
     option_list = NoArgsCommand.option_list + (
         make_option('--noinput', action='store_false', dest='interactive', default=True,
@@ -72,7 +71,7 @@ The full error: %s""" % (connection.settings_dict['NAME'], e))
                     m for m in models.get_models(app, include_auto_created=True)
                     if router.allow_syncdb(db, m)
                 ])
-            emit_post_sync_signal(all_models, verbosity, interactive, db)
+            emit_post_sync_signal(set(all_models), verbosity, interactive, db)
 
             # Reinstall the initial_data fixture.
             kwargs = options.copy()

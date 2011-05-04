@@ -1,16 +1,15 @@
 import datetime
+import warnings
+from xml.dom import minidom
+
 from django.contrib.syndication import feeds, views
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.utils import tzinfo
 from django.utils.feedgenerator import rfc2822_date, rfc3339_date
-from models import Entry
-from xml.dom import minidom
 
-try:
-    set
-except NameError:
-    from sets import Set as set
+from models import Entry
+
 
 class FeedTestCase(TestCase):
     fixtures = ['feeddata.json']
@@ -199,7 +198,7 @@ class SyndicationFeedTest(FeedTestCase):
             link = item.getElementsByTagName('link')[0]
             if link.firstChild.wholeText == 'http://example.com/blog/4/':
                 title = item.getElementsByTagName('title')[0]
-                self.assertEquals(title.firstChild.wholeText, u'A &amp; B &lt; C &gt; D')
+                self.assertEqual(title.firstChild.wholeText, u'A &amp; B &lt; C &gt; D')
 
     def test_naive_datetime_conversion(self):
         """
@@ -236,6 +235,25 @@ class SyndicationFeedTest(FeedTestCase):
             if link.getAttribute('rel') == 'self':
                 self.assertEqual(link.getAttribute('href'), 'http://example.com/customfeedurl/')
 
+    def test_secure_urls(self):
+        """
+        Test URLs are prefixed with https:// when feed is requested over HTTPS.
+        """
+        response = self.client.get('/syndication/rss2/', **{
+            'wsgi.url_scheme': 'https',
+        })
+        doc = minidom.parseString(response.content)
+        chan = doc.getElementsByTagName('channel')[0]
+        self.assertEqual(
+            chan.getElementsByTagName('link')[0].firstChild.wholeText[0:5],
+            'https'
+        )
+        atom_link = chan.getElementsByTagName('atom:link')[0]
+        self.assertEqual(atom_link.getAttribute('href')[0:5], 'https')
+        for link in doc.getElementsByTagName('link'):
+            if link.getAttribute('rel') == 'self':
+                self.assertEqual(link.getAttribute('href')[0:5], 'https')
+
     def test_item_link_error(self):
         """
         Test that a ImproperlyConfigured is raised if no link could be found
@@ -271,6 +289,10 @@ class SyndicationFeedTest(FeedTestCase):
             'http://example.com/foo/?arg=value'
         )
         self.assertEqual(
+            views.add_domain('example.com', '/foo/?arg=value', True),
+            'https://example.com/foo/?arg=value'
+        )
+        self.assertEqual(
             views.add_domain('example.com', 'http://djangoproject.com/doc/'),
             'http://djangoproject.com/doc/'
         )
@@ -292,20 +314,29 @@ class DeprecatedSyndicationFeedTest(FeedTestCase):
     """
     Tests for the deprecated API (feed() view and the feed_dict etc).
     """
+    def setUp(self):
+        self.save_warnings_state()
+        warnings.filterwarnings('ignore', category=DeprecationWarning,
+                                module='django.contrib.syndication.feeds')
+        warnings.filterwarnings('ignore', category=DeprecationWarning,
+                                module='django.contrib.syndication.views')
+
+    def tearDown(self):
+        self.restore_warnings_state()
 
     def test_empty_feed_dict(self):
         """
         Test that an empty feed_dict raises a 404.
         """
         response = self.client.get('/syndication/depr-feeds-empty/aware-dates/')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_nonexistent_slug(self):
         """
         Test that a non-existent slug raises a 404.
         """
         response = self.client.get('/syndication/depr-feeds/foobar/')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_rss_feed(self):
         """
@@ -329,5 +360,5 @@ class DeprecatedSyndicationFeedTest(FeedTestCase):
         exception.
         """
         response = self.client.get('/syndication/depr-feeds/complex/')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import connection, DEFAULT_DB_ALIAS
-from django.test import TestCase
+from django.test import TestCase, skipUnlessDBFeature
 from django.utils import functional
 
 from models import Reporter, Article
@@ -38,9 +38,9 @@ class IntrospectionTests(TestCase):
 
     def test_table_names(self):
         tl = connection.introspection.table_names()
-        self.assert_(Reporter._meta.db_table in tl,
+        self.assertTrue(Reporter._meta.db_table in tl,
                      "'%s' isn't in table_list()." % Reporter._meta.db_table)
-        self.assert_(Article._meta.db_table in tl,
+        self.assertTrue(Article._meta.db_table in tl,
                      "'%s' isn't in table_list()." % Article._meta.db_table)
 
     def test_django_table_names(self):
@@ -48,7 +48,7 @@ class IntrospectionTests(TestCase):
         cursor.execute('CREATE TABLE django_ixn_test_table (id INTEGER);');
         tl = connection.introspection.django_table_names()
         cursor.execute("DROP TABLE django_ixn_test_table;")
-        self.assert_('django_ixn_testcase_table' not in tl,
+        self.assertTrue('django_ixn_testcase_table' not in tl,
                      "django_table_names() returned a non-Django table")
 
     def test_installed_models(self):
@@ -59,7 +59,7 @@ class IntrospectionTests(TestCase):
     def test_sequence_list(self):
         sequences = connection.introspection.sequence_list()
         expected = {'table': Reporter._meta.db_table, 'column': 'id'}
-        self.assert_(expected in sequences,
+        self.assertTrue(expected in sequences,
                      'Reporter sequence not found in sequence_list()')
 
     def test_get_table_description_names(self):
@@ -77,13 +77,13 @@ class IntrospectionTests(TestCase):
         )
 
     # Regression test for #9991 - 'real' types in postgres
-    if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'].startswith('django.db.backends.postgresql'):
-        def test_postgresql_real_type(self):
-            cursor = connection.cursor()
-            cursor.execute("CREATE TABLE django_ixn_real_test_table (number REAL);")
-            desc = connection.introspection.get_table_description(cursor, 'django_ixn_real_test_table')
-            cursor.execute('DROP TABLE django_ixn_real_test_table;')
-            self.assertEqual(datatype(desc[0][1], desc[0]), 'FloatField')
+    @skipUnlessDBFeature('has_real_datatype')
+    def test_postgresql_real_type(self):
+        cursor = connection.cursor()
+        cursor.execute("CREATE TABLE django_ixn_real_test_table (number REAL);")
+        desc = connection.introspection.get_table_description(cursor, 'django_ixn_real_test_table')
+        cursor.execute('DROP TABLE django_ixn_real_test_table;')
+        self.assertEqual(datatype(desc[0][1], desc[0]), 'FloatField')
 
     def test_get_relations(self):
         cursor = connection.cursor()

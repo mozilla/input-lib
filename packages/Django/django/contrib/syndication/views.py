@@ -1,20 +1,23 @@
-import datetime
 from django.conf import settings
-from django.contrib.sites.models import Site, RequestSite
+from django.contrib.sites.models import get_current_site
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.http import HttpResponse, Http404
-from django.template import loader, Template, TemplateDoesNotExist, RequestContext
+from django.template import loader, TemplateDoesNotExist, RequestContext
 from django.utils import feedgenerator, tzinfo
 from django.utils.encoding import force_unicode, iri_to_uri, smart_unicode
 from django.utils.html import escape
 
-def add_domain(domain, url):
+def add_domain(domain, url, secure=False):
     if not (url.startswith('http://')
             or url.startswith('https://')
             or url.startswith('mailto:')):
         # 'url' must already be ASCII and URL-quoted, so no need for encoding
         # conversions here.
-        url = iri_to_uri(u'http://%s%s' % (domain, url))
+        if secure:
+            protocol = 'https'
+        else:
+            protocol = 'http'
+        url = iri_to_uri(u'%s://%s%s' % (protocol, domain, url))
     return url
 
 class FeedDoesNotExist(ObjectDoesNotExist):
@@ -91,13 +94,10 @@ class Feed(object):
         Returns a feedgenerator.DefaultFeed object, fully populated, for
         this feed. Raises FeedDoesNotExist for invalid parameters.
         """
-        if Site._meta.installed:
-            current_site = Site.objects.get_current()
-        else:
-            current_site = RequestSite(request)
+        current_site = get_current_site(request)
 
         link = self.__get_dynamic_attr('link', obj)
-        link = add_domain(current_site.domain, link)
+        link = add_domain(current_site.domain, link, request.is_secure())
 
         feed = self.feed_type(
             title = self.__get_dynamic_attr('title', obj),
@@ -105,8 +105,11 @@ class Feed(object):
             link = link,
             description = self.__get_dynamic_attr('description', obj),
             language = settings.LANGUAGE_CODE.decode(),
-            feed_url = add_domain(current_site.domain,
-                    self.__get_dynamic_attr('feed_url', obj) or request.path),
+            feed_url = add_domain(
+                current_site.domain,
+                self.__get_dynamic_attr('feed_url', obj) or request.path,
+                request.is_secure(),
+            ),
             author_name = self.__get_dynamic_attr('author_name', obj),
             author_link = self.__get_dynamic_attr('author_link', obj),
             author_email = self.__get_dynamic_attr('author_email', obj),
@@ -140,7 +143,11 @@ class Feed(object):
                 description = description_tmp.render(RequestContext(request, {'obj': item, 'site': current_site}))
             else:
                 description = self.__get_dynamic_attr('item_description', item)
-            link = add_domain(current_site.domain, self.__get_dynamic_attr('item_link', item))
+            link = add_domain(
+                current_site.domain,
+                self.__get_dynamic_attr('item_link', item),
+                request.is_secure(),
+            )
             enc = None
             enc_url = self.__get_dynamic_attr('item_enclosure_url', item)
             if enc_url:
@@ -180,10 +187,11 @@ class Feed(object):
 
 def feed(request, url, feed_dict=None):
     """Provided for backwards compatibility."""
+    from django.contrib.syndication.feeds import Feed as LegacyFeed
     import warnings
     warnings.warn('The syndication feed() view is deprecated. Please use the '
                   'new class based view API.',
-                  category=PendingDeprecationWarning)
+                  category=DeprecationWarning)
 
     if not feed_dict:
         raise Http404("No feeds are registered.")
@@ -197,6 +205,18 @@ def feed(request, url, feed_dict=None):
         f = feed_dict[slug]
     except KeyError:
         raise Http404("Slug %r isn't registered." % slug)
+
+    # Backwards compatibility within the backwards compatibility;
+    # Feeds can be updated to be class-based, but still be deployed
+    # using the legacy feed view. This only works if the feed takes
+    # no arguments (i.e., get_object returns None). Refs #14176.
+    if not issubclass(f, LegacyFeed):
+        instance = f()
+        instance.feed_url = getattr(f, 'feed_url', None) or request.path
+        instance.title_template = f.title_template or ('feeds/%s_title.html' % slug)
+        instance.description_template = f.description_template or ('feeds/%s_description.html' % slug)
+
+        return instance(request)
 
     try:
         feedgen = f(slug, request).get_feed(param)

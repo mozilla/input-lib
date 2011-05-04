@@ -11,7 +11,7 @@ API. Refer to the :doc:`data model reference </ref/models/index>` for full
 details of all the various model lookup options.
 
 Throughout this guide (and in the reference), we'll refer to the following
-models, which comprise a weblog application:
+models, which comprise a Weblog application:
 
 .. _queryset-model-example:
 
@@ -36,6 +36,7 @@ models, which comprise a weblog application:
         headline = models.CharField(max_length=255)
         body_text = models.TextField()
         pub_date = models.DateTimeField()
+        mod_date = models.DateTimeField()
         authors = models.ManyToManyField(Author)
         n_comments = models.IntegerField()
         n_pingbacks = models.IntegerField()
@@ -60,7 +61,7 @@ funky model importing.)
 
 Assuming models live in a file ``mysite/blog/models.py``, here's an example::
 
-    >>> from mysite.blog.models import Blog
+    >>> from blog.models import Blog
     >>> b = Blog(name='Beatles Blog', tagline='All the latest Beatles news.')
     >>> b.save()
 
@@ -94,18 +95,23 @@ the database until you explicitly call ``save()``.
 Saving ``ForeignKey`` and ``ManyToManyField`` fields
 ----------------------------------------------------
 
-Updating ``ForeignKey`` fields works exactly the same way as saving a normal
-field; simply assign an object of the right type to the field in question::
+Updating a ``ForeignKey`` field works exactly the same way as saving a normal
+field; simply assign an object of the right type to the field in question.
+This example updates the ``blog`` attribute of an ``Entry`` instance ``entry``::
 
+    >>> from blog.models import Entry
+    >>> entry = Entry.objects.get(pk=1)
     >>> cheese_blog = Blog.objects.get(name="Cheddar Talk")
     >>> entry.blog = cheese_blog
     >>> entry.save()
 
 Updating a ``ManyToManyField`` works a little differently; use the ``add()``
-method on the field to add a record to the relation::
+method on the field to add a record to the relation. This example adds the
+``Author`` instance ``joe`` to the ``entry`` object::
 
-    >> joe = Author.objects.create(name="Joe")
-    >> entry.authors.add(joe)
+    >>> from blog.models import Author
+    >>> joe = Author.objects.create(name="Joe")
+    >>> entry.authors.add(joe)
 
 Django will complain if you try to assign or add an object of the wrong type.
 
@@ -157,6 +163,7 @@ The ``all()`` method returns a ``QuerySet`` of all the objects in the database.
 That's because ``Entry.objects``, the root ``QuerySet``, is a special case
 that cannot be evaluated. The ``all()`` method returns a ``QuerySet`` that
 *can* be evaluated.)
+
 
 Retrieving specific objects with filters
 ----------------------------------------
@@ -253,12 +260,43 @@ aren't fetched from the database until you "ask" for them. When you do, the
 ``QuerySet`` is *evaluated* by accessing the database. For more details on
 exactly when evaluation takes place, see :ref:`when-querysets-are-evaluated`.
 
-Other QuerySet methods
-~~~~~~~~~~~~~~~~~~~~~~
 
-Most of the time you'll use ``all()``, ``filter()`` and ``exclude()`` when you
-need to look up objects from the database. However, that's far from all there is; see the :ref:`QuerySet API Reference <queryset-api>` for a complete list
-of all the various ``QuerySet`` methods.
+.. _retrieving-single-object-with-get:
+
+Retrieving a single object with get
+-----------------------------------
+
+``.filter()`` will always give you a ``QuerySet``, even if only a single
+object matches the query - in this case, it will be a ``QuerySet`` containing
+a single element.
+
+If you know there is only one object that matches your query, you can use
+the ``get()`` method on a `Manager` which returns the object directly::
+
+    >>> one_entry = Entry.objects.get(pk=1)
+
+You can use any query expression with ``get()``, just like with ``filter()`` -
+again, see `Field lookups`_ below.
+
+Note that there is a difference between using ``.get()``, and using
+``.filter()`` with a slice of ``[0]``. If there are no results that match the
+query, ``.get()`` will raise a ``DoesNotExist`` exception. This exception is an
+attribute of the model class that the query is being performed on - so in the
+code above, if there is no ``Entry`` object with a primary key of 1, Django will
+raise ``Entry.DoesNotExist``.
+
+Similarly, Django will complain if more than one item matches the ``get()``
+query. In this case, it will raise ``MultipleObjectsReturned``, which again is
+an attribute of the model class itself.
+
+
+Other QuerySet methods
+----------------------
+
+Most of the time you'll use ``all()``, ``get()``, ``filter()`` and ``exclude()``
+when you need to look up objects from the database. However, that's far from all
+there is; see the :ref:`QuerySet API Reference <queryset-api>` for a complete
+list of all the various ``QuerySet`` methods.
 
 .. _limiting-querysets:
 
@@ -299,7 +337,7 @@ This is roughly equivalent to::
 
 Note, however, that the first of these will raise ``IndexError`` while the
 second will raise ``DoesNotExist`` if no objects match the given criteria. See
-``get()`` for more details.
+:meth:`~django.db.models.QuerySet.get` for more details.
 
 .. _field-lookups-intro:
 
@@ -437,8 +475,6 @@ those latter objects, you could write::
 Spanning multi-valued relationships
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
-
 When you are filtering an object based on a ``ManyToManyField`` or a reverse
 ``ForeignKey``, there are two different sorts of filter you may be
 interested in. Consider the ``Blog``/``Entry`` relationship (``Blog`` to
@@ -494,8 +530,6 @@ filtering on different linked objects.
 Filters can reference fields on the model
 -----------------------------------------
 
-.. versionadded:: 1.1
-
 In the examples given so far, we have constructed filters that compare
 the value of a model field with a constant. But what if you want to compare
 the value of a model field with another field on the same model?
@@ -529,9 +563,18 @@ You can also use the double underscore notation to span relationships in
 an ``F()`` object. An ``F()`` object with a double underscore will introduce
 any joins needed to access the related object. For example, to retrieve all
 the entries where the author's name is the same as the blog name, we could
-issue the query:
+issue the query::
 
     >>> Entry.objects.filter(authors__name=F('blog__name'))
+
+.. versionadded:: 1.3
+
+For date and date/time fields, you can add or subtract a ``datetime.timedelta``
+object.  The following would return all entries that were modified more than 3 days
+after they were published::
+   
+    >>> from datetime import timedelta
+    >>> Entry.objects.filter(mod_date__gt=F('pub_date') + timedelta(days=3))
 
 The pk lookup shortcut
 ----------------------
@@ -636,6 +679,7 @@ collection of keyword arguments. These keyword arguments are specified as in
 
 For example, this ``Q`` object encapsulates a single ``LIKE`` query::
 
+    from django.db.models import Q
     Q(question__startswith='What')
 
 ``Q`` objects can be combined using the ``&`` and ``|`` operators. When an
@@ -696,7 +740,7 @@ precede the definition of any keyword arguments. For example::
     The `OR lookups examples`_ in the Django unit tests show some possible uses
     of ``Q``.
 
-    .. _OR lookups examples: http://code.djangoproject.com/browser/django/trunk/tests/modeltests/or_lookups/models.py
+    .. _OR lookups examples: http://code.djangoproject.com/browser/django/trunk/tests/modeltests/or_lookups/tests.py
 
 Comparing objects
 =================
@@ -744,14 +788,19 @@ model (e.g., by iterating over a ``QuerySet`` and calling ``delete()``
 on each object individually) rather than using the bulk ``delete()``
 method of a ``QuerySet``.
 
-When Django deletes an object, it emulates the behavior of the SQL
-constraint ``ON DELETE CASCADE`` -- in other words, any objects which
-had foreign keys pointing at the object to be deleted will be deleted
-along with it. For example::
+When Django deletes an object, by default it emulates the behavior of the SQL
+constraint ``ON DELETE CASCADE`` -- in other words, any objects which had
+foreign keys pointing at the object to be deleted will be deleted along with
+it. For example::
 
     b = Blog.objects.get(pk=1)
     # This will delete the Blog and all of its Entry objects.
     b.delete()
+
+.. versionadded:: 1.3
+    This cascade behavior is customizable via the
+    :attr:`~django.db.models.ForeignKey.on_delete` argument to the
+    :class:`~django.db.models.ForeignKey`.
 
 Note that ``delete()`` is the only ``QuerySet`` method that is not exposed on a
 ``Manager`` itself. This is a safety mechanism to prevent you from accidentally
@@ -765,8 +814,6 @@ complete query set::
 
 Updating multiple objects at once
 =================================
-
-.. versionadded:: 1.0
 
 Sometimes you want to set a field to a particular value for all the objects in
 a ``QuerySet``. You can do this with the ``update()`` method. For example::
@@ -806,8 +853,6 @@ Just loop over them and call ``save()``::
     for item in my_queryset:
         item.save()
 
-.. versionadded:: 1.1
-
 Calls to update can also use :ref:`F() objects <query-expressions>` to update
 one field based on the value of another field in the model. This is especially
 useful for incrementing counters based upon their current value. For example, to
@@ -822,6 +867,8 @@ a join with an ``F()`` object, a ``FieldError`` will be raised::
 
     # THIS WILL RAISE A FieldError
     >>> Entry.objects.update(headline=F('blog__name'))
+
+.. _topics-db-queries-related:
 
 Related objects
 ===============

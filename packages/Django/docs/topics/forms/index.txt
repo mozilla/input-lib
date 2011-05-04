@@ -5,8 +5,9 @@ Working with forms
 .. admonition:: About this document
 
     This document provides an introduction to Django's form handling features.
-    For a more detailed look at the forms API, see :doc:`/ref/forms/api`. For
-    documentation of the available field types, see :doc:`/ref/forms/fields`.
+    For a more detailed look at specific areas of the forms API, see
+    :doc:`/ref/forms/api`, :doc:`/ref/forms/fields`, and
+    :doc:`/ref/forms/validation`.
 
 .. highlightlang:: html+django
 
@@ -113,9 +114,6 @@ There are three code paths here:
     3. If the form has been submitted but is invalid, the bound form instance is
        passed on to the template.
 
-.. versionchanged:: 1.0
-    The ``cleaned_data`` attribute was called ``clean_data`` in earlier releases.
-
 The distinction between **bound** and **unbound** forms is important. An unbound
 form does not have any data associated with it; when rendered to the user, it
 will be empty or will contain default values. A bound form does have submitted
@@ -141,7 +139,11 @@ While you could access ``request.POST`` directly at this point, it is better to
 access ``form.cleaned_data``. This data has not only been validated but will
 also be converted in to the relevant Python types for you. In the above example,
 ``cc_myself`` will be a boolean value. Likewise, fields such as ``IntegerField``
-and ``FloatField`` convert values to a Python int and float respectively.
+and ``FloatField`` convert values to a Python int and float respectively. Note
+that read-only fields are not available in ``form.cleaned_data`` (and setting
+a value in a custom ``clean()`` method won't have any effect) because these
+fields are displayed as text rather than as input elements, and thus are not
+posted back to the server.
 
 Extending the above example, here's how the form data could be processed:
 
@@ -170,13 +172,22 @@ Forms are designed to work with the Django template language. In the above
 example, we passed our ``ContactForm`` instance to the template using the
 context variable ``form``. Here's a simple example template::
 
-    <form action="/contact/" method="post">
+    <form action="/contact/" method="post">{% csrf_token %}
     {{ form.as_p }}
     <input type="submit" value="Submit" />
     </form>
 
 The form only outputs its own fields; it is up to you to provide the surrounding
 ``<form>`` tags and the submit button.
+
+.. admonition:: Forms and Cross Site Request Forgery protection
+
+   Django ships with an easy-to-use :doc:`protection against Cross Site Request
+   Forgeries </ref/contrib/csrf>`. When submitting a form via POST with
+   CSRF protection enabled you must use the :ttag:`csrf_token` template tag
+   as in the preceding example. However, since CSRF protection is not
+   directly tied to forms in templates, this tag is omitted from the
+   following examples in this document.
 
 ``form.as_p`` will output the form with each form field and accompanying label
 wrapped in a paragraph. Here's the output for our example template::
@@ -210,6 +221,7 @@ the way a form is presented using the Django template language. Extending the
 above example::
 
     <form action="/contact/" method="post">
+        {{ form.non_field_errors }}
         <div class="fieldWrapper">
             {{ form.subject.errors }}
             <label for="id_subject">E-mail subject:</label>
@@ -343,10 +355,6 @@ error in a hidden field is a sign of form tampering, since normal form
 interaction won't alter them. However, you could easily insert some error
 displays for those form errors, as well.
 
-.. versionadded:: 1.1
-    The ``hidden_fields`` and ``visible_fields`` methods are new in Django
-    1.1.
-
 Reusable form templates
 -----------------------
 
@@ -369,12 +377,11 @@ using the :ttag:`include` tag to reuse it in other templates::
     {% endfor %}
 
 If the form object passed to a template has a different name within the
-context, you can alias it using the :ttag:`with` tag::
+context, you can alias it using the ``with`` argument of the :ttag:`include`
+tag::
 
     <form action="/comments/add/" method="post">
-        {% with comment_form as form %}
-            {% include "form_snippet.html" %}
-        {% endwith %}
+        {% include "form_snippet.html" with form=comment_form %}
         <p><input type="submit" value="Submit comment" /></p>
     </form>
 
@@ -387,12 +394,14 @@ Further topics
 This covers the basics, but forms can do a whole lot more:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   modelforms
    formsets
+   modelforms
    media
 
 .. seealso::
 
-    The :doc:`form API reference </ref/forms/index>`.
+    :doc:`The Forms Reference </ref/forms/index>`
+        Covers the full API reference, including form fields, form widgets,
+        and form and field validation.

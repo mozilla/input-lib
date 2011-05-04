@@ -1,32 +1,13 @@
 import datetime
+import pickle
 from decimal import Decimal
+from operator import attrgetter
 
 from django.core.exceptions import FieldError
-from django.conf import settings
-from django.test import TestCase, Approximate
-from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Count, Max, Avg, Sum, StdDev, Variance, F
+from django.db.models import Count, Max, Avg, Sum, StdDev, Variance, F, Q
+from django.test import TestCase, Approximate, skipUnlessDBFeature
 
-from regressiontests.aggregation_regress.models import *
-
-
-def run_stddev_tests():
-    """Check to see if StdDev/Variance tests should be run.
-
-    Stddev and Variance are not guaranteed to be available for SQLite, and
-    are not available for PostgreSQL before 8.2.
-    """
-    if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'] == 'django.db.backends.sqlite3':
-        return False
-
-    class StdDevPop(object):
-        sql_function = 'STDDEV_POP'
-
-    try:
-        connection.ops.check_aggregate_support(StdDevPop())
-    except:
-        return False
-    return True
+from models import Author, Book, Publisher, Clues, Entries, HardbackBook
 
 
 class AggregationTests(TestCase):
@@ -75,27 +56,27 @@ class AggregationTests(TestCase):
         qs2 = books.filter(id__in=list(qs))
         self.assertEqual(list(qs1), list(qs2))
 
-    if settings.DATABASES[DEFAULT_DB_ALIAS]['ENGINE'] != 'django.db.backends.oracle':
-        def test_annotate_with_extra(self):
-            """
-            Regression test for #11916: Extra params + aggregation creates
-            incorrect SQL.
-            """
-            #oracle doesn't support subqueries in group by clause
-            shortest_book_sql = """
-            SELECT name
-            FROM aggregation_regress_book b
-            WHERE b.publisher_id = aggregation_regress_publisher.id
-            ORDER BY b.pages
-            LIMIT 1
-            """
-            # tests that this query does not raise a DatabaseError due to the full
-            # subselect being (erroneously) added to the GROUP BY parameters
-            qs = Publisher.objects.extra(select={
-                'name_of_shortest_book': shortest_book_sql,
-            }).annotate(total_books=Count('book'))
-            # force execution of the query
-            list(qs)
+    @skipUnlessDBFeature('supports_subqueries_in_group_by')
+    def test_annotate_with_extra(self):
+        """
+        Regression test for #11916: Extra params + aggregation creates
+        incorrect SQL.
+        """
+        #oracle doesn't support subqueries in group by clause
+        shortest_book_sql = """
+        SELECT name
+        FROM aggregation_regress_book b
+        WHERE b.publisher_id = aggregation_regress_publisher.id
+        ORDER BY b.pages
+        LIMIT 1
+        """
+        # tests that this query does not raise a DatabaseError due to the full
+        # subselect being (erroneously) added to the GROUP BY parameters
+        qs = Publisher.objects.extra(select={
+            'name_of_shortest_book': shortest_book_sql,
+        }).annotate(total_books=Count('book'))
+        # force execution of the query
+        list(qs)
 
     def test_aggregate(self):
         # Ordering requests are ignored
@@ -481,11 +462,49 @@ class AggregationTests(TestCase):
             lambda b: b.name
         )
 
+    def test_duplicate_alias(self):
+        # Regression for #11256 - duplicating a default alias raises ValueError.
+        self.assertRaises(ValueError, Book.objects.all().annotate, Avg('authors__age'), authors__age__avg=Avg('authors__age'))
+
+    def test_field_name_conflict(self):
+        # Regression for #11256 - providing an aggregate name that conflicts with a field name on the model raises ValueError
+        self.assertRaises(ValueError, Author.objects.annotate, age=Avg('friends__age'))
+
+    def test_m2m_name_conflict(self):
+        # Regression for #11256 - providing an aggregate name that conflicts with an m2m name on the model raises ValueError
+        self.assertRaises(ValueError, Author.objects.annotate, friends=Count('friends'))
+
+    def test_values_queryset_non_conflict(self):
+        # Regression for #14707 -- If you're using a values query set, some potential conflicts are avoided.
+
+        # age is a field on Author, so it shouldn't be allowed as an aggregate.
+        # But age isn't included in the ValuesQuerySet, so it is.
+        results = Author.objects.values('name').annotate(age=Count('book_contact_set')).order_by('name')
+        self.assertEqual(len(results), 9)
+        self.assertEqual(results[0]['name'], u'Adrian Holovaty')
+        self.assertEqual(results[0]['age'], 1)
+
+        # Same problem, but aggregating over m2m fields
+        results = Author.objects.values('name').annotate(age=Avg('friends__age')).order_by('name')
+        self.assertEqual(len(results), 9)
+        self.assertEqual(results[0]['name'], u'Adrian Holovaty')
+        self.assertEqual(results[0]['age'], 32.0)
+
+        # Same problem, but colliding with an m2m field
+        results = Author.objects.values('name').annotate(friends=Count('friends')).order_by('name')
+        self.assertEqual(len(results), 9)
+        self.assertEqual(results[0]['name'], u'Adrian Holovaty')
+        self.assertEqual(results[0]['friends'], 2)
+
+    def test_reverse_relation_name_conflict(self):
+        # Regression for #11256 - providing an aggregate name that conflicts with a reverse-related name on the model raises ValueError
+        self.assertRaises(ValueError, Author.objects.annotate, book_contact_set=Avg('friends__age'))
+
     def test_pickle(self):
         # Regression for #10197 -- Queries with aggregates can be pickled.
         # First check that pickling is possible at all. No crash = success
         qs = Book.objects.annotate(num_authors=Count('authors'))
-        out = pickle.dumps(qs)
+        pickle.dumps(qs)
 
         # Then check that the round trip works.
         query = qs.query.get_compiler(qs.db).as_sql()[0]
@@ -549,12 +568,12 @@ class AggregationTests(TestCase):
         )
 
         publishers = Publisher.objects.filter(id__in=[1, 2])
-        self.assertQuerysetEqual(
-            publishers, [
+        self.assertEqual(
+            sorted(p.name for p in publishers),
+            [
                 "Apress",
                 "Sams"
-            ],
-            lambda p: p.name
+            ]
         )
 
         publishers = publishers.annotate(n_books=Count("book"))
@@ -563,12 +582,12 @@ class AggregationTests(TestCase):
             2
         )
 
-        self.assertQuerysetEqual(
-            publishers, [
+        self.assertEqual(
+            sorted(p.name for p in publishers),
+            [
                 "Apress",
-                "Sams",
-            ],
-            lambda p: p.name
+                "Sams"
+            ]
         )
 
         books = Book.objects.filter(publisher__in=publishers)
@@ -580,12 +599,12 @@ class AggregationTests(TestCase):
             ],
             lambda b: b.name
         )
-        self.assertQuerysetEqual(
-            publishers, [
+        self.assertEqual(
+            sorted(p.name for p in publishers),
+            [
                 "Apress",
-                "Sams",
-            ],
-            lambda p: p.name
+                "Sams"
+            ]
         )
 
         # Regression for 10666 - inherited fields work with annotations and
@@ -625,64 +644,180 @@ class AggregationTests(TestCase):
             lambda: Book.objects.annotate(mean_age=Avg('authors__age')).annotate(Avg('mean_age'))
         )
 
-    if run_stddev_tests():
-        def test_stddev(self):
-            self.assertEqual(
-                Book.objects.aggregate(StdDev('pages')),
-                {'pages__stddev': Approximate(311.46, 1)}
-            )
+    def test_empty_filter_count(self):
+        self.assertEqual(
+            Author.objects.filter(id__in=[]).annotate(Count("friends")).count(),
+            0
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(StdDev('rating')),
-                {'rating__stddev': Approximate(0.60, 1)}
-            )
+    def test_empty_filter_aggregate(self):
+        self.assertEqual(
+            Author.objects.filter(id__in=[]).annotate(Count("friends")).aggregate(Count("pk")),
+            {"pk__count": None}
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(StdDev('price')),
-                {'price__stddev': Approximate(24.16, 2)}
-            )
+    def test_annotate_and_join(self):
+        self.assertEqual(
+            Author.objects.annotate(c=Count("friends__name")).exclude(friends__name="Joe").count(),
+            Author.objects.count()
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(StdDev('pages', sample=True)),
-                {'pages__stddev': Approximate(341.19, 2)}
-            )
+    def test_f_expression_annotation(self):
+        # Books with less than 200 pages per author.
+        qs = Book.objects.values("name").annotate(
+            n_authors=Count("authors")
+        ).filter(
+            pages__lt=F("n_authors") * 200
+        ).values_list("pk")
+        self.assertQuerysetEqual(
+            Book.objects.filter(pk__in=qs), [
+                "Python Web Development with Django"
+            ],
+            attrgetter("name")
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(StdDev('rating', sample=True)),
-                {'rating__stddev': Approximate(0.66, 2)}
-            )
+    def test_values_annotate_values(self):
+        qs = Book.objects.values("name").annotate(
+            n_authors=Count("authors")
+        ).values_list("pk", flat=True)
+        self.assertEqual(list(qs), list(Book.objects.values_list("pk", flat=True)))
 
-            self.assertEqual(
-                Book.objects.aggregate(StdDev('price', sample=True)),
-                {'price__stddev': Approximate(26.46, 1)}
-            )
+    def test_having_group_by(self):
+        # Test that when a field occurs on the LHS of a HAVING clause that it
+        # appears correctly in the GROUP BY clause
+        qs = Book.objects.values_list("name").annotate(
+            n_authors=Count("authors")
+        ).filter(
+            pages__gt=F("n_authors")
+        ).values_list("name", flat=True)
+        # Results should be the same, all Books have more pages than authors
+        self.assertEqual(
+            list(qs), list(Book.objects.values_list("name", flat=True))
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(Variance('pages')),
-                {'pages__variance': Approximate(97010.80, 1)}
-            )
+    def test_annotation_disjunction(self):
+        qs = Book.objects.annotate(n_authors=Count("authors")).filter(
+            Q(n_authors=2) | Q(name="Python Web Development with Django")
+        )
+        self.assertQuerysetEqual(
+            qs, [
+                "Artificial Intelligence: A Modern Approach",
+                "Python Web Development with Django",
+                "The Definitive Guide to Django: Web Development Done Right",
+            ],
+            attrgetter("name")
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(Variance('rating')),
-                {'rating__variance': Approximate(0.36, 1)}
-            )
+        qs = Book.objects.annotate(n_authors=Count("authors")).filter(
+            Q(name="The Definitive Guide to Django: Web Development Done Right") | (Q(name="Artificial Intelligence: A Modern Approach") & Q(n_authors=3))
+        )
+        self.assertQuerysetEqual(
+            qs, [
+                "The Definitive Guide to Django: Web Development Done Right",
+            ],
+            attrgetter("name")
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(Variance('price')),
-                {'price__variance': Approximate(583.77, 1)}
-            )
+        qs = Publisher.objects.annotate(
+            rating_sum=Sum("book__rating"),
+            book_count=Count("book")
+        ).filter(
+            Q(rating_sum__gt=5.5) | Q(rating_sum__isnull=True)
+        ).order_by('pk')
+        self.assertQuerysetEqual(
+            qs, [
+                "Apress",
+                "Prentice Hall",
+                "Jonno's House of Books",
+            ],
+            attrgetter("name")
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(Variance('pages', sample=True)),
-                {'pages__variance': Approximate(116412.96, 1)}
-            )
+        qs = Publisher.objects.annotate(
+            rating_sum=Sum("book__rating"),
+            book_count=Count("book")
+        ).filter(
+            Q(pk__lt=F("book_count")) | Q(rating_sum=None)
+        ).order_by("pk")
+        self.assertQuerysetEqual(
+            qs, [
+                "Apress",
+                "Jonno's House of Books",
+            ],
+            attrgetter("name")
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(Variance('rating', sample=True)),
-                {'rating__variance': Approximate(0.44, 2)}
-            )
+    def test_quoting_aggregate_order_by(self):
+        qs = Book.objects.filter(
+            name="Python Web Development with Django"
+        ).annotate(
+            authorCount=Count("authors")
+        ).order_by("authorCount")
+        self.assertQuerysetEqual(
+            qs, [
+                ("Python Web Development with Django", 3),
+            ],
+            lambda b: (b.name, b.authorCount)
+        )
 
-            self.assertEqual(
-                Book.objects.aggregate(Variance('price', sample=True)),
-                {'price__variance': Approximate(700.53, 2)}
-            )
+    @skipUnlessDBFeature('supports_stddev')
+    def test_stddev(self):
+        self.assertEqual(
+            Book.objects.aggregate(StdDev('pages')),
+            {'pages__stddev': Approximate(311.46, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(StdDev('rating')),
+            {'rating__stddev': Approximate(0.60, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(StdDev('price')),
+            {'price__stddev': Approximate(24.16, 2)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(StdDev('pages', sample=True)),
+            {'pages__stddev': Approximate(341.19, 2)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(StdDev('rating', sample=True)),
+            {'rating__stddev': Approximate(0.66, 2)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(StdDev('price', sample=True)),
+            {'price__stddev': Approximate(26.46, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(Variance('pages')),
+            {'pages__variance': Approximate(97010.80, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(Variance('rating')),
+            {'rating__variance': Approximate(0.36, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(Variance('price')),
+            {'price__variance': Approximate(583.77, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(Variance('pages', sample=True)),
+            {'pages__variance': Approximate(116412.96, 1)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(Variance('rating', sample=True)),
+            {'rating__variance': Approximate(0.44, 2)}
+        )
+
+        self.assertEqual(
+            Book.objects.aggregate(Variance('price', sample=True)),
+            {'price__variance': Approximate(700.53, 2)}
+        )

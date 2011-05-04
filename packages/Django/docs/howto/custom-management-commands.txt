@@ -2,8 +2,6 @@
 Writing custom django-admin commands
 ====================================
 
-.. versionadded:: 1.0
-
 Applications can register their own actions with ``manage.py``. For example,
 you might want to add a ``manage.py`` action for a Django app that you're
 distributing. In this document, we will be building a custom ``closepoll``
@@ -60,7 +58,14 @@ look like this:
                 poll.opened = False
                 poll.save()
 
-                print 'Successfully closed poll "%s"' % poll_id
+                self.stdout.write('Successfully closed poll "%s"\n' % poll_id)
+
+.. note::
+    When you are using management commands and wish to provide console
+    output, you should write to ``self.stdout`` and ``self.stderr``,
+    instead of printing to ``stdout`` and ``stderr`` directly. By
+    using these proxies, it becomes much easier to test your custom
+    command.
 
 The new custom command can be called using ``python manage.py closepoll
 <poll_id>``.
@@ -92,6 +97,55 @@ must be added to :attr:`~BaseCommand.option_list` like this:
 In addition to being able to add custom command line options, all
 :doc:`management commands</ref/django-admin>` can accept some
 default options such as :djadminopt:`--verbosity` and :djadminopt:`--traceback`.
+
+.. admonition:: Management commands and locales
+
+    The :meth:`BaseCommand.execute` method sets the hardcoded ``en-us`` locale
+    because the commands shipped with Django perform several tasks
+    (for example, user-facing content rendering and database population) that
+    require a system-neutral string language (for which we use ``en-us``).
+
+    If your custom management command uses another locale, you should manually
+    activate and deactivate it in your :meth:`~BaseCommand.handle` or
+    :meth:`~NoArgsCommand.handle_noargs` method using the functions provided by
+    the I18N support code:
+
+    .. code-block:: python
+
+        from django.core.management.base import BaseCommand, CommandError
+        from django.utils import translation
+
+        class Command(BaseCommand):
+            ...
+            self.can_import_settings = True
+
+            def handle(self, *args, **options):
+
+                # Activate a fixed locale, e.g. Russian
+                translation.activate('ru')
+
+                # Or you can activate the LANGUAGE_CODE
+                # chosen in the settings:
+                #
+                #from django.conf import settings
+                #translation.activate(settings.LANGUAGE_CODE)
+
+                # Your command logic here
+                # ...
+
+                translation.deactivate()
+
+    Take into account though, that system management commands typically have to
+    be very careful about running in non-uniform locales, so:
+
+    * Make sure the :setting:`USE_I18N` setting is always ``True`` when running
+      the command (this is one good example of the potential problems stemming
+      from a dynamic runtime environment that Django commands avoid offhand by
+      always using a fixed locale).
+
+    * Review the code of your command and the code it calls for behavioral
+      differences when locales are changed and evaluate its impact on
+      predictable behavior of your command.
 
 Command objects
 ===============

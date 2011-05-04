@@ -39,6 +39,7 @@ Countries currently supported by :mod:`~django.contrib.localflavor` are:
     * Argentina_
     * Australia_
     * Austria_
+    * Belgium_
     * Brazil_
     * Canada_
     * Chile_
@@ -50,6 +51,7 @@ Countries currently supported by :mod:`~django.contrib.localflavor` are:
     * India_
     * Indonesia_
     * Ireland_
+    * Israel_
     * Italy_
     * Japan_
     * Kuwait_
@@ -65,6 +67,7 @@ Countries currently supported by :mod:`~django.contrib.localflavor` are:
     * Spain_
     * Sweden_
     * Switzerland_
+    * Turkey_
     * `United Kingdom`_
     * `United States of America`_
     * Uruguay_
@@ -85,6 +88,7 @@ Here's an example of how to use them::
 .. _Argentina: `Argentina (ar)`_
 .. _Australia: `Australia (au)`_
 .. _Austria: `Austria (at)`_
+.. _Belgium: `Belgium (be)`_
 .. _Brazil: `Brazil (br)`_
 .. _Canada: `Canada (ca)`_
 .. _Chile: `Chile (cl)`_
@@ -97,6 +101,7 @@ Here's an example of how to use them::
 .. _India: `India (in\_)`_
 .. _Indonesia: `Indonesia (id)`_
 .. _Ireland: `Ireland (ie)`_
+.. _Israel: `Israel (il)`_
 .. _Italy: `Italy (it)`_
 .. _Japan: `Japan (jp)`_
 .. _Kuwait: `Kuwait (kw)`_
@@ -111,6 +116,7 @@ Here's an example of how to use them::
 .. _Spain: `Spain (es)`_
 .. _Sweden: `Sweden (se)`_
 .. _Switzerland: `Switzerland (ch)`_
+.. _Turkey: `Turkey (tr)`_
 .. _United Kingdom: `United Kingdom (uk)`_
 .. _United States of America: `United States of America (us)`_
 .. _Uruguay: `Uruguay (uy)`_
@@ -124,6 +130,35 @@ Unicode objects (``u'mystring'``) for strings, rather than setting the encoding
 in the file. See any of the existing flavors for examples.
 
 .. _create a ticket: http://code.djangoproject.com/simpleticket
+
+Localflavor and backwards compatibility
+=======================================
+
+As documented in our :ref:`API stability
+<misc-api-stability-localflavor>` policy, Django will always attempt
+to make :mod:`django.contrib.localflavor` reflect the officially
+gazetted policies of the appropriate local government authority. For
+example, if a government body makes a change to add, alter, or remove
+a province (or state, or county), that change will be reflected in
+Django's localflavor in the next stable Django release.
+
+When a backwards-incompatible change is made (for example, the removal
+or renaming of a province) the localflavor in question will raise a
+warning when that localflavor is imported. This provides a runtime
+indication that something may require attention.
+
+However, once you have addressed the backwards compatibility (for
+example, auditing your code to see if any data migration is required),
+the warning serves no purpose. The warning can then be supressed.
+For example, to suppress the warnings raised by the Indonesian
+localflavor you would use the following code::
+
+    import warnings
+    warnings.filterwarnings('ignore',
+                            category=RuntimeWarning,
+                            module='django.contrib.localflavor.id')
+    from django.contrib.localflavor.id import forms as id_forms
+
 
 Argentina (``ar``)
 =============================================
@@ -182,6 +217,33 @@ Austria (``at``)
 
     A form field that validates its input as an Austrian social security number.
 
+Belgium (``be``)
+================
+
+.. versionadded:: 1.3
+
+.. class:: be.forms.BEPhoneNumberField
+
+    A form field that validates input as a Belgium phone number, with one of
+    the formats 0x xxx xx xx, 0xx xx xx xx, 04xx xx xx xx, 0x/xxx.xx.xx,
+    0xx/xx.xx.xx, 04xx/xx.xx.xx, 0x.xxx.xx.xx, 0xx.xx.xx.xx, 04xx.xx.xx.xx,
+    0xxxxxxxx or 04xxxxxxxx.
+
+.. class:: be.forms.BEPostalCodeField
+
+    A form field that validates input as a Belgium postal code, in the range
+    and format 1XXX-9XXX.
+
+.. class:: be.forms.BEProvinceSelect
+
+    A ``Select`` widget that uses a list of Belgium provinces as its
+    choices.
+
+.. class:: be.forms.BERegionSelect
+
+    A ``Select`` widget that uses a list of Belgium regions as its
+    choices.
+
 Brazil (``br``)
 ===============
 
@@ -199,6 +261,23 @@ Brazil (``br``)
 
     A ``Select`` widget that uses a list of Brazilian states/territories as its
     choices.
+
+.. class:: br.forms.BRCPFField
+
+    A form field that validates input as `Brazilian CPF`_.
+
+    Input can either be of the format XXX.XXX.XXX-VD or be a group of 11 digits.
+
+.. _Brazilian CPF: http://en.wikipedia.org/wiki/Cadastro_de_Pessoas_F%C3%ADsicas
+
+.. class:: br.forms.BRCNPJField
+
+    A form field that validates input as `Brazilian CNPJ`_.
+
+    Input can either be of the format XX.XXX.XXX/XXXX-XX or be a group of 14
+    digits.
+
+.. _Brazilian CNPJ: http://en.wikipedia.org/wiki/National_identification_number#Brazil
 
 Canada (``ca``)
 ===============
@@ -395,6 +474,11 @@ Indonesia (``id``)
 
     A ``Select`` widget that uses a list of Indonesian provinces as its choices.
 
+.. versionchanged:: 1.3
+    The province "Nanggroe Aceh Darussalam (NAD)" has been removed
+    from the province list in favor of the new official designation
+    "Aceh (ACE)".
+
 .. class:: id.forms.IDPhoneNumberField
 
     A form field that validates input as an Indonesian telephone number.
@@ -416,6 +500,28 @@ Indonesia (``id``)
     down the numbers.
 
 .. _NIK: http://en.wikipedia.org/wiki/Indonesian_identity_card
+
+Israel (``il``)
+===============
+
+.. class:: il.forms.ILPostalCodeField
+
+    A form field that validates its input as an Israeli five-digit postal code.
+
+.. class:: il.forms.ILIDNumberField
+
+    A form field that validates its input as an `Israeli identification number`_.
+    The output will be in the format of a 2-9 digit number, consisting of a
+    1-8 digit ID number followed by a single checksum digit, calculated using
+    the `Luhn algorithm`_.
+
+    Input may contain an optional hyphen separating the ID number from the checksum
+    digit.
+
+.. _Israeli identification number: http://he.wikipedia.org/wiki/%D7%9E%D7%A1%D7%A4%D7%A8_%D7%96%D7%94%D7%95%D7%AA_(%D7%99%D7%A9%D7%A8%D7%90%D7%9C)
+.. _Luhn algorithm: http://en.wikipedia.org/wiki/Luhn_algorithm
+
+
 
 Italy (``it``)
 ==============
@@ -749,6 +855,35 @@ Switzerland (``ch``)
 
     A ``Select`` widget that uses a list of Swiss states as its choices.
 
+Turkey (``tr``)
+===============
+
+.. class:: tr.forms.TRZipCodeField
+
+    A form field that validates input as a Turkish zip code. Valid codes
+    consist of five digits.
+
+.. class:: tr.forms.TRPhoneNumberField
+
+    A form field that validates input as a Turkish phone number. The correct
+    format is 0xxx xxx xxxx. +90xxx xxx xxxx and inputs without spaces also
+    validates. The result is normalized to xxx xxx xxxx format.
+
+.. class:: tr.forms.TRIdentificationNumberField
+
+    A form field that validates input as a TR identification number. A valid
+    number must satisfy the following:
+
+    * The number consist of 11 digits.
+    * The first digit cannot be 0.
+    * (sum(1st, 3rd, 5th, 7th, 9th)*7 - sum(2nd,4th,6th,8th)) % 10) must be
+      equal to the 10th digit.
+    * (sum(1st to 10th) % 10) must be equal to the 11th digit.
+
+.. class:: tr.forms.TRProvinceSelect
+
+    A ``select`` widget that uses a list of Turkish provinces as its choices.
+
 United Kingdom (``uk``)
 =======================
 
@@ -802,6 +937,11 @@ United States of America (``us``)
     A form ``Select`` widget that uses a list of U.S. states/territories as its
     choices.
 
+.. class:: us.forms.USPSSelect
+
+    A form ``Select`` widget that uses a list of U.S Postal Service
+    state, territory and country abbreviations as its choices.
+
 .. class:: us.models.PhoneNumberField
 
     A :class:`CharField` that checks that the value is a valid U.S.A.-style phone
@@ -811,6 +951,66 @@ United States of America (``us``)
 
     A model field that forms represent as a ``forms.USStateField`` field and
     stores the two-letter U.S. state abbreviation in the database.
+
+.. class:: us.models.USPostalCodeField
+
+    A model field that forms represent as a ``forms.USPSSelect`` field
+    and stores the two-letter U.S Postal Service abbreviation in the
+    database.
+
+Additionally, a variety of choice tuples are provided in
+``django.contrib.localflavor.us.us_states``, allowing customized model
+and form fields, and form presentations, for subsets of U.S states,
+territories and U.S Postal Service abbreviations:
+
+.. data:: us.us_states.CONTIGUOUS_STATES
+
+    A tuple of choices of the postal abbreviations for the
+    contiguous or "lower 48" states (i.e., all except Alaska and
+    Hawaii), plus the District of Columbia.
+
+.. data:: us.us_states.US_STATES
+
+    A tuple of choices of the postal abbreviations for all
+    50 U.S. states, plus the District of Columbia.
+
+.. data:: us.us_states.US_TERRITORIES
+
+    A tuple of choices of the postal abbreviations for U.S
+    territories: American Samoa, Guam, the Northern Mariana Islands,
+    Puerto Rico and the U.S. Virgin Islands.
+
+.. data:: us.us_states.ARMED_FORCES_STATES
+
+    A tuple of choices of the postal abbreviations of the three U.S
+    military postal "states": Armed Forces Americas, Armed Forces
+    Europe and Armed Forces Pacific.
+
+.. data:: us.us_states.COFA_STATES
+
+    A tuple of choices of the postal abbreviations of the three
+    independent nations which, under the Compact of Free Association,
+    are served by the U.S. Postal Service: the Federated States of
+    Micronesia, the Marshall Islands and Palau.
+
+.. data:: us.us_states.OBSOLETE_STATES
+
+    A tuple of choices of obsolete U.S Postal Service state
+    abbreviations: the former abbreviation for the Northern Mariana
+    Islands, plus the Panama Canal Zone, the Philippines and the
+    former Pacific trust territories.
+
+.. data:: us.us_states.STATE_CHOICES
+
+    A tuple of choices of all postal abbreviations corresponding to U.S states or
+    territories, and the District of Columbia..
+
+.. data:: us.us_states.USPS_CHOICES
+
+    A tuple of choices of all postal abbreviations recognized by the
+    U.S Postal Service (including all states and territories, the
+    District of Columbia, armed forces "states" and independent
+    nations serviced by USPS).
 
 Uruguay (``uy``)
 ================

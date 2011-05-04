@@ -9,16 +9,20 @@ from django.conf import settings
 if __name__ == '__main__':
     settings.configure()
 
-import unittest
 import sys
 import pkg_resources
 import imp
 import StringIO
 import os.path
+import warnings
 
 from django.template import TemplateDoesNotExist, Context
 from django.template.loaders.eggs import load_template_source as lts_egg
+from django.template.loaders.eggs import Loader as EggLoader
 from django.template import loader
+from django.test.utils import get_warnings_state, restore_warnings_state
+from django.utils import unittest
+
 
 # Mock classes and objects for pkg_resources functions.
 class MockProvider(pkg_resources.NullProvider):
@@ -53,7 +57,35 @@ def create_egg(name, resources):
     egg._resources = resources
     sys.modules[name] = egg
 
-class EggLoader(unittest.TestCase):
+class DeprecatedEggLoaderTest(unittest.TestCase):
+    "Test the deprecated load_template_source interface to the egg loader"
+    def setUp(self):
+        pkg_resources._provider_factories[MockLoader] = MockProvider
+
+        self.empty_egg = create_egg("egg_empty", {})
+        self.egg_1 = create_egg("egg_1", {
+            os.path.normcase('templates/y.html') : StringIO.StringIO("y"),
+            os.path.normcase('templates/x.txt') : StringIO.StringIO("x"),
+        })
+        self._old_installed_apps = settings.INSTALLED_APPS
+        settings.INSTALLED_APPS = []
+        self._warnings_state = get_warnings_state()
+        warnings.filterwarnings("ignore", category=DeprecationWarning,
+                                module='django.template.loaders.eggs')
+
+    def tearDown(self):
+        settings.INSTALLED_APPS = self._old_installed_apps
+        restore_warnings_state(self._warnings_state)
+
+    def test_existing(self):
+        "A template can be loaded from an egg"
+        settings.INSTALLED_APPS = ['egg_1']
+        contents, template_name = lts_egg("y.html")
+        self.assertEqual(contents, "y")
+        self.assertEqual(template_name, "egg:egg_1:templates/y.html")
+
+
+class EggLoaderTest(unittest.TestCase):
     def setUp(self):
         pkg_resources._provider_factories[MockLoader] = MockProvider
 
@@ -71,24 +103,28 @@ class EggLoader(unittest.TestCase):
     def test_empty(self):
         "Loading any template on an empty egg should fail"
         settings.INSTALLED_APPS = ['egg_empty']
-        self.assertRaises(TemplateDoesNotExist, lts_egg, "not-existing.html")
+        egg_loader = EggLoader()
+        self.assertRaises(TemplateDoesNotExist, egg_loader.load_template_source, "not-existing.html")
 
     def test_non_existing(self):
         "Template loading fails if the template is not in the egg"
         settings.INSTALLED_APPS = ['egg_1']
-        self.assertRaises(TemplateDoesNotExist, lts_egg, "not-existing.html")
+        egg_loader = EggLoader()
+        self.assertRaises(TemplateDoesNotExist, egg_loader.load_template_source, "not-existing.html")
 
     def test_existing(self):
         "A template can be loaded from an egg"
         settings.INSTALLED_APPS = ['egg_1']
-        contents, template_name = lts_egg("y.html")
+        egg_loader = EggLoader()
+        contents, template_name = egg_loader.load_template_source("y.html")
         self.assertEqual(contents, "y")
         self.assertEqual(template_name, "egg:egg_1:templates/y.html")
 
     def test_not_installed(self):
         "Loading an existent template from an egg not included in INSTALLED_APPS should fail"
         settings.INSTALLED_APPS = []
-        self.assertRaises(TemplateDoesNotExist, lts_egg, "y.html")
+        egg_loader = EggLoader()
+        self.assertRaises(TemplateDoesNotExist, egg_loader.load_template_source, "y.html")
 
 class CachedLoader(unittest.TestCase):
     def setUp(self):
@@ -111,6 +147,31 @@ class CachedLoader(unittest.TestCase):
 
         # The two templates should not have the same content
         self.assertNotEqual(t1.render(Context({})), t2.render(Context({})))
+
+class RenderToStringTest(unittest.TestCase):
+
+    def setUp(self):
+        self._old_TEMPLATE_DIRS = settings.TEMPLATE_DIRS
+        settings.TEMPLATE_DIRS = (
+            os.path.join(os.path.dirname(__file__), 'templates'),
+        )
+
+    def tearDown(self):
+        settings.TEMPLATE_DIRS = self._old_TEMPLATE_DIRS
+
+    def test_basic(self):
+        self.assertEqual(loader.render_to_string('test_context.html'), 'obj:')
+
+    def test_basic_context(self):
+        self.assertEqual(loader.render_to_string('test_context.html',
+                                                 {'obj': 'test'}), 'obj:test')
+
+    def test_existing_context_kept_clean(self):
+        context = Context({'obj': 'before'})
+        output = loader.render_to_string('test_context.html', {'obj': 'after'},
+                                         context_instance=context)
+        self.assertEqual(output, 'obj:after')
+        self.assertEqual(context['obj'], 'before')
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,18 +1,19 @@
-from unittest import TestCase
 from sys import version_info
 try:
     from functools import wraps
 except ImportError:
     from django.utils.functional import wraps  # Python 2.4 fallback.
 
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, HttpRequest
+from django.utils.decorators import method_decorator
 from django.utils.functional import allow_lazy, lazy, memoize
+from django.utils.unittest import TestCase
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from django.views.decorators.vary import vary_on_headers, vary_on_cookie
 from django.views.decorators.cache import cache_page, never_cache, cache_control
-from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
-from django.contrib.admin.views.decorators import staff_member_required
+
 
 def fully_decorated(request):
     """Expected __doc__"""
@@ -55,12 +56,9 @@ class DecoratorsTest(TestCase):
         Tests that django decorators set certain attributes of the wrapped
         function.
         """
-        # Only check __name__ on Python 2.4 or later since __name__ can't be
-        # assigned to in earlier Python versions.
-        if version_info[0] >= 2 and version_info[1] >= 4:
-            self.assertEquals(fully_decorated.__name__, 'fully_decorated')
-        self.assertEquals(fully_decorated.__doc__, 'Expected __doc__')
-        self.assertEquals(fully_decorated.__dict__['anything'], 'Expected __dict__')
+        self.assertEqual(fully_decorated.__name__, 'fully_decorated')
+        self.assertEqual(fully_decorated.__doc__, 'Expected __doc__')
+        self.assertEqual(fully_decorated.__dict__['anything'], 'Expected __dict__')
 
     def test_user_passes_test_composition(self):
         """
@@ -70,25 +68,25 @@ class DecoratorsTest(TestCase):
         def test1(user):
             user.decorators_applied.append('test1')
             return True
-            
+
         def test2(user):
             user.decorators_applied.append('test2')
             return True
-            
+
         def callback(request):
             return request.user.decorators_applied
 
         callback = user_passes_test(test1)(callback)
         callback = user_passes_test(test2)(callback)
-        
+
         class DummyUser(object): pass
         class DummyRequest(object): pass
-        
+
         request = DummyRequest()
         request.user = DummyUser()
         request.user.decorators_applied = []
         response = callback(request)
-        
+
         self.assertEqual(response, ['test2', 'test1'])
 
     def test_cache_page_new_style(self):
@@ -112,6 +110,10 @@ class DecoratorsTest(TestCase):
         self.assertEqual(my_view_cached(HttpRequest()), "response")
         my_view_cached2 = cache_page(my_view, 123, key_prefix="test")
         self.assertEqual(my_view_cached2(HttpRequest()), "response")
+        my_view_cached3 = cache_page(my_view)
+        self.assertEqual(my_view_cached3(HttpRequest()), "response")
+        my_view_cached4 = cache_page()(my_view)
+        self.assertEqual(my_view_cached4(HttpRequest()), "response")
 
 
 # For testing method_decorator, a decorator that assumes a single argument.
@@ -124,14 +126,60 @@ def simple_dec(func):
 simple_dec_m = method_decorator(simple_dec)
 
 
+# For testing method_decorator, two decorators that add an attribute to the function
+def myattr_dec(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    wrapper.myattr = True
+    return wraps(func)(wrapper)
+
+myattr_dec_m = method_decorator(myattr_dec)
+
+
+def myattr2_dec(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    wrapper.myattr2 = True
+    return wraps(func)(wrapper)
+
+myattr2_dec_m = method_decorator(myattr2_dec)
+
+
 class MethodDecoratorTests(TestCase):
     """
     Tests for method_decorator
     """
-    def test_method_decorator(self):
+    def test_preserve_signature(self):
         class Test(object):
             @simple_dec_m
             def say(self, arg):
                 return arg
 
         self.assertEqual("test:hello", Test().say("hello"))
+
+    def test_preserve_attributes(self):
+        # Sanity check myattr_dec and myattr2_dec
+        @myattr_dec
+        @myattr2_dec
+        def func():
+            pass
+
+        self.assertEqual(getattr(func, 'myattr', False), True)
+        self.assertEqual(getattr(func, 'myattr2', False), True)
+
+        # Now check method_decorator
+        class Test(object):
+            @myattr_dec_m
+            @myattr2_dec_m
+            def method(self):
+                "A method"
+                pass
+
+        self.assertEqual(getattr(Test().method, 'myattr', False), True)
+        self.assertEqual(getattr(Test().method, 'myattr2', False), True)
+
+        self.assertEqual(getattr(Test.method, 'myattr', False), True)
+        self.assertEqual(getattr(Test.method, 'myattr2', False), True)
+
+        self.assertEqual(Test.method.__doc__, 'A method')
+        self.assertEqual(Test.method.im_func.__name__, 'method')

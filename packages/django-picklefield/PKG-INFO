@@ -1,8 +1,8 @@
 Metadata-Version: 1.0
 Name: django-picklefield
-Version: 0.1.6
+Version: 0.1.9
 Summary: Pickled object field for Django
-Home-page: http://github.com/shrubberysoft/django-picklefield
+Home-page: http://github.com/gintas/django-picklefield
 Author: Gintautas Miliauskas
 Author-email: gintautas@miliauskas.lt
 License: UNKNOWN
@@ -13,9 +13,9 @@ Description: -----
         **django-picklefield** provides an implementation of a pickled object field.
         Such fields can contain any picklable objects.
         
-        The implementation is taken and adopted from `Django snippet #1694
-        <http://www.djangosnippets.org/snippets/1694/>`_ by Taavi Taijala, which is in
-        turn based on `Django snippet #513 <http://www.djangosnippets.org/snippets/513/>`_
+        The implementation is taken and adopted from Django snippet #1694
+        <http://www.djangosnippets.org/snippets/1694/> by Taavi Taijala, which is in
+        turn based on Django snippet #513 <http://www.djangosnippets.org/snippets/513/>
         by Oliver Beattie.
         
         django-picklefield is available under the MIT license.
@@ -30,15 +30,15 @@ Description: -----
         
         To use, just define a field in your model::
         
-        >>> from picklefield.fields import PickledObjectField
-        ... class SomeObject(models.Model):
-        ...     args = PickledObjectField()
+            >>> from picklefield.fields import PickledObjectField
+            ... class SomeObject(models.Model):
+            ...     args = PickledObjectField()
         
         and assign whatever you like (as long as it's picklable) to the field::
         
-        >>> obj = SomeObject()
-        >>> obj.args = ['fancy', {'objects': 'inside'}]
-        >>> obj.save()
+            >>> obj = SomeObject()
+            >>> obj.args = ['fancy', {'objects': 'inside'}]
+            >>> obj.save()
         
         
         -----
@@ -122,51 +122,68 @@ Description: -----
         Changes
         -------
         
+        Changes in version 0.1.9
+        ========================
+        
+         * Added `connection` and `prepared` parameters to `get_db_prep_value()` too
+           (thanks to Matthew Schinckel).
+        
+        Changes in version 0.1.8
+        ========================
+        
+         * Updated link to code repository.
+        
+        Changes in version 0.1.7
+        ========================
+        
+         * Added `connection` and `prepared` parameters to `get_db_prep_lookup()` to
+           get rid of deprecation warnings in Django 1.2.
+        
         Changes in version 0.1.6
         ========================
         
-        * Fixed South support (thanks aehlke@github).
+         * Fixed South support (thanks aehlke@github).
         
         Changes in version 0.1.5
         ========================
         
-        * Added support for South.
-        * Changed default to null=False, as is common throughout Django.
+         * Added support for South.
+         * Changed default to null=False, as is common throughout Django.
         
         Changes in version 0.1.4
         ========================
         
-        * Updated copyright statements.
+         * Updated copyright statements.
         
         Changes in version 0.1.3
         ========================
         
-        * Updated serialization tests (thanks to Michael Fladischer).
+         * Updated serialization tests (thanks to Michael Fladischer).
         
         Changes in version 0.1.2
         ========================
         
-        * Added Simplified BSD licence.
+         * Added Simplified BSD licence.
         
         Changes in version 0.1.1
         ========================
         
-        * Added test for serialization.
-        * Added note about JSON serialization for browser.
-        * Added support for different pickle protocol versions (thanks to Michael
-        Fladischer).
+         * Added test for serialization.
+         * Added note about JSON serialization for browser.
+         * Added support for different pickle protocol versions (thanks to Michael
+           Fladischer).
         
         Changes in version 0.1
         ======================
         
-        * First public release.
+         * First public release.
         
         
         --------
         Feedback
         --------
         
-        There is a `home page <http://github.com/shrubberysoft/django-picklefield>`_
+        There is a home page <http://github.com/gintas/django-picklefield>
         with instructions on how to access the code repository.
         
         Send feedback and suggestions to gintautas@miliauskas.lt .

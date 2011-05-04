@@ -1,12 +1,16 @@
 import sys
 import time
 import os
+import warnings
 from django.conf import settings
 from django.core import mail
 from django.core.mail.backends import locmem
 from django.test import signals
 from django.template import Template
 from django.utils.translation import deactivate
+
+__all__ = ('Approximate', 'ContextList', 'setup_test_environment',
+       'teardown_test_environment', 'get_runner')
 
 
 class Approximate(object):
@@ -35,6 +39,13 @@ class ContextList(list):
             raise KeyError(key)
         else:
             return super(ContextList, self).__getitem__(key)
+
+    def __contains__(self, key):
+        try:
+            value = self[key]
+        except KeyError:
+            return False
+        return True
 
 
 def instrumented_test_render(self, context):
@@ -66,6 +77,7 @@ def setup_test_environment():
 
     deactivate()
 
+
 def teardown_test_environment():
     """Perform any global post-test teardown. This involves:
 
@@ -83,6 +95,25 @@ def teardown_test_environment():
     del mail.original_email_backend
 
     del mail.outbox
+
+
+def get_warnings_state():
+    """
+    Returns an object containing the state of the warnings module
+    """
+    # There is no public interface for doing this, but this implementation of
+    # get_warnings_state and restore_warnings_state appears to work on Python
+    # 2.4 to 2.7.
+    return warnings.filters[:]
+
+
+def restore_warnings_state(state):
+    """
+    Restores the state of the warnings module when passed an object that was
+    returned by get_warnings_state()
+    """
+    warnings.filters = state[:]
+
 
 def get_runner(settings):
     test_path = settings.TEST_RUNNER.split('.')

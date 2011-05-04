@@ -79,7 +79,11 @@ Variables
 
 Variables look like this: ``{{ variable }}``. When the template engine
 encounters a variable, it evaluates that variable and replaces it with the
-result.
+result. Variable names consist of any combination of alphanumeric characters
+and the underscore (``"_"``). The dot (``"."``) also appears in variable
+sections, although that has a special meaning, as indicated below.
+Importantly, *you cannot have spaces or punctuation characters in variable
+names.*
 
 Use a dot (``.``) to access attributes of a variable.
 
@@ -99,9 +103,6 @@ In the above example, ``{{ section.title }}`` will be replaced with the
 If you use a variable that doesn't exist, the template system will insert
 the value of the ``TEMPLATE_STRING_IF_INVALID`` setting, which is set to ``''``
 (the empty string) by default.
-
-See `Using the built-in reference`_, below, for help on finding what variables
-are available in a given template.
 
 Filters
 =======
@@ -161,6 +162,12 @@ Again, these are just a few examples; see the :ref:`built-in filter reference
 You can also create your own custom template filters; see
 :doc:`/howto/custom-template-tags`.
 
+.. seealso::
+
+    Django's admin interface can include a complete reference of all template
+    tags and filters available for a given site. See
+    :doc:`/ref/contrib/admin/admindocs`.
+
 Tags
 ====
 
@@ -216,6 +223,12 @@ tag reference <ref-templates-builtins-tags>` for the complete list.
 
 You can also create your own custom template tags; see
 :doc:`/howto/custom-template-tags`.
+
+.. seealso::
+
+    Django's admin interface can include a complete reference of all template
+    tags and filters available for a given site. See
+    :doc:`/ref/contrib/admin/admindocs`.
 
 Comments
 ========
@@ -389,8 +402,6 @@ wouldn't know which one of the blocks' content to use.
 
 Automatic HTML escaping
 =======================
-
-.. versionadded:: 1.0
 
 When generating HTML from templates, there's always a risk that a variable will
 include characters that affect the resulting HTML. For example, consider this
@@ -569,48 +580,44 @@ This doesn't affect what happens to data coming from the variable itself.
 The variable's contents are still automatically escaped, if necessary, because
 they're beyond the control of the template author.
 
-.. _template-built-in-reference:
+.. _template-accessing-methods:
 
-Using the built-in reference
-============================
+Accessing method calls
+======================
 
-Django's admin interface includes a complete reference of all template tags and
-filters available for a given site. To activate it, follow these steps:
+Most method calls attached to objects are also available from within templates.
+This means that templates have access to much more than just class attributes
+(like field names) and variables passed in from views. For example, the Django
+ORM provides the :ref:`"entry_set"<topics-db-queries-related>` syntax for
+finding a collection of objects related on a foreign key. Therefore, given
+a model called "comment" with a foreign key relationship to a model called
+"task" you can loop through all comments attached to a given task like this::
 
-    * Add :mod:`django.contrib.admindocs` to your :setting:`INSTALLED_APPS`.
-    * Add ``(r'^admin/doc/', include('django.contrib.admindocs.urls'))`` to your
-      :data:`urlpatterns`. Make sure it's included *before* the ``r'^admin/'``
-      entry, so that requests to ``/admin/doc/`` don't get handled by the
-      latter entry.
-    * Install the docutils module (http://docutils.sf.net/).
+    {% for comment in task.comment_set.all %}
+        {{ comment }}
+    {% endfor %}
 
-After you've followed those steps, you can start browsing the documentation by
-going to your admin interface and clicking the "Documentation" link in the
-upper right of the page.
+Similarly, :doc:`QuerySets</ref/models/querysets>` provide a ``count()`` method
+to count the number of objects they contain. Therefore, you can obtain a count
+of all comments related to the current task with::
 
-The reference is divided into 4 sections: tags, filters, models, and views.
+    {{ task.comment_set.all.count }}
 
-The **tags** and **filters** sections describe all the built-in tags (in fact,
-the tag and filter references below come directly from those pages) as well as
-any custom tag or filter libraries available.
+And of course you can easily access methods you've explicitly defined on your
+own models::
 
-The **views** page is the most valuable. Each URL in your site has a separate
-entry here, and clicking on a URL will show you:
+    # In model
+    class Task(models.Model):
+        def foo(self):
+            return "bar"
 
-    * The name of the view function that generates that view.
-    * A short description of what the view does.
-    * The **context**, or a list of variables available in the view's template.
-    * The name of the template or templates that are used for that view.
+    # In template
+    {{ task.foo }}
 
-Each view documentation page also has a bookmarklet that you can use to jump
-from any page to the documentation page for that view.
-
-Because Django-powered sites usually use database objects, the **models**
-section of the documentation page describes each type of object in the system
-along with all the fields available on that object.
-
-Taken together, the documentation pages should tell you every tag, filter,
-variable and object available to you in a given template.
+Because Django intentionally limits the amount of logic processing available
+in the template language, it is not possible to pass arguments to method calls
+accessed from within templates. Data should be calculated in views, then passed
+to templates for display.
 
 .. _loading-custom-template-libraries:
 

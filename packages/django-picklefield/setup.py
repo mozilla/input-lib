@@ -23,12 +23,12 @@
 from setuptools import setup, find_packages
 
 setup(name='django-picklefield',
-    version='0.1.6',
+    version='0.1.9',
     description='Pickled object field for Django',
     long_description=open('README').read(),
     author='Gintautas Miliauskas',
     author_email='gintautas@miliauskas.lt',
-    url='http://github.com/shrubberysoft/django-picklefield',
+    url='http://github.com/gintas/django-picklefield',
     packages=find_packages('src'),
     package_dir={'' : 'src'},
     classifiers=[
