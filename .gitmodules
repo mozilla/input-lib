@@ -43,3 +43,6 @@
 [submodule "src/slugify"]
 	path = src/slugify
 	url = git://github.com/mozilla/unicode-slugify.git
+[submodule "src/pyes"]
+	path = src/pyes
+	url = git://github.com/aparo/pyes.git

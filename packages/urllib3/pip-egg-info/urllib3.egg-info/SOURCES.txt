@@ -1,0 +1,13 @@
+README.txt
+setup.cfg
+pip-egg-info/urllib3.egg-info/PKG-INFO
+pip-egg-info/urllib3.egg-info/SOURCES.txt
+pip-egg-info/urllib3.egg-info/dependency_links.txt
+pip-egg-info/urllib3.egg-info/entry_points.txt
+pip-egg-info/urllib3.egg-info/not-zip-safe
+pip-egg-info/urllib3.egg-info/top_level.txt
+test/test_connectionpool.py
+test/test_withdummy.py
+urllib3/__init__.py
+urllib3/connectionpool.py
+urllib3/filepost.py
