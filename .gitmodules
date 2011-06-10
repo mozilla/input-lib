@@ -46,3 +46,6 @@
 [submodule "src/pyes"]
 	path = src/pyes
 	url = git://github.com/aparo/pyes.git
+[submodule "src/elasticutils"]
+	path = src/elasticutils
+	url = git://github.com/davedash/elasticutils.git
