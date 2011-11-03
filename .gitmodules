@@ -52,3 +52,6 @@
 [submodule "src/django"]
 	path = src/django
 	url = git://github.com/django/django.git
+[submodule "src/statsd"]
+	path = src/statsd
+	url = git://github.com/jsocol/pystatsd.git

@@ -1,2 +1,3 @@
 src/elasticutils
 src/django
+src/statsd
