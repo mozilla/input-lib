@@ -61,3 +61,6 @@
 [submodule "src/django-session-csrf"]
 	path = src/django-session-csrf
 	url = git://github.com/mozilla/django-session-csrf.git
+[submodule "src/django-sha2"]
+	path = src/django-sha2
+	url = git://github.com/fwenzel/django-sha2.git

@@ -3,3 +3,4 @@ src/django
 src/statsd
 src/funfactory
 src/django-session-csrf
+src/django-sha2
