@@ -66,4 +66,4 @@
 	url = git://github.com/fwenzel/django-sha2.git
 [submodule "src/django-mobility"]
 	path = src/django-mobility
-	url = git://github.com/jbalogh/django-mobility@644e0c1c58
+	url = git://github.com/jbalogh/django-mobility
