@@ -4,3 +4,4 @@ src/statsd
 src/funfactory
 src/django-session-csrf
 src/django-sha2
+src/django-mobility
