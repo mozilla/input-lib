@@ -55,3 +55,6 @@
 [submodule "src/statsd"]
 	path = src/statsd
 	url = git://github.com/jsocol/pystatsd.git
+[submodule "src/funfactory"]
+	path = src/funfactory
+	url = git://github.com/mozilla/funfactory.git

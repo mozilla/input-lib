@@ -1,3 +1,4 @@
 src/elasticutils
 src/django
 src/statsd
+src/funfactory
