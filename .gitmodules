@@ -67,3 +67,6 @@
 [submodule "src/django-mobility"]
 	path = src/django-mobility
 	url = git://github.com/jbalogh/django-mobility
+[submodule "src/django-waffle"]
+	path = src/django-waffle
+	url = git://github.com/jsocol/django-waffle.git
