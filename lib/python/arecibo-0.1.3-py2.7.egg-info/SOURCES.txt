@@ -1,0 +1,17 @@
+README.txt
+setup.cfg
+setup.py
+arecibo/__init__.py
+arecibo/arecibo.py
+arecibo.egg-info/PKG-INFO
+arecibo.egg-info/SOURCES.txt
+arecibo.egg-info/dependency_links.txt
+arecibo.egg-info/entry_points.txt
+arecibo.egg-info/not-zip-safe
+arecibo.egg-info/requires.txt
+arecibo.egg-info/top_level.txt
+arecibo/simplejson/__init__.py
+arecibo/simplejson/decoder.py
+arecibo/simplejson/encoder.py
+arecibo/simplejson/scanner.py
+arecibo/simplejson/tool.py
