@@ -1,0 +1,19 @@
+Metadata-Version: 1.0
+Name: django-arecibo
+Version: 0.3.2dev
+Summary: Connector from Django to Arecibo
+Home-page: http://clearwind.ca
+Author: Clearwind Consulting
+Author-email: andy@clearwind.ca
+License: BSD
+Description: This is a version of the Arecibo API which connects the server.
+        
+        Arecibo is an open source application to provide error logging and notifications for your web sites.
+        
+        See http://areciboapp.com/docs/client/django.html for more information
+        
+        
+Platform: UNKNOWN
+Classifier: Framework :: Django
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
