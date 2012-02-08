@@ -73,3 +73,6 @@
 [submodule "src/haystack"]
 	path = src/haystack
 	url = git://github.com/toastdriven/django-haystack.git
+[submodule "src/pyelasticsearch"]
+	path = src/pyelasticsearch
+	url = git://github.com/toastdriven/pyelasticsearch.git

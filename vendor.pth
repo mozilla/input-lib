@@ -7,3 +7,4 @@ src/django-sha2
 src/django-mobility
 src/django-waffle
 src/haystack
+src/pyelasticsearch
