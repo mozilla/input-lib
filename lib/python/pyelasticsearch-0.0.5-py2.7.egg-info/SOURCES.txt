@@ -1,0 +1,10 @@
+LICENSE
+MANIFEST.in
+pyelasticsearch.py
+setup.cfg
+setup.py
+pyelasticsearch.egg-info/PKG-INFO
+pyelasticsearch.egg-info/SOURCES.txt
+pyelasticsearch.egg-info/dependency_links.txt
+pyelasticsearch.egg-info/requires.txt
+pyelasticsearch.egg-info/top_level.txt
