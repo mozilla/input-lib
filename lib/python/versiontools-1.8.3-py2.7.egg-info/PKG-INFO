@@ -1,0 +1,22 @@
+Metadata-Version: 1.0
+Name: versiontools
+Version: 1.8.3
+Summary: Smart replacement for plain tuple used in __version__
+Home-page: https://launchpad.net/versiontools
+Author: Zygmunt Krynicki
+Author-email: zygmunt.krynicki@linaro.org
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.4
+Classifier: Programming Language :: Python :: 2.5
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.0
+Classifier: Programming Language :: Python :: 3.1
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Topic :: Software Development :: Version Control
