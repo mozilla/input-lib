@@ -76,3 +76,9 @@
 [submodule "src/pyelasticsearch"]
 	path = src/pyelasticsearch
 	url = git://github.com/toastdriven/pyelasticsearch.git
+[submodule "src/cef"]
+	path = src/cef
+	url = git://github.com/mozilla/cef.git
+[submodule "src/django-adminplus"]
+	path = src/django-adminplus
+	url = git://github.com/jsocol/django-adminplus.git
